@@ -1,64 +1,155 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import GameCard from "@/components/GameCard";
+import type { NBAGame } from "@/lib/types";
+
+function parseGameTime(time: string): number {
+  const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return 9999;
+  let hours = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+  const ampm = match[3].toUpperCase();
+  if (ampm === "PM" && hours !== 12) hours += 12;
+  if (ampm === "AM" && hours === 12) hours = 0;
+  return hours * 60 + mins;
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const [games, setGames] = useState<NBAGame[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/games")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load slate");
+        return r.json();
+      })
+      .then((data) => {
+        setGames(data.games ?? []);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
+  }, []);
+
+  function handleGameSelect(gameId: string) {
+    router.push(`/breakdown/${gameId}`);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-[#F4F6F9]">
+      {/* Nav */}
+      <header className="border-b border-[#E0E5EE] bg-white">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <span className="font-heading text-xl font-bold text-[#0D1B2E] tracking-tight">
+              Clearbet
+            </span>
+            <span className="ml-2 font-mono text-xs text-[#0A7A6C] tracking-widest uppercase">
+              NBA
+            </span>
+          </div>
+          <a
+            href="/glossary"
+            className="font-mono text-xs text-[#6B7A90] hover:text-[#0A7A6C] transition-colors"
+          >
+            Glossary
+          </a>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="max-w-2xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="font-heading text-3xl font-extrabold text-[#0D1B2E] border-b-2 border-[#0A7A6C] inline-block pb-1">
+            Today&#8217;s Slate
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-2 font-mono text-xs text-[#6B7A90] tracking-wide">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {loading && (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white border border-[#E0E5EE] rounded-xl p-5 animate-pulse"
+              >
+                <div className="h-3 bg-[#E0E5EE] rounded w-24 mb-4" />
+                <div className="flex justify-between mb-4">
+                  <div className="space-y-2">
+                    <div className="h-5 bg-[#E0E5EE] rounded w-32" />
+                    <div className="h-5 bg-[#E0E5EE] rounded w-24" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-5 bg-[#E0E5EE] rounded w-32" />
+                    <div className="h-5 bg-[#E0E5EE] rounded w-24" />
+                  </div>
+                </div>
+                <div className="h-px bg-[#E0E5EE] mb-3" />
+                <div className="flex justify-between">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="h-3 bg-[#E0E5EE] rounded w-12" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-white border border-red-100 rounded-xl p-6 text-center">
+            <p className="text-sm text-[#D0342C]">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-3 text-xs font-mono text-[#0A7A6C] hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && games.length === 0 && (
+          <div className="bg-white border border-[#E0E5EE] rounded-xl p-8 text-center">
+            <p className="font-heading text-lg font-semibold text-[#0D1B2E] mb-2">
+              No games today
+            </p>
+            <p className="text-sm text-[#6B7A90]">Check back on a game day.</p>
+          </div>
+        )}
+
+        {!loading && !error && games.length > 0 && (() => {
+          const sorted = [...games].sort((a, b) => parseGameTime(a.gameTime) - parseGameTime(b.gameTime));
+          const allDone = sorted.every((g) => g.gameStatus === "final" || g.gameStatus === "live");
+          return (
+            <>
+              {allDone && (
+                <div className="bg-white border border-[#E0E5EE] rounded-xl px-5 py-4 mb-4">
+                  <p className="text-sm text-[#6B7A90]">
+                    All of tonight&#8217;s games are underway or have ended. Check back tomorrow morning for the full slate and fresh breakdowns.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-4">
+                {sorted.map((game) => (
+                  <GameCard key={game.gameId} game={game} onClick={handleGameSelect} />
+                ))}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* Tagline */}
+        <p className="mt-10 text-center font-mono text-xs text-[#6B7A90]">
+          What the data says. Your decision to make.
+        </p>
       </main>
     </div>
   );
