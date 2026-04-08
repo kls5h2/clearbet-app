@@ -52,7 +52,8 @@ Assign exactly one:
 One term from the analysis. Defined in one plain sentence. No jargon in the definition.
 
 ## Forbidden
-Never use: lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "sharp money says" / "anything can happen" / "it will be interesting to see" / "both teams bring"
+Never use: lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "sharp money says" / "anything can happen" / "it will be interesting to see" / "both teams bring" / "wins by roughly a week" / "covers comfortably" / "by a mile" / any sports betting jargon that requires insider knowledge to understand.
+When describing a large margin of victory, use plain English: "wins comfortably," "wins by double digits," or state the actual expected point differential plainly. Never use phrases a casual fan would have to Google.
 
 ## Output Format
 Return valid JSON only. No markdown, no explanation, no preamble.

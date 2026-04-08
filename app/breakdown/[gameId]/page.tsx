@@ -18,6 +18,16 @@ const LOADING_MESSAGES = [
   "Separating signal from noise.",
   "Building your breakdown. Not picking your bet.",
   "The data is talking. We're listening.",
+  "Checking who's actually suiting up tonight.",
+  "Running the numbers one more time.",
+  "Sorting signal from noise.",
+  "This is the part where the picture gets clear.",
+  "Pulling the latest injury report.",
+  "No hot takes. Just data.",
+  "Almost ready. Worth the wait.",
+  "Asking better questions about tonight's game.",
+  "The market has opinions. So does the data.",
+  "One moment. Making sure this is right.",
 ];
 
 function useRotatingMessage(active: boolean) {
