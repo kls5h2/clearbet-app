@@ -1,10 +1,10 @@
 /**
  * The Odds API client
  * Docs: https://the-odds-api.com/lol-of-odds-api/
- * Endpoint: GET /v4/sports/basketball_nba/odds
+ * Endpoints: /v4/sports/basketball_nba/odds and /v4/sports/baseball_mlb/odds
  */
 
-import type { GameOdds } from "./types";
+import type { GameOdds, MLBGameOdds } from "./types";
 
 const BASE_URL = "https://api.the-odds-api.com/v4";
 
@@ -49,7 +49,7 @@ export async function fetchNBAOdds(): Promise<Map<string, OddsMatchup>> {
   url.searchParams.set("markets", "h2h,spreads,totals");
   url.searchParams.set("oddsFormat", "american");
 
-  const res = await fetch(url.toString(), { next: { revalidate: 300 } });
+  const res = await fetch(url.toString(), { next: { revalidate: 900 } });
   if (!res.ok) {
     throw new Error(`Odds API error: ${res.status} ${res.statusText}`);
   }
@@ -129,6 +129,50 @@ function extractOdds(game: OddsApiGame): GameOdds {
     spreadBookmaker: spreadBook?.title ?? "",
     totalsBookmaker: totalsBook?.title ?? "",
   };
+}
+
+/**
+ * Fetch current MLB odds from The Odds API.
+ * Returns a map of matchup key -> MLBGameOdds.
+ */
+export async function fetchMLBOdds(): Promise<Map<string, OddsMatchup & { mlbOdds: MLBGameOdds }>> {
+  const key = process.env.ODDS_API_KEY;
+  if (!key) throw new Error("ODDS_API_KEY is not set");
+
+  const url = new URL(`${BASE_URL}/sports/baseball_mlb/odds`);
+  url.searchParams.set("apiKey", key);
+  url.searchParams.set("regions", "us");
+  url.searchParams.set("markets", "h2h,spreads,totals");
+  url.searchParams.set("oddsFormat", "american");
+
+  const res = await fetch(url.toString(), { next: { revalidate: 900 } });
+  if (!res.ok) {
+    throw new Error(`Odds API MLB error: ${res.status} ${res.statusText}`);
+  }
+
+  const games: OddsApiGame[] = await res.json();
+  const result = new Map<string, OddsMatchup & { mlbOdds: MLBGameOdds }>();
+
+  for (const game of games) {
+    const nbaStyleOdds = extractOdds(game);
+    const mlbOdds: MLBGameOdds = {
+      homeMoneyline: nbaStyleOdds.homeMoneyline,
+      awayMoneyline: nbaStyleOdds.awayMoneyline,
+      runLine: nbaStyleOdds.spread, // run line maps to spread field
+      total: nbaStyleOdds.total,
+      impliedHomeProbability: nbaStyleOdds.impliedHomeProbability,
+      impliedAwayProbability: nbaStyleOdds.impliedAwayProbability,
+    };
+    result.set(buildMatchupKey(game.home_team, game.away_team), {
+      homeTeam: game.home_team,
+      awayTeam: game.away_team,
+      commenceTime: game.commence_time,
+      odds: nbaStyleOdds,
+      mlbOdds,
+    });
+  }
+
+  return result;
 }
 
 /**

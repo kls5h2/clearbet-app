@@ -38,7 +38,7 @@ The test for every sentence: Would a person who bets twice a month understand th
 ### 05 — MARKET READ
 2 sentences only. Sentence 1: what the line says in plain English. Sentence 2: does that fit what the data shows or does it feel off.
 
-### 06 — DECISION LENS
+### 06 — WHAT THIS MEANS
 3 sentences only. Sentence 1: the lean and why. Sentence 2: the one thing that changes it. Sentence 3 must be this exact text, word for word: "This is not a pick. This is what the data says. Your decision is always yours."
 
 ## Confidence Levels

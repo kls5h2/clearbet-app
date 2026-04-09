@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import GameCard from "@/components/GameCard";
-import type { NBAGame } from "@/lib/types";
+import type { NBAGame, MLBGame, AnyGame, Sport } from "@/lib/types";
 
 function parseGameTime(time: string): number {
   const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -18,12 +18,17 @@ function parseGameTime(time: string): number {
 
 export default function HomePage() {
   const router = useRouter();
-  const [games, setGames] = useState<NBAGame[]>([]);
+  const [activeSport, setActiveSport] = useState<Sport>("NBA");
+  const [games, setGames] = useState<AnyGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/games")
+    setLoading(true);
+    setError(null);
+    setGames([]);
+
+    fetch(`/api/games?sport=${activeSport.toLowerCase()}`)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load slate");
         return r.json();
@@ -36,10 +41,10 @@ export default function HomePage() {
         setError(e.message);
         setLoading(false);
       });
-  }, []);
+  }, [activeSport]);
 
   function handleGameSelect(gameId: string) {
-    router.push(`/breakdown/${gameId}`);
+    router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
   }
 
   return (
@@ -50,9 +55,6 @@ export default function HomePage() {
           <div>
             <span className="font-heading text-xl font-bold text-[#0D1B2E] tracking-tight">
               Clearbet
-            </span>
-            <span className="ml-2 font-mono text-xs text-[#0A7A6C] tracking-widest uppercase">
-              NBA
             </span>
           </div>
           <a
@@ -66,13 +68,30 @@ export default function HomePage() {
 
       {/* Main */}
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="font-heading text-3xl font-extrabold text-[#0D1B2E] border-b-2 border-[#0A7A6C] inline-block pb-1">
             Today&#8217;s Slate
           </h1>
           <p className="mt-2 font-mono text-xs text-[#6B7A90] tracking-wide">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
+        </div>
+
+        {/* Sport tabs */}
+        <div className="flex gap-2 mb-6">
+          {(["NBA", "MLB"] as Sport[]).map((sport) => (
+            <button
+              key={sport}
+              onClick={() => setActiveSport(sport)}
+              className={`font-mono text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-lg transition-colors ${
+                activeSport === sport
+                  ? "bg-[#0A7A6C] text-white"
+                  : "bg-white border border-[#E0E5EE] text-[#6B7A90] hover:border-[#0A7A6C] hover:text-[#0A7A6C]"
+              }`}
+            >
+              {sport}
+            </button>
+          ))}
         </div>
 
         {loading && (
@@ -119,7 +138,7 @@ export default function HomePage() {
         {!loading && !error && games.length === 0 && (
           <div className="bg-white border border-[#E0E5EE] rounded-xl p-8 text-center">
             <p className="font-heading text-lg font-semibold text-[#0D1B2E] mb-2">
-              No games today
+              No {activeSport} games today
             </p>
             <p className="text-sm text-[#6B7A90]">Check back on a game day.</p>
           </div>

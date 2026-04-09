@@ -1,10 +1,10 @@
-import type { BreakdownResult, NBAGame, FragilityColor } from "@/lib/types";
+import type { BreakdownResult, AnyGame, FragilityColor } from "@/lib/types";
 import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
 
 interface Props {
   breakdown: BreakdownResult;
-  game: NBAGame;
+  game: AnyGame;
 }
 
 const fragilityColors: Record<FragilityColor, { dot: string; text: string; bg: string }> = {
@@ -26,6 +26,33 @@ const fragilityColors: Record<FragilityColor, { dot: string; text: string; bg: s
 };
 
 
+function getArchetype(
+  confidenceLabel: import("@/lib/types").ConfidenceLabel,
+  odds: AnyGame["odds"]
+): string {
+  if (confidenceLabel === "PASS") return "Avoid";
+  if (confidenceLabel === "FRAGILE") return "Handle with care";
+
+  const spread = odds && "spread" in odds ? odds.spread : null;
+  const runLine = odds && "runLine" in odds ? odds.runLine : null;
+  const line = spread ?? runLine;
+  const absSpread = line !== null ? Math.abs(line) : null;
+  const total = odds?.total ?? null;
+  const highTotal = total !== null && total >= 220;
+  const lowTotal = total !== null && total <= 212;
+
+  if (absSpread !== null && absSpread > 7) return "Blowout risk";
+  if (absSpread !== null && absSpread >= 3) {
+    if (highTotal) return "Scoring showcase";
+    if (lowTotal) return "Controlled game";
+    return "Controlled game";
+  }
+  // Under 3 or no spread
+  if (highTotal) return "Open game";
+  if (lowTotal) return "Grind";
+  return "Open game";
+}
+
 function SectionHeader({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-baseline gap-3 mb-4">
@@ -46,7 +73,9 @@ function Section({ children, className = "" }: { children: React.ReactNode; clas
 }
 
 export default function BreakdownView({ breakdown, game }: Props) {
-  const { homeTeam, awayTeam, odds, gameStatus } = game;
+  const { homeTeam, awayTeam, gameStatus } = game;
+  const odds = game.odds;
+  const isMLB = game.sport === "MLB";
 
   return (
     <div className="space-y-4">
@@ -84,7 +113,8 @@ export default function BreakdownView({ breakdown, game }: Props) {
 
           {odds && (
             <div className="flex gap-6 text-right">
-              {odds.spread !== null && (
+              {/* NBA: spread | MLB: run line */}
+              {!isMLB && "spread" in odds && odds.spread !== null && (
                 <div>
                   <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest">Spread</p>
                   <p className="font-mono text-sm font-semibold text-[#0D1B2E]">
@@ -92,9 +122,19 @@ export default function BreakdownView({ breakdown, game }: Props) {
                   </p>
                 </div>
               )}
+              {isMLB && "runLine" in odds && odds.runLine !== null && (
+                <div>
+                  <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest">Run Line</p>
+                  <p className="font-mono text-sm font-semibold text-[#0D1B2E]">
+                    {homeTeam.teamAbv} {odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}
+                  </p>
+                </div>
+              )}
               {odds.total !== null && (
                 <div>
-                  <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest">Total</p>
+                  <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest">
+                    {isMLB ? "Total Runs" : "Total"}
+                  </p>
                   <p className="font-mono text-sm font-semibold text-[#0D1B2E]">O/U {odds.total}</p>
                 </div>
               )}
@@ -113,10 +153,15 @@ export default function BreakdownView({ breakdown, game }: Props) {
         </div>
 
         <div className="mt-4 pt-4 border-t border-[#E0E5EE]">
-          <ConfidenceBadge
-            level={breakdown.confidenceLevel}
-            label={breakdown.confidenceLabel}
-          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <ConfidenceBadge
+              level={breakdown.confidenceLevel}
+              label={breakdown.confidenceLabel}
+            />
+            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-medium tracking-widest uppercase bg-[#F4F6F9] text-[#6B7A90] border border-[#E0E5EE]">
+              {getArchetype(breakdown.confidenceLabel, odds)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -207,13 +252,13 @@ export default function BreakdownView({ breakdown, game }: Props) {
         <p className="text-base text-[#0D1B2E] leading-[1.7]">
           {odds
             ? breakdown.marketRead
-            : "Lines haven't posted yet for this game — check back closer to tip-off for the full market picture."}
+            : `Lines haven't posted yet for this game — check back closer to ${isMLB ? "first pitch" : "tip-off"} for the full market picture.`}
         </p>
       </Section>
 
-      {/* 06 — Decision Lens */}
+      {/* 06 — What This Means */}
       <Section>
-        <SectionHeader number="06" title="Decision Lens" />
+        <SectionHeader number="06" title="What This Means" />
         <p className="text-base text-[#0D1B2E] leading-[1.7]">{breakdown.decisionLens}</p>
 
         {/* Glossary callout */}

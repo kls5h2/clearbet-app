@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import BreakdownView from "@/components/BreakdownView";
-import type { BreakdownResult, NBAGame } from "@/lib/types";
+import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
 
 type Status = "idle" | "loading" | "done" | "error";
 
@@ -53,10 +53,12 @@ export default function BreakdownPage() {
   const { gameId: rawGameId } = useParams<{ gameId: string }>();
   const gameId = decodeURIComponent(rawGameId ?? "");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sport: Sport = (searchParams.get("sport")?.toUpperCase() === "MLB" ? "MLB" : "NBA");
 
   const [status, setStatus] = useState<Status>("idle");
   const [breakdown, setBreakdown] = useState<BreakdownResult | null>(null);
-  const [game, setGame] = useState<NBAGame | null>(null);
+  const [game, setGame] = useState<AnyGame | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { message, visible } = useRotatingMessage(status === "loading");
@@ -68,7 +70,7 @@ export default function BreakdownPage() {
     fetch("/api/breakdown", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameId }),
+      body: JSON.stringify({ gameId, sport }),
     })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to generate breakdown");

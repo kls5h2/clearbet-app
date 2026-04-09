@@ -79,7 +79,7 @@ export default async function ArchivePage() {
             return (
               <Link
                 key={row.id}
-                href={`/breakdown/${encodeURIComponent(row.game_id)}`}
+                href={`/archive/${encodeURIComponent(row.game_id)}`}
                 className="block bg-white border border-[#E0E5EE] rounded-xl px-5 py-4 hover:border-[#0A7A6C] hover:shadow-sm transition-all duration-150"
               >
                 <div className="flex items-center justify-between gap-4">

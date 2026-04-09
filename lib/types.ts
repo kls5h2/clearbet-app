@@ -1,70 +1,16 @@
-// ─── Game Slate ──────────────────────────────────────────────────────────────
+// ─── Sport ───────────────────────────────────────────────────────────────────
+
+export type Sport = "NBA" | "MLB";
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
 
 export type GameStatus = "scheduled" | "live" | "final";
 
-export interface NBAGame {
-  gameId: string;
-  gameDate: string;
-  gameTime: string; // e.g. "7:30 PM ET"
-  gameStatus: GameStatus;
-  homeTeam: Team;
-  awayTeam: Team;
-  odds: GameOdds | null;
-}
-
 export interface Team {
   teamId: string;
-  teamAbv: string; // e.g. "LAL"
+  teamAbv: string; // e.g. "LAL", "NYY"
   teamName: string; // e.g. "Los Angeles Lakers"
   teamCity: string;
-}
-
-export interface GameOdds {
-  spread: number | null; // negative = home favored, e.g. -4.5
-  total: number | null; // over/under, e.g. 224.5
-  homeMoneyline: number | null; // American odds, e.g. -180
-  awayMoneyline: number | null;
-  impliedHomeProbability: number | null; // 0–100
-  impliedAwayProbability: number | null;
-  spreadBookmaker: string;
-  totalsBookmaker: string;
-}
-
-// ─── Game Detail Data (fed to Claude) ────────────────────────────────────────
-
-export interface GameDetailData {
-  game: NBAGame;
-  homeTeamStats: TeamSeasonStats;
-  awayTeamStats: TeamSeasonStats;
-  homeRecentForm: RecentGame[];
-  awayRecentForm: RecentGame[];
-  injuries: InjuryReport;
-}
-
-export interface TeamSeasonStats {
-  teamId: string;
-  teamAbv: string;
-  pointsPerGame: number;
-  pointsAllowedPerGame: number;
-  pace: number; // possessions per 48
-  offensiveRating: number;
-  defensiveRating: number;
-  reboundsPerGame: number;
-  assistsPerGame: number;
-  turnoversPerGame: number;
-  threePointAttempts: number;
-  threePointPct: number;
-  wins: number;
-  losses: number;
-  topPlayers: PlayerStat[];
-}
-
-export interface PlayerStat {
-  playerName: string;
-  position: string;
-  pointsPerGame: number;
-  assistsPerGame: number;
-  reboundsPerGame: number;
 }
 
 export interface RecentGame {
@@ -118,18 +64,149 @@ export interface BreakdownResult {
   glossaryDefinition: string;
 }
 
+// ─── NBA ──────────────────────────────────────────────────────────────────────
+
+export interface NBAGame {
+  sport: "NBA";
+  gameId: string;
+  gameDate: string;
+  gameTime: string;
+  gameStatus: GameStatus;
+  homeTeam: Team;
+  awayTeam: Team;
+  odds: GameOdds | null;
+}
+
+export interface GameOdds {
+  spread: number | null;
+  total: number | null;
+  homeMoneyline: number | null;
+  awayMoneyline: number | null;
+  impliedHomeProbability: number | null;
+  impliedAwayProbability: number | null;
+  spreadBookmaker: string;
+  totalsBookmaker: string;
+}
+
+export interface TeamSeasonStats {
+  teamId: string;
+  teamAbv: string;
+  pointsPerGame: number;
+  pointsAllowedPerGame: number;
+  pace: number;
+  offensiveRating: number;
+  defensiveRating: number;
+  reboundsPerGame: number;
+  assistsPerGame: number;
+  turnoversPerGame: number;
+  threePointAttempts: number;
+  threePointPct: number;
+  wins: number;
+  losses: number;
+  topPlayers: PlayerStat[];
+}
+
+export interface PlayerStat {
+  playerName: string;
+  position: string;
+  pointsPerGame: number;
+  assistsPerGame: number;
+  reboundsPerGame: number;
+}
+
+export interface GameDetailData {
+  game: NBAGame;
+  homeTeamStats: TeamSeasonStats;
+  awayTeamStats: TeamSeasonStats;
+  homeRecentForm: RecentGame[];
+  awayRecentForm: RecentGame[];
+  injuries: InjuryReport;
+}
+
+// ─── MLB ──────────────────────────────────────────────────────────────────────
+
+export interface MLBPitcher {
+  name: string;
+  seasonERA: number;
+  recentERA: number | null; // last 3 starts ERA
+  hand: "L" | "R" | null;
+}
+
+export interface MLBGame {
+  sport: "MLB";
+  gameId: string;
+  gameDate: string;
+  gameTime: string;
+  gameStatus: GameStatus;
+  homeTeam: Team;
+  awayTeam: Team;
+  odds: MLBGameOdds | null;
+  homePitcher: MLBPitcher | null;
+  awayPitcher: MLBPitcher | null;
+}
+
+export interface MLBGameOdds {
+  homeMoneyline: number | null;
+  awayMoneyline: number | null;
+  runLine: number | null; // home run line, typically -1.5
+  total: number | null;
+  impliedHomeProbability: number | null;
+  impliedAwayProbability: number | null;
+}
+
+export interface MLBTeamStats {
+  teamAbv: string;
+  wins: number;
+  losses: number;
+  runsPerGame: number;
+  runsAllowedPerGame: number;
+  teamERA: number;
+  topHitters: MLBHitterStat[];
+}
+
+export interface MLBHitterStat {
+  playerName: string;
+  position: string;
+  battingAverage: number;
+  homeRuns: number;
+  rbi: number;
+  ops: number;
+}
+
+export interface MLBGameDetailData {
+  game: MLBGame;
+  homeTeamStats: MLBTeamStats;
+  awayTeamStats: MLBTeamStats;
+  homeRecentForm: RecentGame[];
+  awayRecentForm: RecentGame[];
+  injuries: InjuryReport;
+}
+
+// ─── Union type used by GameCard and BreakdownView ────────────────────────────
+
+export type AnyGame = NBAGame | MLBGame;
+
 // ─── API Response shapes ──────────────────────────────────────────────────────
 
 export interface GamesApiResponse {
   games: NBAGame[];
   date: string;
+  sport: "NBA";
+}
+
+export interface MLBGamesApiResponse {
+  games: MLBGame[];
+  date: string;
+  sport: "MLB";
 }
 
 export interface BreakdownApiRequest {
   gameId: string;
+  sport: Sport;
 }
 
 export interface BreakdownApiResponse {
   breakdown: BreakdownResult;
-  game: NBAGame;
+  game: AnyGame;
+  sport: Sport;
 }

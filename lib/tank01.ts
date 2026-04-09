@@ -30,7 +30,7 @@ async function fetchTank01<T>(path: string, params: Record<string, string> = {})
 
   const res = await fetch(url.toString(), {
     headers: getHeaders(),
-    next: { revalidate: 300 }, // cache 5 min
+    next: { revalidate: 900 }, // cache 15 min
   });
 
   if (!res.ok) {
@@ -154,6 +154,7 @@ export async function getGamesForDate(dateStr: string): Promise<{
     const meta = gameMetas[i] as GameMeta;
 
     return {
+      sport: "NBA" as const,
       gameId: g.gameID,
       gameDate: g.gameDate,
       gameTime: meta.gameTime,
