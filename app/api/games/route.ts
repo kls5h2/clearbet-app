@@ -3,6 +3,7 @@ import { getGamesForDate } from "@/lib/tank01";
 import { fetchNBAOdds, buildMatchupKey } from "@/lib/odds-api";
 import { getMLBGamesForDate, getMLBStartingPitcher } from "@/lib/tank01-mlb";
 import { fetchMLBOdds } from "@/lib/odds-api";
+import { fetchMLBProbableStarters } from "@/lib/mlb-stats-api";
 import type { NBAGame, MLBGame, GamesApiResponse, MLBGamesApiResponse } from "@/lib/types";
 
 /**
@@ -58,18 +59,29 @@ async function handleNBA(): Promise<NextResponse> {
 async function handleMLB(): Promise<NextResponse> {
   try {
     const today = getTodayDateString();
-    const [rawGames, oddsMap] = await Promise.all([
+    const [rawGames, oddsMap, mlbStatsPitchers] = await Promise.all([
       getMLBGamesForDate(today),
       fetchMLBOdds().catch(() => new Map()),
+      // MLB Stats API is authoritative for probable starters; never blocks the response
+      fetchMLBProbableStarters(today).catch(() => new Map()),
     ]);
 
-    // Fetch starting pitchers in parallel (non-blocking on failure)
+    // Merge pitcher sources: MLB Stats API (official) takes priority over Tank01 fallback
     const gamesWithPitchers = await Promise.all(
       rawGames.map(async (g) => {
-        const [homePitcher, awayPitcher] = await Promise.all([
-          getMLBStartingPitcher(g.probableStarterHomeId, g.homeTeam.teamAbv).catch(() => null),
-          getMLBStartingPitcher(g.probableStarterAwayId, g.awayTeam.teamAbv).catch(() => null),
-        ]);
+        // Try matching by home team abbreviation, then away (handles abbreviation drift)
+        const statsEntry =
+          mlbStatsPitchers.get(g.homeTeam.teamAbv) ??
+          mlbStatsPitchers.get(g.awayTeam.teamAbv) ??
+          null;
+
+        const homePitcher =
+          statsEntry?.home ??
+          (await getMLBStartingPitcher(g.probableStarterHomeId, g.homeTeam.teamAbv).catch(() => null));
+        const awayPitcher =
+          statsEntry?.away ??
+          (await getMLBStartingPitcher(g.probableStarterAwayId, g.awayTeam.teamAbv).catch(() => null));
+
         return { ...g, homePitcher, awayPitcher };
       })
     );

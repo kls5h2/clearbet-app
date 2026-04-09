@@ -203,16 +203,18 @@ export default function BreakdownView({ breakdown, game }: Props) {
               level={breakdown.confidenceLevel}
               label={breakdown.confidenceLabel}
             />
-            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-medium tracking-widest uppercase bg-[#F4F6F9] text-[#6B7A90] border border-[#E0E5EE]">
-              {getArchetype(breakdown.confidenceLabel, odds)}
-            </span>
+            {breakdown.confidenceLabel !== "PASS" && (
+              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-medium tracking-widest uppercase bg-[#F4F6F9] text-[#6B7A90] border border-[#E0E5EE]">
+                {getArchetype(breakdown.confidenceLabel, odds)}
+              </span>
+            )}
           </div>
 
           {(showMLBPitcherBanner || showNBAEarlyBanner) && (
             <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
               <p className="font-mono text-[10px] text-[#B45309] leading-relaxed">
                 {showMLBPitcherBanner
-                  ? "Starting pitchers unconfirmed at time of generation. Check back closer to first pitch for the full picture."
+                  ? "This breakdown updates closer to first pitch — check back for the latest starter information."
                   : "Generated early — check injury report closer to tip-off for the latest."}
               </p>
             </div>

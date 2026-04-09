@@ -21,7 +21,8 @@ const MLB_COLORS: Record<string, string> = {
   CHC: "#0E3386", CWS: "#27251F", CIN: "#C6011F", CLE: "#00385D",
   COL: "#333366", DET: "#0C2340", HOU: "#002D62", KC:  "#004687",
   LAA: "#BA0021", LAD: "#005A9C", MIA: "#00A3E0", MIL: "#FFC52F",
-  MIN: "#002B5C", NYM: "#002D72", NYY: "#003087", OAK: "#003831", ATH: "#003831", SAC: "#003831",
+  MIN: "#002B5C", NYM: "#002D72", NYY: "#003087",
+  OAK: "#003831", ATH: "#003831", SAC: "#003831", LV: "#003831", LAS: "#003831",
   PHI: "#E81828", PIT: "#FDB827", SD:  "#2F241D", SF:  "#FD5A1E",
   SEA: "#0C2C56", STL: "#C41E3A", TB:  "#092C5C", TEX: "#003278",
   TOR: "#134A8E", WSH: "#AB0003",
@@ -29,7 +30,7 @@ const MLB_COLORS: Record<string, string> = {
 
 // Teams whose colors need lightening for the border (too dark against white)
 const NBA_LIGHTEN = new Set(["BKN", "IND", "MIN", "NO", "NOP", "UTA", "WAS"]);
-const MLB_LIGHTEN = new Set(["CHC", "CLE", "COL", "DET", "HOU", "KC", "MIN", "NYM", "NYY", "OAK", "ATH", "SAC", "SD", "SEA", "TB", "TEX", "WSH", "CWS"]);
+const MLB_LIGHTEN = new Set(["CHC", "CLE", "COL", "DET", "HOU", "KC", "MIN", "NYM", "NYY", "OAK", "ATH", "SAC", "LV", "LAS", "SD", "SEA", "TB", "TEX", "WSH", "CWS"]);
 
 function lighten(hex: string, amount = 0.4): string {
   const h = hex.replace("#", "");
