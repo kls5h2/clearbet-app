@@ -1,4 +1,6 @@
-import type { BreakdownResult, AnyGame, FragilityColor } from "@/lib/types";
+"use client";
+
+import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
 import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
 
@@ -25,6 +27,35 @@ const fragilityColors: Record<FragilityColor, { dot: string; text: string; bg: s
   },
 };
 
+
+function isPitcherUnknown(name: string | undefined | null): boolean {
+  if (!name) return true;
+  const n = name.toLowerCase().trim();
+  return n === "" || n === "tbd" || n.startsWith("unknown");
+}
+
+function isGeneratedEarly(gameTime: string): boolean {
+  const match = gameTime.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
+  if (!match) return false;
+  let gameHour = parseInt(match[1], 10);
+  const gameMins = parseInt(match[2], 10);
+  const ampm = match[3].toUpperCase();
+  if (ampm === "PM" && gameHour !== 12) gameHour += 12;
+  if (ampm === "AM" && gameHour === 12) gameHour = 0;
+
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const currentHour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const currentMin = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+
+  const minutesUntil = gameHour * 60 + gameMins - (currentHour * 60 + currentMin);
+  return minutesUntil > 240; // more than 4 hours before tip-off
+}
 
 function getArchetype(
   confidenceLabel: import("@/lib/types").ConfidenceLabel,
@@ -76,6 +107,20 @@ export default function BreakdownView({ breakdown, game }: Props) {
   const { homeTeam, awayTeam, gameStatus } = game;
   const odds = game.odds;
   const isMLB = game.sport === "MLB";
+
+  // MLB: warn if either starter is unconfirmed at generation time
+  const showMLBPitcherBanner = (() => {
+    if (!isMLB || gameStatus === "final") return false;
+    const g = game as MLBGame;
+    return (
+      g.homePitcher === null || g.awayPitcher === null ||
+      isPitcherUnknown(g.homePitcher?.name) || isPitcherUnknown(g.awayPitcher?.name)
+    );
+  })();
+
+  // NBA: warn if breakdown was generated more than 4 hours before tip-off
+  const showNBAEarlyBanner =
+    !isMLB && gameStatus === "scheduled" && isGeneratedEarly(game.gameTime);
 
   return (
     <div className="space-y-4">
@@ -162,6 +207,16 @@ export default function BreakdownView({ breakdown, game }: Props) {
               {getArchetype(breakdown.confidenceLabel, odds)}
             </span>
           </div>
+
+          {(showMLBPitcherBanner || showNBAEarlyBanner) && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+              <p className="font-mono text-[10px] text-[#B45309] leading-relaxed">
+                {showMLBPitcherBanner
+                  ? "Starting pitchers unconfirmed at time of generation. Check back closer to first pitch for the full picture."
+                  : "Generated early — check injury report closer to tip-off for the latest."}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

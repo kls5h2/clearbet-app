@@ -100,7 +100,7 @@ export default function BreakdownPage() {
           </button>
           <span className="text-[#E0E5EE]">|</span>
           <span className="font-heading text-base font-bold text-[#0D1B2E]">Clearbet</span>
-          <span className="font-mono text-xs text-[#0A7A6C] tracking-widest uppercase">NBA</span>
+          <span className="font-mono text-xs text-[#0A7A6C] tracking-widest uppercase">{sport}</span>
         </div>
       </header>
 

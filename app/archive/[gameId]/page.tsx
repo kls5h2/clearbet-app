@@ -56,7 +56,7 @@ const MLB_TEAM_NAMES: Record<string, string> = {
   DET: "Detroit Tigers", HOU: "Houston Astros", KC: "Kansas City Royals",
   LAA: "Los Angeles Angels", LAD: "Los Angeles Dodgers", MIA: "Miami Marlins",
   MIL: "Milwaukee Brewers", MIN: "Minnesota Twins", NYM: "New York Mets",
-  NYY: "New York Yankees", OAK: "Oakland Athletics", PHI: "Philadelphia Phillies",
+  NYY: "New York Yankees", OAK: "Oakland Athletics", ATH: "Athletics", SAC: "Athletics", PHI: "Philadelphia Phillies",
   PIT: "Pittsburgh Pirates", SD: "San Diego Padres", SF: "San Francisco Giants",
   SEA: "Seattle Mariners", STL: "St. Louis Cardinals", TB: "Tampa Bay Rays",
   TEX: "Texas Rangers", TOR: "Toronto Blue Jays", WSH: "Washington Nationals",
