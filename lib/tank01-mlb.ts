@@ -14,6 +14,8 @@ import type {
   InjuryReport,
   PlayerInjury,
   GameStatus,
+  H2HRecord,
+  H2HGame,
 } from "./types";
 
 const MLB_BASE_URL = "https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com";
@@ -172,12 +174,31 @@ export async function getMLBGamesForDate(dateStr: string): Promise<{
   if (!raw.body || !Array.isArray(raw.body)) return [];
 
   const teamMap = await getMLBTeamMap();
+  // Build a secondary lookup by full team name for when Tank01 returns a name instead of abbreviation
+  const teamMapByName: Record<string, RawMLBTeamInfo> = {};
+  for (const info of Object.values(teamMap)) {
+    const fullName = `${info.teamCity} ${info.teamName}`.trim().toLowerCase();
+    teamMapByName[fullName] = info;
+    teamMapByName[info.teamName.toLowerCase()] = info;
+  }
+
+  const resolveTeam = (abvField: string | undefined, nameField: string): { abv: string; info: RawMLBTeamInfo | undefined } => {
+    const raw = abvField ?? nameField ?? "";
+    // Try direct abbreviation lookup first
+    if (teamMap[raw]) return { abv: raw, info: teamMap[raw] };
+    // Fall back to name-based lookup (handles when Tank01 returns "Athletics" in the home/away field)
+    const byName = teamMapByName[raw.toLowerCase()];
+    if (byName) {
+      console.log(`[tank01-mlb] resolved "${raw}" → "${byName.teamAbv}" via name lookup`);
+      return { abv: byName.teamAbv, info: byName };
+    }
+    console.warn(`[tank01-mlb] unknown team identifier: "${raw}"`);
+    return { abv: raw, info: undefined };
+  };
 
   return raw.body.map((g) => {
-    const homeAbv = g.homeTeamAbbr ?? g.home ?? "";
-    const awayAbv = g.awayTeamAbbr ?? g.away ?? "";
-    const homeInfo = teamMap[homeAbv];
-    const awayInfo = teamMap[awayAbv];
+    const home = resolveTeam(g.homeTeamAbbr, g.home ?? "");
+    const away = resolveTeam(g.awayTeamAbbr, g.away ?? "");
 
     const statusCode = g.gameStatusCode ?? "0";
     const gameStatus: GameStatus =
@@ -189,16 +210,16 @@ export async function getMLBGamesForDate(dateStr: string): Promise<{
       gameTime: g.gameTime ? formatGameTime(g.gameTime) : "",
       gameStatus,
       homeTeam: {
-        teamId: g.teamIDHome ?? homeAbv,
-        teamAbv: homeAbv,
-        teamName: homeInfo ? `${homeInfo.teamCity} ${homeInfo.teamName}` : homeAbv,
-        teamCity: homeInfo?.teamCity ?? "",
+        teamId: g.teamIDHome ?? home.abv,
+        teamAbv: home.abv,
+        teamName: home.info ? `${home.info.teamCity} ${home.info.teamName}`.trim() : home.abv,
+        teamCity: home.info?.teamCity ?? "",
       },
       awayTeam: {
-        teamId: g.teamIDAway ?? awayAbv,
-        teamAbv: awayAbv,
-        teamName: awayInfo ? `${awayInfo.teamCity} ${awayInfo.teamName}` : awayAbv,
-        teamCity: awayInfo?.teamCity ?? "",
+        teamId: g.teamIDAway ?? away.abv,
+        teamAbv: away.abv,
+        teamName: away.info ? `${away.info.teamCity} ${away.info.teamName}`.trim() : away.abv,
+        teamCity: away.info?.teamCity ?? "",
       },
       probableStarterHomeId: g.probableStarterHome ?? null,
       probableStarterAwayId: g.probableStarterAway ?? null,
@@ -353,6 +374,69 @@ export async function getMLBInjuryReport(
     };
   } catch {
     return { homeInjuries: [], awayInjuries: [] };
+  }
+}
+
+/**
+ * Build season series H2H record by filtering the home team's schedule for
+ * completed games against the away team. Returns from the home team's perspective.
+ */
+export async function getMLBH2HRecord(
+  homeAbv: string,
+  awayAbv: string
+): Promise<H2HRecord | null> {
+  try {
+    const raw = await fetchMLB<RawMLBScheduleResponse>("/getMLBTeamSchedule", {
+      teamAbv: homeAbv,
+      season: currentMLBSeason(),
+    });
+
+    const schedule = raw.body?.schedule ?? [];
+    const h2hGames = schedule.filter((g) => {
+      const completed = !!(g.gameResult && g.homePts && g.awayPts);
+      const vsOpponent = g.home === awayAbv || g.away === awayAbv;
+      return completed && vsOpponent;
+    });
+
+    if (h2hGames.length === 0) return null;
+
+    let wins = 0, losses = 0;
+    const marginsFor: number[] = [];
+    const marginsAgainst: number[] = [];
+    const games: H2HGame[] = [];
+
+    for (const g of h2hGames) {
+      const homePts = parseInt(g.homePts ?? "0", 10);
+      const awayPts = parseInt(g.awayPts ?? "0", 10);
+      const isHome = g.home === homeAbv;
+      const teamScore = isHome ? homePts : awayPts;
+      const oppScore = isHome ? awayPts : homePts;
+
+      if (teamScore > oppScore) {
+        wins++;
+        marginsFor.push(teamScore - oppScore);
+      } else {
+        losses++;
+        marginsAgainst.push(oppScore - teamScore);
+      }
+
+      games.push({ date: g.gameDate, home: g.home, away: g.away, homePts, awayPts });
+    }
+
+    const avg = (arr: number[]) =>
+      arr.length > 0
+        ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10
+        : 0;
+
+    return {
+      wins,
+      losses,
+      games,
+      avgMarginFor: avg(marginsFor),
+      avgMarginAgainst: avg(marginsAgainst),
+    };
+  } catch {
+    return null;
   }
 }
 

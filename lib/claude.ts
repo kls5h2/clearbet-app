@@ -10,6 +10,21 @@ const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are the Clearbet analysis engine. Produce a six-step breakdown of an NBA game. You are not a picks service. You help people think — you do not tell them what to bet.
 
+## SEASON SERIES RULE
+A SEASON SERIES section shows how many times these teams have played this season and who won each game.
+- If one team owns the series (e.g. 3-0), that's a pattern worth naming — but don't over-weight it. Small samples lie.
+- If the series is split, that signals a genuine competitive matchup. Note it briefly.
+- If there are no prior meetings, skip the season series entirely — don't speculate.
+- Use the series as supporting context, never as the primary driver of the lean.
+
+## PLAYOFF CONTEXT RULE
+A PLAYOFF CONTEXT section is included for each team. Read it before writing Game Shape.
+- If a team is eliminated, their motivation tonight is genuinely different — note it.
+- If a team has clinched, rest management or load concerns become relevant.
+- If a team is fighting for a play-in spot with few games left, that urgency belongs in Game Shape or Fragility Check.
+- If both teams are eliminated or both have clinched, say so plainly. Do not invent playoff stakes that don't exist.
+- Games back and current streak are proxies for momentum and urgency — use them.
+
 ## INJURY RULE — NON-NEGOTIABLE
 Before writing anything, read the injury data for both teams. Any player listed as Out or Doubtful does not play tonight — treat them as absent, not as a factor.
 - Do not mention an injured player as if they are playing.
@@ -83,7 +98,7 @@ Return valid JSON only. No markdown, no explanation, no preamble.
 }`;
 
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries, homePlayoffContext, awayPlayoffContext, h2h } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
@@ -106,6 +121,34 @@ function buildUserMessage(data: GameDetailData): string {
       .map((p) => `${p.playerName} (${p.position}): ${p.pointsPerGame} PPG / ${p.assistsPerGame} APG / ${p.reboundsPerGame} RPG`)
       .join("; ");
 
+  const formatPlayoffContext = (
+    ctx: typeof homePlayoffContext,
+    teamAbv: string,
+    wins: number,
+    losses: number
+  ): string => {
+    if (!ctx) return "Standings data unavailable";
+    const statusLabel: Record<string, string> = {
+      "clinched-playoff":   "CLINCHED playoff berth (top-6 seed)",
+      "in-playoff":         "Currently IN playoffs (top-6 seed)",
+      "play-in":            "Currently in PLAY-IN position (7–10 seed)",
+      "play-in-contention": "Chasing PLAY-IN spot (outside top 10, not eliminated)",
+      "eliminated":         "ELIMINATED from playoff contention",
+    };
+    return [
+      `${teamAbv} — ${ctx.conference} seed #${ctx.seed} | ${wins}-${losses} | ${ctx.gamesRemaining} games remaining`,
+      `Status: ${statusLabel[ctx.playoffStatus] ?? ctx.playoffStatus}`,
+      ctx.clinched ? "Clinched: Yes" : "",
+      ctx.gamesBack > 0 ? `Games back of 1st: ${ctx.gamesBack}` : "Holds 1st seed in conference",
+      ctx.gamesBackSix > 0 ? `Games back of 6th (auto-playoff cutoff): ${ctx.gamesBackSix}` : "",
+      ctx.gamesBackTen > 0 ? `Games back of 10th (play-in cutoff): ${ctx.gamesBackTen}` : "",
+      ctx.currentStreak ? `Current streak: ${ctx.currentStreak}` : "",
+    ].filter(Boolean).join("\n");
+  };
+
+  const optionalStat = (label: string, value: number | null | undefined, decimals = 1): string =>
+    value != null && value > 0 ? `\n${label}: ${value.toFixed(decimals)}` : "";
+
   return `Game: ${awayTeam.teamName} @ ${homeTeam.teamName}
 Date: ${game.gameDate} — ${game.gameTime}
 
@@ -115,18 +158,27 @@ Total (O/U): ${odds?.total ?? "N/A"}
 Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds?.homeMoneyline ?? null)} / ${awayTeam.teamAbv} ${formatOdds(odds?.awayMoneyline ?? null)}
 Implied probability: ${homeTeam.teamAbv} ${odds?.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds?.impliedAwayProbability ?? "?"}%
 
+━━━ SEASON SERIES (H2H) ━━━
+${h2h
+  ? `${homeTeam.teamAbv} vs ${awayTeam.teamAbv} this season: ${h2h.wins}-${h2h.losses} (${homeTeam.teamAbv} perspective)
+Games: ${h2h.games.map((g) => {
+    const homeWon = g.homePts > g.awayPts;
+    const refIsHome = g.home === homeTeam.teamAbv;
+    const winner = homeWon ? g.home : g.away;
+    return `${g.date.slice(4, 6)}/${g.date.slice(6, 8)}: ${g.away}@${g.home} ${g.awayPts}-${g.homePts} (${winner} W)`;
+  }).join(", ")}
+${h2h.wins > 0 ? `Avg margin in ${homeTeam.teamAbv} wins: +${h2h.avgMarginFor}` : ""}${h2h.losses > 0 ? `  Avg margin in ${homeTeam.teamAbv} losses: -${h2h.avgMarginAgainst}` : ""}`
+  : "No prior meetings this season"}
+
+━━━ PLAYOFF CONTEXT ━━━
+${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins, homeTeamStats.losses)}
+
+${formatPlayoffContext(awayPlayoffContext, awayTeam.teamAbv, awayTeamStats.wins, awayTeamStats.losses)}
+
 ━━━ ${homeTeam.teamAbv} (HOME) ━━━
 Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
 Points per game: ${homeTeamStats.pointsPerGame}
-Points allowed per game: ${homeTeamStats.pointsAllowedPerGame}
-Pace (possessions/48): ${homeTeamStats.pace}
-Offensive rating: ${homeTeamStats.offensiveRating}
-Defensive rating: ${homeTeamStats.defensiveRating}
-Rebounds/game: ${homeTeamStats.reboundsPerGame}
-Assists/game: ${homeTeamStats.assistsPerGame}
-Turnovers/game: ${homeTeamStats.turnoversPerGame}
-3-point attempts/game: ${homeTeamStats.threePointAttempts}
-3-point %: ${homeTeamStats.threePointPct}%
+Points allowed per game: ${homeTeamStats.pointsAllowedPerGame}${optionalStat("Pace", homeTeamStats.pace)}${optionalStat("Offensive rating", homeTeamStats.offensiveRating)}${optionalStat("Defensive rating", homeTeamStats.defensiveRating)}${optionalStat("Rebounds per game", homeTeamStats.reboundsPerGame)}${optionalStat("Assists per game", homeTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", homeTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", homeTeamStats.threePointAttempts)}${optionalStat("3pt%", homeTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(homeTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(homeRecentForm)}
 Injuries: ${formatInjuries(injuries.homeInjuries)}
@@ -134,15 +186,7 @@ Injuries: ${formatInjuries(injuries.homeInjuries)}
 ━━━ ${awayTeam.teamAbv} (AWAY) ━━━
 Record: ${formatRecord(awayTeamStats.wins, awayTeamStats.losses)}
 Points per game: ${awayTeamStats.pointsPerGame}
-Points allowed per game: ${awayTeamStats.pointsAllowedPerGame}
-Pace (possessions/48): ${awayTeamStats.pace}
-Offensive rating: ${awayTeamStats.offensiveRating}
-Defensive rating: ${awayTeamStats.defensiveRating}
-Rebounds/game: ${awayTeamStats.reboundsPerGame}
-Assists/game: ${awayTeamStats.assistsPerGame}
-Turnovers/game: ${awayTeamStats.turnoversPerGame}
-3-point attempts/game: ${awayTeamStats.threePointAttempts}
-3-point %: ${awayTeamStats.threePointPct}%
+Points allowed per game: ${awayTeamStats.pointsAllowedPerGame}${optionalStat("Pace", awayTeamStats.pace)}${optionalStat("Offensive rating", awayTeamStats.offensiveRating)}${optionalStat("Defensive rating", awayTeamStats.defensiveRating)}${optionalStat("Rebounds per game", awayTeamStats.reboundsPerGame)}${optionalStat("Assists per game", awayTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", awayTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", awayTeamStats.threePointAttempts)}${optionalStat("3pt%", awayTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(awayTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
 Injuries: ${formatInjuries(injuries.awayInjuries)}
@@ -154,6 +198,7 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
+  const userMessage = buildUserMessage(data);
   const client = new Anthropic({ apiKey });
 
   const message = await client.messages.create({
@@ -163,7 +208,7 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
     messages: [
       {
         role: "user",
-        content: buildUserMessage(data),
+        content: userMessage,
       },
     ],
   });

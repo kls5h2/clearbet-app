@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport } from "@/lib/tank01";
+import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport, getPlayoffContext, getH2HRecord } from "@/lib/tank01";
 import { fetchNBAOdds, buildMatchupKey, fetchMLBOdds } from "@/lib/odds-api";
 import { generateBreakdown } from "@/lib/claude";
 import {
@@ -8,7 +8,14 @@ import {
   getMLBRecentForm,
   getMLBInjuryReport,
   getMLBStartingPitcher,
+  getMLBH2HRecord,
 } from "@/lib/tank01-mlb";
+import {
+  fetchMLBProbableStarters,
+  getMLBPlayoffContext,
+  getMLBBullpenStats,
+  getMLBUmpire,
+} from "@/lib/mlb-stats-api";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -16,6 +23,7 @@ import type {
   MLBGameDetailData,
   NBAGame,
   MLBGame,
+  MLBParkFactor,
   BreakdownApiResponse,
   Sport,
 } from "@/lib/types";
@@ -54,13 +62,15 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     }
 
     const { homeTeam, awayTeam } = rawGame;
-    const [homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap] = await Promise.all([
+    const [homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap, playoffCtx, h2h] = await Promise.all([
       getTeamStats(homeTeam.teamAbv),
       getTeamStats(awayTeam.teamAbv),
       getRecentForm(homeTeam.teamAbv),
       getRecentForm(awayTeam.teamAbv),
       getInjuryReport(homeTeam.teamAbv, awayTeam.teamAbv),
       fetchNBAOdds().catch(() => new Map()),
+      getPlayoffContext(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => ({ home: null, away: null })),
+      getH2HRecord(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => null),
     ]);
 
     const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
@@ -84,6 +94,9 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       homeRecentForm: homeForm,
       awayRecentForm: awayForm,
       injuries: injuryReport,
+      homePlayoffContext: playoffCtx.home,
+      awayPlayoffContext: playoffCtx.away,
+      h2h,
     };
 
     console.log("[breakdown:NBA] calling Claude...");
@@ -133,17 +146,43 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
     }
 
     const { homeTeam, awayTeam } = rawGame;
-    const [homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap, homePitcher, awayPitcher] =
-      await Promise.all([
-        getMLBTeamStats(homeTeam.teamAbv),
-        getMLBTeamStats(awayTeam.teamAbv),
-        getMLBRecentForm(homeTeam.teamAbv),
-        getMLBRecentForm(awayTeam.teamAbv),
-        getMLBInjuryReport(homeTeam.teamAbv, awayTeam.teamAbv),
-        fetchMLBOdds().catch(() => new Map()),
-        getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null),
-        getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null),
-      ]);
+    const [
+      homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap,
+      mlbStatsPitchers, playoffCtx, h2h, homeBullpen, awayBullpen, umpire,
+    ] = await Promise.all([
+      getMLBTeamStats(homeTeam.teamAbv),
+      getMLBTeamStats(awayTeam.teamAbv),
+      getMLBRecentForm(homeTeam.teamAbv),
+      getMLBRecentForm(awayTeam.teamAbv),
+      getMLBInjuryReport(homeTeam.teamAbv, awayTeam.teamAbv),
+      fetchMLBOdds().catch(() => new Map()),
+      fetchMLBProbableStarters(today).catch(() => new Map()),
+      getMLBPlayoffContext(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => ({ home: null, away: null })),
+      getMLBH2HRecord(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => null),
+      getMLBBullpenStats(homeTeam.teamAbv).catch(() => null),
+      getMLBBullpenStats(awayTeam.teamAbv).catch(() => null),
+      getMLBUmpire(today, homeTeam.teamAbv).catch(() => null),
+    ]);
+
+    const statsEntry =
+      mlbStatsPitchers.get(homeTeam.teamAbv) ??
+      mlbStatsPitchers.get(awayTeam.teamAbv) ??
+      null;
+
+    const homePitcher =
+      statsEntry?.home ??
+      (await getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null));
+    const awayPitcher =
+      statsEntry?.away ??
+      (await getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null));
+
+    const MLB_PARK_FACTORS: Record<string, MLBParkFactor> = {
+      COL: { parkName: "Coors Field", factor: "high" },
+      SD:  { parkName: "Petco Park", factor: "low" },
+      SF:  { parkName: "Oracle Park", factor: "low" },
+      CIN: { parkName: "Great American Ball Park", factor: "high" },
+    };
+    const parkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
 
     const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
     const mlbOdds = oddsMap.get(oddsKey)?.mlbOdds ?? null;
@@ -168,6 +207,13 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
       homeRecentForm: homeForm,
       awayRecentForm: awayForm,
       injuries: injuryReport,
+      homePlayoffContext: playoffCtx.home,
+      awayPlayoffContext: playoffCtx.away,
+      homeBullpen,
+      awayBullpen,
+      h2h,
+      parkFactor,
+      umpire,
     };
 
     console.log("[breakdown:MLB] calling Claude...");

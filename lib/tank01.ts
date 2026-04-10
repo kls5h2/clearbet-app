@@ -11,6 +11,10 @@ import type {
   RecentGame,
   InjuryReport,
   PlayerInjury,
+  PlayoffContext,
+  PlayoffStatus,
+  H2HRecord,
+  H2HGame,
 } from "./types";
 
 const BASE_URL = "https://tank01-fantasy-stats.p.rapidapi.com";
@@ -68,6 +72,10 @@ interface RawTeamInfo {
   oppg?: string;
   wins?: string;
   loss?: string;
+  conference?: string;
+  conferenceAbv?: string;
+  division?: string;
+  currentStreak?: { result: string; length: string | number };
 }
 
 interface RawTeamsResponse {
@@ -315,6 +323,167 @@ export async function getInjuryReport(
     return { homeInjuries, awayInjuries };
   } catch {
     return { homeInjuries: [], awayInjuries: [] };
+  }
+}
+
+/**
+ * Compute playoff context for both teams in a game.
+ * Uses the full conference standings derived from /getNBATeams win/loss data.
+ */
+export async function getPlayoffContext(
+  homeAbv: string,
+  awayAbv: string
+): Promise<{ home: PlayoffContext | null; away: PlayoffContext | null }> {
+  try {
+    const teamMap = await getTeamMap();
+    const all = Object.values(teamMap);
+
+    interface StandingRow {
+      teamAbv: string;
+      conference: string;
+      wins: number;
+      losses: number;
+      winPct: number;
+      streak: string;
+    }
+
+    const rows: StandingRow[] = all.map((t) => {
+      const wins = parseInt(t.wins ?? "0", 10);
+      const losses = parseInt(t.loss ?? "0", 10);
+      const streak = t.currentStreak
+        ? `${(t.currentStreak as { result: string; length: string | number }).result}${(t.currentStreak as { result: string; length: string | number }).length}`
+        : "";
+      return {
+        teamAbv: t.teamAbv,
+        conference: t.conference ?? "",
+        wins,
+        losses,
+        winPct: wins + losses > 0 ? wins / (wins + losses) : 0,
+        streak,
+      };
+    });
+
+    const buildContext = (abv: string): PlayoffContext | null => {
+      const team = rows.find((r) => r.teamAbv === abv);
+      if (!team) return null;
+
+      const confRows = rows
+        .filter((r) => r.conference === team.conference)
+        .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
+
+      const seed = confRows.findIndex((r) => r.teamAbv === abv) + 1;
+      const gamesRemaining = Math.max(0, 82 - team.wins - team.losses);
+
+      const gamesBack = (leader: StandingRow) =>
+        parseFloat((((leader.wins - team.wins) + (team.losses - leader.losses)) / 2).toFixed(1));
+
+      const leader = confRows[0];
+      const sixth = confRows[5] ?? confRows[confRows.length - 1];
+      const tenth = confRows[9] ?? confRows[confRows.length - 1];
+
+      const gb1 = gamesBack(leader);
+      const gb6 = seed <= 6 ? 0 : gamesBack(sixth);
+      const gb10 = seed <= 10 ? 0 : gamesBack(tenth);
+
+      // Clinched top-6: even if 6th-seed wins all remaining, team still holds 6th
+      const clinched = (() => {
+        if (seed > 6) return false;
+        const sixthSeedBestWins = sixth.wins + (confRows[5] ? Math.max(0, 82 - sixth.wins - sixth.losses) : 0);
+        return team.wins > sixthSeedBestWins;
+      })();
+
+      // Eliminated from play-in: even if team wins all remaining, can't reach 10th
+      const eliminated = (() => {
+        if (seed <= 10) return false;
+        const teamBestWins = team.wins + gamesRemaining;
+        return teamBestWins < tenth.wins;
+      })();
+
+      let playoffStatus: PlayoffStatus;
+      if (clinched) playoffStatus = "clinched-playoff";
+      else if (seed <= 6) playoffStatus = "in-playoff";
+      else if (seed <= 10) playoffStatus = "play-in";
+      else if (eliminated) playoffStatus = "eliminated";
+      else playoffStatus = "play-in-contention";
+
+      return {
+        seed,
+        conference: team.conference,
+        gamesBack: gb1,
+        gamesBackSix: gb6,
+        gamesBackTen: gb10,
+        gamesRemaining,
+        playoffStatus,
+        currentStreak: team.streak,
+        clinched,
+      };
+    };
+
+    return { home: buildContext(homeAbv), away: buildContext(awayAbv) };
+  } catch {
+    return { home: null, away: null };
+  }
+}
+
+/**
+ * Fetch season series H2H record between two teams.
+ * Uses the home team's schedule and filters for games involving the away team.
+ * homeAbv is the reference team — wins/losses are from their perspective.
+ */
+export async function getH2HRecord(
+  homeAbv: string,
+  awayAbv: string
+): Promise<H2HRecord | null> {
+  try {
+    const raw = await fetchTank01<RawScheduleResponse>("/getNBATeamSchedule", {
+      teamAbv: homeAbv,
+      season: currentNBASeason(),
+    });
+
+    const schedule = raw.body?.schedule ?? [];
+    const matchups = schedule.filter(
+      (g) => g.homePts && g.awayPts && (g.home === awayAbv || g.away === awayAbv)
+    );
+
+    if (matchups.length === 0) return null;
+
+    let wins = 0;
+    let losses = 0;
+    const marginsFor: number[] = [];
+    const marginsAgainst: number[] = [];
+    const games: H2HGame[] = [];
+
+    for (const g of matchups) {
+      const homePts = parseInt(g.homePts ?? "0", 10);
+      const awayPts = parseInt(g.awayPts ?? "0", 10);
+      // Determine if homeAbv was the home team in this particular game
+      const refIsHome = g.home === homeAbv;
+      const refPts = refIsHome ? homePts : awayPts;
+      const oppPts = refIsHome ? awayPts : homePts;
+
+      if (refPts > oppPts) {
+        wins++;
+        marginsFor.push(refPts - oppPts);
+      } else {
+        losses++;
+        marginsAgainst.push(oppPts - refPts);
+      }
+
+      games.push({ date: g.gameDate, home: g.home, away: g.away, homePts, awayPts });
+    }
+
+    const avg = (arr: number[]) =>
+      arr.length > 0 ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)) : 0;
+
+    return {
+      wins,
+      losses,
+      games,
+      avgMarginFor: avg(marginsFor),
+      avgMarginAgainst: avg(marginsAgainst),
+    };
+  } catch {
+    return null;
   }
 }
 

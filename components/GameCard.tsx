@@ -56,6 +56,10 @@ function getBorderColor(teamAbv: string, sport: "NBA" | "MLB"): string {
 
 function getMutedTextColor(teamAbv: string, sport: "NBA" | "MLB"): string {
   const raw = getRawColor(teamAbv, sport);
+  const lightenSet = sport === "MLB" ? MLB_LIGHTEN : NBA_LIGHTEN;
+  // Very dark teams produce near-black when blended with navy — use the lightened
+  // color directly so the accent is still visible on the card.
+  if (lightenSet.has(teamAbv) || raw === "#000000") return lighten(raw, 0.35);
   const navy = { r: 0x0D, g: 0x1B, b: 0x2E };
   const h = raw.replace("#", "");
   const tr = parseInt(h.slice(0, 2), 16);
@@ -189,6 +193,7 @@ export default function GameCard({ game, onClick }: Props) {
   // Odds row content differs by sport
   const oddsRow = (() => {
     if (!game.odds) return null;
+    if (effectiveStatus !== "scheduled") return null;
     if (sport === "MLB") {
       const o = game.odds;
       return (
@@ -274,12 +279,20 @@ export default function GameCard({ game, onClick }: Props) {
           <div className="px-5 pt-4 pb-4 flex items-center justify-between gap-4">
             <div className="flex-1">
               <p className="text-[11px] font-mono font-medium text-[#6B7A90] uppercase tracking-widest mb-1">Away</p>
-              <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
-                {awayTeam.teamCity}
-              </p>
-              <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
-                {awayTeam.teamName.replace(awayTeam.teamCity, "").trim()}
-              </p>
+              {awayTeam.teamCity ? (
+                <>
+                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                    {awayTeam.teamCity}
+                  </p>
+                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                    {awayTeam.teamName.replace(awayTeam.teamCity, "").trim()}
+                  </p>
+                </>
+              ) : (
+                <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                  {awayTeam.teamName}
+                </p>
+              )}
               {/* MLB: show away pitcher */}
               {sport === "MLB" && game.awayPitcher && (
                 <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
@@ -295,12 +308,20 @@ export default function GameCard({ game, onClick }: Props) {
 
             <div className="flex-1 text-right">
               <p className="text-[11px] font-mono font-medium text-[#6B7A90] uppercase tracking-widest mb-1">Home</p>
-              <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
-                {homeTeam.teamCity}
-              </p>
-              <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
-                {homeTeam.teamName.replace(homeTeam.teamCity, "").trim()}
-              </p>
+              {homeTeam.teamCity ? (
+                <>
+                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                    {homeTeam.teamCity}
+                  </p>
+                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                    {homeTeam.teamName.replace(homeTeam.teamCity, "").trim()}
+                  </p>
+                </>
+              ) : (
+                <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                  {homeTeam.teamName}
+                </p>
+              )}
               {/* MLB: show home pitcher */}
               {sport === "MLB" && game.homePitcher && (
                 <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
@@ -327,7 +348,7 @@ export default function GameCard({ game, onClick }: Props) {
             {effectiveStatus === "live" && (
               <div className="w-full text-center">
                 <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game in progress</p>
-                <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Breakdowns are generated before tip-off.</p>
+                <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.</p>
               </div>
             )}
             {effectiveStatus === "final" && (

@@ -3,7 +3,7 @@
  * Probable starters endpoint — authoritative source for confirmed pitchers.
  */
 
-import type { MLBPitcher } from "./types";
+import type { MLBPitcher, MLBPlayoffContext, MLBBullpenStats, MLBUmpire } from "./types";
 
 const BASE = "https://statsapi.mlb.com/api/v1";
 
@@ -50,6 +50,95 @@ interface GameEntry {
   awayAbv: string;
   home: PitcherStub | null;
   away: PitcherStub | null;
+}
+
+// ─── Umpire raw types + static tendency table ────────────────────────────────
+
+interface RawOfficial {
+  official: { id: number; fullName: string };
+  officialType: string; // "Home Plate" | "First Base" | "Second Base" | "Third Base"
+}
+
+interface RawGameWithOfficials {
+  teams: { home: { team: { abbreviation: string } }; away: { team: { abbreviation: string } } };
+  officials?: RawOfficial[];
+}
+
+interface RawScheduleWithOfficialsResponse {
+  dates?: Array<{ games: RawGameWithOfficials[] }>;
+}
+
+// Known HP umpire tendencies — sourced from multi-year strike zone and run data.
+// Only umpires with clear, consistent patterns are listed. Absent = neutral / unknown.
+const UMPIRE_TENDENCIES: Record<string, "pitcher-friendly" | "hitter-friendly"> = {
+  // Pitcher-friendly: larger zone, more Ks, fewer walks
+  "Laz Diaz":          "pitcher-friendly",
+  "Alfonso Marquez":   "pitcher-friendly",
+  "Ted Barrett":       "pitcher-friendly",
+  "Dan Iassogna":      "pitcher-friendly",
+  "Mike Everitt":      "pitcher-friendly",
+  "Tripp Gibson":      "pitcher-friendly",
+  "Doug Eddings":      "pitcher-friendly",
+  "Adrian Johnson":    "pitcher-friendly",
+  // Hitter-friendly: tighter or inconsistent zone, more walks, inflated pitch counts
+  "CB Bucknor":        "hitter-friendly",
+  "Phil Cuzzi":        "hitter-friendly",
+  "Mike Winters":      "hitter-friendly",
+  "Brian Gorman":      "hitter-friendly",
+  "Jim Reynolds":      "hitter-friendly",
+  "Bill Miller":       "hitter-friendly",
+  "Jerry Layne":       "hitter-friendly",
+};
+
+// ─── Standings + bullpen raw types ───────────────────────────────────────────
+
+interface RawStandingsDivisionRecord {
+  wins: number;
+  losses: number;
+  division: { id: number; name: string };
+}
+
+interface RawStandingsTeamRecord {
+  team: { id: number; name: string; abbreviation: string };
+  wins: number;
+  losses: number;
+  divisionRank: string;
+  gamesBack: string;
+  wildCardRank: string;
+  wildCardGamesBack: string;
+  records: { divisionRecords: RawStandingsDivisionRecord[] };
+}
+
+interface RawStandingsDivision {
+  league: { id: number; name: string };
+  division: { id: number; name: string };
+  teamRecords: RawStandingsTeamRecord[];
+}
+
+interface RawStandingsResponse {
+  records: RawStandingsDivision[];
+}
+
+interface RawTeamLookup {
+  id: number;
+  abbreviation: string;
+}
+
+interface RawTeamsLookupResponse {
+  teams?: RawTeamLookup[];
+}
+
+interface RawTeamStatSplit {
+  stat: {
+    era?: string;
+    saves?: number;
+    saveOpportunities?: number;
+    blownSaves?: number;
+  };
+}
+
+interface RawTeamStatsResponse {
+  stats?: Array<{ splits: RawTeamStatSplit[] }>;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -153,4 +242,180 @@ function buildPitcher(
     recentERA: null,
     hand: details?.hand ?? null,
   };
+}
+
+/**
+ * Fetch division standings and wild card position for both teams.
+ * Uses MLB Stats API /standings — no auth required.
+ */
+export async function getMLBPlayoffContext(
+  homeAbv: string,
+  awayAbv: string
+): Promise<{ home: MLBPlayoffContext | null; away: MLBPlayoffContext | null }> {
+  try {
+    const season = String(new Date().getFullYear());
+    const res = await fetch(
+      `${BASE}/standings?leagueId=103,104&season=${season}&hydrate=team`,
+      { next: { revalidate: 900 } }
+    );
+    if (!res.ok) return { home: null, away: null };
+
+    const data: RawStandingsResponse = await res.json();
+    const contextMap = new Map<string, MLBPlayoffContext>();
+
+    for (const divGroup of data.records ?? []) {
+      const divisionName = divGroup.division.name;
+      const leagueName = divGroup.league.name;
+
+      for (const tr of divGroup.teamRecords ?? []) {
+        const abv = tr.team.abbreviation;
+
+        const divRecord = tr.records?.divisionRecords?.find(
+          (r) => r.division.name === divisionName
+        );
+        const divisionRecord = divRecord
+          ? `${divRecord.wins}-${divRecord.losses}`
+          : `${tr.wins}-${tr.losses}`;
+
+        const gamesBackDivision =
+          tr.gamesBack === "-" ? 0 : parseFloat(tr.gamesBack) || 0;
+
+        const wildCardRank =
+          tr.wildCardRank && tr.wildCardRank !== "-"
+            ? parseInt(tr.wildCardRank, 10)
+            : null;
+
+        // "-" means in WC (0 GB); absent/null means division leader (not in WC pool)
+        const gamesBackWildCard =
+          wildCardRank !== null
+            ? tr.wildCardGamesBack === "-"
+              ? 0
+              : parseFloat(tr.wildCardGamesBack) || 0
+            : null;
+
+        contextMap.set(abv, {
+          division: divisionName,
+          leagueName,
+          divisionRank: parseInt(tr.divisionRank, 10) || 1,
+          divisionRecord,
+          gamesBackDivision,
+          wildCardRank,
+          gamesBackWildCard,
+          wins: tr.wins,
+          losses: tr.losses,
+        });
+      }
+    }
+
+    return {
+      home: contextMap.get(homeAbv) ?? null,
+      away: contextMap.get(awayAbv) ?? null,
+    };
+  } catch {
+    return { home: null, away: null };
+  }
+}
+
+/**
+ * Fetch season save stats and 7-day pitching ERA for a team's bullpen.
+ * Season saves/saveOpportunities/blownSaves come from the season stats endpoint.
+ * 7-day ERA comes from the byDateRange endpoint (team pitching aggregate).
+ */
+export async function getMLBBullpenStats(abv: string): Promise<MLBBullpenStats | null> {
+  try {
+    const teamId = await fetchMLBTeamId(abv);
+    if (!teamId) return null;
+
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+    const [seasonRes, recentRes] = await Promise.all([
+      fetch(`${BASE}/teams/${teamId}/stats?stats=season&group=pitching`, {
+        next: { revalidate: 900 },
+      }),
+      fetch(
+        `${BASE}/teams/${teamId}/stats?stats=byDateRange&group=pitching&startDate=${fmt(sevenDaysAgo)}&endDate=${fmt(today)}`,
+        { next: { revalidate: 900 } }
+      ),
+    ]);
+
+    let saves = 0, saveOpportunities = 0, blownSaves = 0;
+    let era7Day: number | null = null;
+
+    if (seasonRes.ok) {
+      const d: RawTeamStatsResponse = await seasonRes.json();
+      const stat = d.stats?.[0]?.splits?.[0]?.stat;
+      if (stat) {
+        saves = stat.saves ?? 0;
+        saveOpportunities = stat.saveOpportunities ?? 0;
+        blownSaves = stat.blownSaves ?? 0;
+      }
+    }
+
+    if (recentRes.ok) {
+      const d: RawTeamStatsResponse = await recentRes.json();
+      const eraStr = d.stats?.[0]?.splits?.[0]?.stat?.era;
+      if (eraStr && eraStr !== "-" && eraStr !== "-.--") {
+        const parsed = parseFloat(eraStr);
+        if (!isNaN(parsed)) era7Day = parsed;
+      }
+    }
+
+    return { era7Day, saves, saveOpportunities, blownSaves };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch the home plate umpire for a specific game identified by the home team abbreviation.
+ * Matches against the static tendency table to return a lean signal.
+ * Returns null if the crew hasn't been assigned yet (common for early-day requests).
+ */
+export async function getMLBUmpire(
+  dateStr: string, // YYYYMMDD
+  homeAbv: string
+): Promise<MLBUmpire | null> {
+  try {
+    const date = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+    const res = await fetch(
+      `${BASE}/schedule?sportId=1&date=${date}&hydrate=officials`,
+      { next: { revalidate: 900 } }
+    );
+    if (!res.ok) return null;
+
+    const data: RawScheduleWithOfficialsResponse = await res.json();
+
+    for (const d of data.dates ?? []) {
+      for (const g of d.games) {
+        if (g.teams.home.team.abbreviation !== homeAbv) continue;
+        const hp = g.officials?.find((o) => o.officialType === "Home Plate");
+        if (!hp) return null;
+        const name = hp.official.fullName;
+        return {
+          name,
+          tendency: UMPIRE_TENDENCIES[name] ?? null,
+        };
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchMLBTeamId(abv: string): Promise<number | null> {
+  try {
+    const res = await fetch(`${BASE}/teams?sportId=1`, {
+      next: { revalidate: 900 },
+    });
+    if (!res.ok) return null;
+    const data: RawTeamsLookupResponse = await res.json();
+    return data.teams?.find((t) => t.abbreviation === abv)?.id ?? null;
+  } catch {
+    return null;
+  }
 }

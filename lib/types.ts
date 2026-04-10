@@ -114,6 +114,41 @@ export interface PlayerStat {
   reboundsPerGame: number;
 }
 
+export type PlayoffStatus =
+  | "clinched-playoff"   // mathematically guaranteed top-6 seed
+  | "in-playoff"         // currently seeded 1–6
+  | "play-in"            // currently seeded 7–10
+  | "play-in-contention" // outside top 10 but not yet eliminated
+  | "eliminated";        // cannot reach the play-in
+
+export interface PlayoffContext {
+  seed: number;                // current conference seed (1–15)
+  conference: string;          // "Eastern Conference" | "Western Conference"
+  gamesBack: number;           // games back from 1st in conference
+  gamesBackSix: number;        // games back from 6th seed (last auto-playoff)
+  gamesBackTen: number;        // games back from 10th seed (last play-in spot)
+  gamesRemaining: number;      // games left in regular season (82-game schedule)
+  playoffStatus: PlayoffStatus;
+  currentStreak: string;       // e.g. "W4" or "L2"
+  clinched: boolean;           // locked into top 6
+}
+
+export interface H2HGame {
+  date: string;       // YYYYMMDD
+  home: string;       // team abbv
+  away: string;
+  homePts: number;
+  awayPts: number;
+}
+
+export interface H2HRecord {
+  wins: number;         // wins for the reference team (home team in the breakdown)
+  losses: number;
+  games: H2HGame[];     // individual matchups, chronological
+  avgMarginFor: number; // average point margin when reference team won
+  avgMarginAgainst: number;
+}
+
 export interface GameDetailData {
   game: NBAGame;
   homeTeamStats: TeamSeasonStats;
@@ -121,6 +156,9 @@ export interface GameDetailData {
   homeRecentForm: RecentGame[];
   awayRecentForm: RecentGame[];
   injuries: InjuryReport;
+  homePlayoffContext: PlayoffContext | null;
+  awayPlayoffContext: PlayoffContext | null;
+  h2h: H2HRecord | null;
 }
 
 // ─── MLB ──────────────────────────────────────────────────────────────────────
@@ -173,6 +211,35 @@ export interface MLBHitterStat {
   ops: number;
 }
 
+export interface MLBPlayoffContext {
+  division: string;               // "AL East", "NL West"
+  leagueName: string;             // "American League" | "National League"
+  divisionRank: number;           // 1–5
+  divisionRecord: string;         // "4-2" (record within division)
+  gamesBackDivision: number;      // 0 if leading division
+  wildCardRank: number | null;    // rank among WC candidates; null if division leader
+  gamesBackWildCard: number | null; // 0 if in WC; null if division leader
+  wins: number;
+  losses: number;
+}
+
+export interface MLBBullpenStats {
+  era7Day: number | null;         // team pitching ERA last 7 days
+  saves: number;
+  saveOpportunities: number;
+  blownSaves: number;
+}
+
+export interface MLBParkFactor {
+  parkName: string;
+  factor: "high" | "low";
+}
+
+export interface MLBUmpire {
+  name: string;
+  tendency: "pitcher-friendly" | "hitter-friendly" | null; // null = no data / neutral
+}
+
 export interface MLBGameDetailData {
   game: MLBGame;
   homeTeamStats: MLBTeamStats;
@@ -180,6 +247,13 @@ export interface MLBGameDetailData {
   homeRecentForm: RecentGame[];
   awayRecentForm: RecentGame[];
   injuries: InjuryReport;
+  homePlayoffContext: MLBPlayoffContext | null;
+  awayPlayoffContext: MLBPlayoffContext | null;
+  homeBullpen: MLBBullpenStats | null;
+  awayBullpen: MLBBullpenStats | null;
+  h2h: H2HRecord | null;
+  parkFactor: MLBParkFactor | null;
+  umpire: MLBUmpire | null;
 }
 
 // ─── Union type used by GameCard and BreakdownView ────────────────────────────
