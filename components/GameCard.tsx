@@ -76,22 +76,26 @@ interface Props {
 }
 
 /**
- * Generate a one-line game signal from spread and total.
- * Rule-based only — no API call. Returns null when no odds or game is not scheduled.
+ * Generate a one-line game signal from spread/total and optional context flags.
+ * Rule-based only — no API call. Returns null when game is not scheduled.
  */
 function getGameSignal(
   spread: number | null,
   total: number | null,
-  isMLB: boolean
+  isMLB: boolean,
+  pitchersUnconfirmed = false
 ): string | null {
-  // For MLB run line is always ±1.5 — spread signal doesn't apply meaningfully
   if (isMLB) {
-    if (total === null) return null;
-    if (total >= 9.5) return "High-scoring environment expected";
-    if (total <= 7) return "Low-scoring game — pitching will decide this";
-    return null;
+    // MLB: run line is always ±1.5 so spread isn't meaningful — key on total and pitcher status
+    if (pitchersUnconfirmed) return "Starters unconfirmed — pitching matchup TBD";
+    if (total === null) return "Pitching matchup is the key variable tonight";
+    if (total >= 9.5) return "High run environment — offense likely active";
+    if (total >= 8.5) return "Run environment favors both offenses";
+    if (total <= 7.5) return "Pitcher's game — starters will decide this";
+    return "Pitching matchup is the key variable tonight";
   }
 
+  // NBA
   const absSpread = spread !== null ? Math.abs(spread) : null;
 
   let spreadSignal: string | null = null;
@@ -109,14 +113,13 @@ function getGameSignal(
   }
 
   if (spreadSignal && totalSignal) {
-    // Combine: swap the spread signal ending with a total qualifier
     if (totalSignal === "high-scoring environment") {
       return spreadSignal.replace(" — ", " in a high-scoring environment — ");
     }
     return `${spreadSignal}. ${totalSignal.charAt(0).toUpperCase() + totalSignal.slice(1)}.`;
   }
   if (totalSignal === "high-scoring environment") return "High-scoring environment expected";
-  if (totalSignal) return `Defensive game — scoring will be at a premium`;
+  if (totalSignal) return "Defensive game — scoring will be at a premium";
   return spreadSignal;
 }
 
@@ -182,8 +185,17 @@ export default function GameCard({ game, onClick }: Props) {
   const runLine = game.odds && "runLine" in game.odds ? game.odds.runLine : null;
   const total = game.odds?.total ?? null;
   const signalSpread = sport === "MLB" ? runLine : spread;
+
+  const pitchersUnconfirmed = (() => {
+    if (sport !== "MLB") return false;
+    const g = game as import("@/lib/types").MLBGame;
+    const unknown = (name: string | null | undefined) =>
+      !name || name.toLowerCase() === "tbd" || name.toLowerCase().startsWith("unknown");
+    return !g.homePitcher || !g.awayPitcher || unknown(g.homePitcher?.name) || unknown(g.awayPitcher?.name);
+  })();
+
   const signal = effectiveStatus === "scheduled"
-    ? getGameSignal(signalSpread, total, sport === "MLB")
+    ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
     : null;
 
   const borderGradient = `linear-gradient(to right, ${getBorderColor(awayTeam.teamAbv, sport)} 50%, ${getBorderColor(homeTeam.teamAbv, sport)} 50%)`;
@@ -296,8 +308,10 @@ export default function GameCard({ game, onClick }: Props) {
               {/* MLB: show away pitcher */}
               {sport === "MLB" && game.awayPitcher && (
                 <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
-                  {game.awayPitcher.name}
-                  <span className="text-[#B0BAC9]"> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>
+                  {game.awayPitcher.hand ? `${game.awayPitcher.hand}HP · ` : ""}{game.awayPitcher.name}
+                  {game.awayPitcher.seasonERA > 0 && (
+                    <span className="text-[#B0BAC9]"> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>
+                  )}
                 </p>
               )}
             </div>
@@ -325,8 +339,10 @@ export default function GameCard({ game, onClick }: Props) {
               {/* MLB: show home pitcher */}
               {sport === "MLB" && game.homePitcher && (
                 <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
-                  {game.homePitcher.name}
-                  <span className="text-[#B0BAC9]"> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>
+                  {game.homePitcher.hand ? `${game.homePitcher.hand}HP · ` : ""}{game.homePitcher.name}
+                  {game.homePitcher.seasonERA > 0 && (
+                    <span className="text-[#B0BAC9]"> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>
+                  )}
                 </p>
               )}
             </div>

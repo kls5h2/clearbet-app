@@ -59,16 +59,24 @@ function isGeneratedEarly(gameTime: string): boolean {
 
 function getArchetype(
   confidenceLabel: import("@/lib/types").ConfidenceLabel,
-  odds: AnyGame["odds"]
+  odds: AnyGame["odds"],
+  sport: "NBA" | "MLB"
 ): string {
   if (confidenceLabel === "PASS") return "Avoid";
   if (confidenceLabel === "FRAGILE") return "Handle with care";
 
-  const spread = odds && "spread" in odds ? odds.spread : null;
-  const runLine = odds && "runLine" in odds ? odds.runLine : null;
-  const line = spread ?? runLine;
-  const absSpread = line !== null ? Math.abs(line) : null;
   const total = odds?.total ?? null;
+
+  if (sport === "MLB") {
+    // Run line is always ±1.5 — use total as primary differentiator
+    if (total !== null && total >= 9.5) return "High-run environment";
+    if (total !== null && total <= 7.5) return "Pitching showcase";
+    return "Standard game";
+  }
+
+  // NBA
+  const spread = odds && "spread" in odds ? odds.spread : null;
+  const absSpread = spread !== null ? Math.abs(spread) : null;
   const highTotal = total !== null && total >= 220;
   const lowTotal = total !== null && total <= 212;
 
@@ -78,7 +86,6 @@ function getArchetype(
     if (lowTotal) return "Controlled game";
     return "Controlled game";
   }
-  // Under 3 or no spread
   if (highTotal) return "Open game";
   if (lowTotal) return "Grind";
   return "Open game";
@@ -128,7 +135,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
       {gameStatus === "final" && (
         <div className="bg-[#F4F6F9] border border-[#E0E5EE] rounded-xl px-5 py-3 flex items-center gap-3">
           <span className="font-mono text-[10px] font-semibold text-[#6B7A90] tracking-widest uppercase">Final</span>
-          <span className="text-sm text-[#6B7A90]">This game has ended. This breakdown was generated before tip-off.</span>
+          <span className="text-sm text-[#6B7A90]">This game has ended. This breakdown was generated before {isMLB ? "first pitch" : "tip-off"}.</span>
         </div>
       )}
       {gameStatus === "live" && (
@@ -205,7 +212,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
             />
             {breakdown.confidenceLabel !== "PASS" && (
               <span className="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-medium tracking-widest uppercase bg-[#F4F6F9] text-[#6B7A90] border border-[#E0E5EE]">
-                {getArchetype(breakdown.confidenceLabel, odds)}
+                {getArchetype(breakdown.confidenceLabel, odds, game.sport)}
               </span>
             )}
           </div>
