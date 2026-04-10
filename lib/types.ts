@@ -57,6 +57,8 @@ export interface BreakdownResult {
   baseScript: string;
   fragilityCheck: FragilityItem[];
   marketRead: string;
+  edge: string[];
+  edgeClosingLine: string;
   decisionLens: string;
   confidenceLevel: ConfidenceLevel;
   confidenceLabel: ConfidenceLabel;

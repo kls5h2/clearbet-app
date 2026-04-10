@@ -320,9 +320,29 @@ export default function BreakdownView({ breakdown, game }: Props) {
         </p>
       </Section>
 
-      {/* 06 — What This Means */}
+      {/* 06 — The Edge */}
+      {breakdown.edge && breakdown.edge.length > 0 && (
+        <Section>
+          <SectionHeader number="06" title="The Edge" />
+          <div className="space-y-3">
+            {breakdown.edge.map((item, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="mt-2 shrink-0">
+                  <span className="w-2 h-2 rounded-full block bg-[#0A7A6C]" />
+                </div>
+                <p className="text-[#0D1B2E] leading-[1.7] text-base flex-1">{item}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 pt-3 border-t border-[#E0E5EE] text-sm text-[#6B7A90] italic leading-relaxed">
+            {breakdown.edgeClosingLine}
+          </p>
+        </Section>
+      )}
+
+      {/* 07 — What This Means */}
       <Section>
-        <SectionHeader number="06" title="What This Means" />
+        <SectionHeader number="07" title="What This Means" />
         <p className="text-base text-[#0D1B2E] leading-[1.7]">{breakdown.decisionLens}</p>
 
         {/* Glossary callout */}

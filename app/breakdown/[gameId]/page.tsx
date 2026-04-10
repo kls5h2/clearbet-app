@@ -168,7 +168,7 @@ export default function BreakdownPage() {
             {/* Pre-game data banner — sets expectations for all breakdowns */}
             <div className="bg-[#F4F6F9] border border-[#E0E5EE] rounded-xl px-5 py-3 mb-4">
               <p className="font-mono text-[10px] text-[#6B7A90] leading-relaxed">
-                This breakdown was generated before tip-off using live pre-game data. Injury updates or lineup changes after generation are not reflected.
+                This breakdown was generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
               </p>
             </div>
             <BreakdownView breakdown={breakdown} game={game} />

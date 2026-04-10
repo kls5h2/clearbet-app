@@ -170,7 +170,7 @@ export default async function ArchiveDetailPage({
         {/* Saved snapshot banner */}
         <div className="bg-[#F4F6F9] border border-[#E0E5EE] rounded-xl px-5 py-3 mb-4">
           <p className="font-mono text-[10px] text-[#6B7A90] leading-relaxed">
-            This breakdown was saved on {savedDate} before tip-off. Lines and injury data reflect conditions at time of generation.
+            This breakdown was saved on {savedDate} before {row.sport === "MLB" ? "first pitch" : "tip-off"}. Lines and injury data reflect conditions at time of generation.
           </p>
         </div>
 
