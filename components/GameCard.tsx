@@ -179,7 +179,9 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
 
-  const effectiveStatus = getEffectiveStatus(gameStatus, gameTime);
+  // Preview (tomorrow) cards are always "scheduled" — getEffectiveStatus compares
+  // against today's clock, which would incorrectly mark afternoon games as "final".
+  const effectiveStatus = preview ? "scheduled" : getEffectiveStatus(gameStatus, gameTime);
   const isClickable = effectiveStatus === "scheduled" && !preview;
 
   const spread = game.odds && "spread" in game.odds ? game.odds.spread : null;
@@ -373,7 +375,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
               {effectiveStatus === "final" && (
                 <div className="w-full text-center">
                   <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game ended</p>
-                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Come back tomorrow for a new slate.</p>
+                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Game ended. Check back tomorrow for new breakdowns.</p>
                 </div>
               )}
               {effectiveStatus === "scheduled" && <span />}

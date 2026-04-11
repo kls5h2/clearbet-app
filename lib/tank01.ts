@@ -161,11 +161,15 @@ export async function getGamesForDate(dateStr: string): Promise<{
     const awayInfo = (teamMap as Record<string, RawTeamInfo>)[awayAbv];
     const meta = gameMetas[i] as GameMeta;
 
+    // getGameMeta looks up the season schedule — it returns "" for future-dated
+    // games not yet in the schedule. Fall back to the gameTime on the raw response.
+    const gameTime = meta.gameTime || formatGameTime(g.gameTime ?? "");
+
     return {
       sport: "NBA" as const,
       gameId: g.gameID,
       gameDate: g.gameDate,
-      gameTime: meta.gameTime,
+      gameTime,
       gameStatus: meta.gameStatus,
       homeTeam: {
         teamId: g.teamIDHome ?? homeAbv,
