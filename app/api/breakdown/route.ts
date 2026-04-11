@@ -18,6 +18,7 @@ import {
 } from "@/lib/mlb-stats-api";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
+import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
 import type {
   GameDetailData,
   MLBGameDetailData,
@@ -76,6 +77,24 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
     const odds = oddsMap.get(oddsKey)?.odds ?? null;
 
+    // Record opening line (insert-only, non-blocking) then fetch it for movement calc
+    recordOpeningLine(
+      gameId, today,
+      homeTeam.teamAbv, awayTeam.teamAbv, "NBA",
+      odds?.spread ?? null,
+      odds?.total ?? null,
+      odds?.homeMoneyline ?? null,
+      odds?.awayMoneyline ?? null,
+    );
+    const openingLine = await getOpeningLine(gameId);
+    const lineMovement = calcLineMovement(
+      openingLine,
+      odds?.spread ?? null,
+      odds?.total ?? null,
+      odds?.homeMoneyline ?? null,
+      odds?.awayMoneyline ?? null,
+    );
+
     const game: NBAGame = {
       sport: "NBA",
       gameId: rawGame.gameId,
@@ -97,6 +116,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       homePlayoffContext: playoffCtx.home,
       awayPlayoffContext: playoffCtx.away,
       h2h,
+      lineMovement,
     };
 
     console.log("[breakdown:NBA] calling Claude...");
@@ -187,6 +207,24 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
     const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
     const mlbOdds = oddsMap.get(oddsKey)?.mlbOdds ?? null;
 
+    // Record opening line (insert-only, non-blocking) then fetch it for movement calc
+    recordOpeningLine(
+      gameId, today,
+      homeTeam.teamAbv, awayTeam.teamAbv, "MLB",
+      mlbOdds?.runLine ?? null,
+      mlbOdds?.total ?? null,
+      mlbOdds?.homeMoneyline ?? null,
+      mlbOdds?.awayMoneyline ?? null,
+    );
+    const openingLine = await getOpeningLine(gameId);
+    const lineMovement = calcLineMovement(
+      openingLine,
+      mlbOdds?.runLine ?? null,
+      mlbOdds?.total ?? null,
+      mlbOdds?.homeMoneyline ?? null,
+      mlbOdds?.awayMoneyline ?? null,
+    );
+
     const game: MLBGame = {
       sport: "MLB",
       gameId: rawGame.gameId,
@@ -214,6 +252,7 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
       h2h,
       parkFactor,
       umpire,
+      lineMovement,
     };
 
     console.log("[breakdown:MLB] calling Claude...");

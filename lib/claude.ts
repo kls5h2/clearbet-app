@@ -94,7 +94,7 @@ Return valid JSON only. No markdown, no explanation, no preamble.
 }`;
 
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries, homePlayoffContext, awayPlayoffContext, h2h } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
@@ -145,6 +145,24 @@ function buildUserMessage(data: GameDetailData): string {
   const optionalStat = (label: string, value: number | null | undefined, decimals = 1): string =>
     value != null && value > 0 ? `\n${label}: ${value.toFixed(decimals)}` : "";
 
+  const formatMovement = (val: number | null, label: string): string => {
+    if (val === null) return "";
+    if (val === 0) return `${label}: no movement`;
+    return `${label}: ${val > 0 ? "+" : ""}${val} (moved ${val > 0 ? "toward home" : "toward away"})`;
+  };
+  const formatMLMovement = (val: number | null, teamAbv: string): string => {
+    if (val === null) return "";
+    if (val === 0) return `${teamAbv} ML: no movement`;
+    return `${teamAbv} ML: ${val > 0 ? "+" : ""}${val} (${val > 0 ? "money coming in" : "money going out"})`;
+  };
+
+  const movementLines = lineMovement ? [
+    formatMovement(lineMovement.spreadMovement, "Spread"),
+    formatMovement(lineMovement.totalMovement, "Total"),
+    formatMLMovement(lineMovement.homeMLMovement, homeTeam.teamAbv),
+    formatMLMovement(lineMovement.awayMLMovement, awayTeam.teamAbv),
+  ].filter(Boolean) : [];
+
   return `Game: ${awayTeam.teamName} @ ${homeTeam.teamName}
 Date: ${game.gameDate} — ${game.gameTime}
 
@@ -153,6 +171,7 @@ Spread: ${homeTeam.teamAbv} ${formatOdds(odds?.spread ?? null)} (home)
 Total (O/U): ${odds?.total ?? "N/A"}
 Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds?.homeMoneyline ?? null)} / ${awayTeam.teamAbv} ${formatOdds(odds?.awayMoneyline ?? null)}
 Implied probability: ${homeTeam.teamAbv} ${odds?.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds?.impliedAwayProbability ?? "?"}%
+${movementLines.length > 0 ? `\n━━━ LINE MOVEMENT (opening → current) ━━━\n${movementLines.join("\n")}` : "\n━━━ LINE MOVEMENT ━━━\nOpening line not yet recorded — first fetch of the day"}
 
 ━━━ SEASON SERIES (H2H) ━━━
 ${h2h

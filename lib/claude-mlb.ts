@@ -118,7 +118,7 @@ Return valid JSON only. No markdown, no explanation, no preamble.
 function buildMLBUserMessage(data: MLBGameDetailData): string {
   const {
     game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries,
-    homePlayoffContext, awayPlayoffContext, homeBullpen, awayBullpen, h2h, parkFactor, umpire,
+    homePlayoffContext, awayPlayoffContext, homeBullpen, awayBullpen, h2h, parkFactor, umpire, lineMovement,
   } = data;
   const { homeTeam, awayTeam, odds, homePitcher, awayPitcher } = game;
 
@@ -214,6 +214,29 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
 
   const parkSection = formatParkFactor(parkFactor);
 
+  const formatMovement = (val: number | null, label: string): string => {
+    if (val === null) return "";
+    if (val === 0) return `${label}: no movement`;
+    return `${label}: ${val > 0 ? "+" : ""}${val} (moved ${val > 0 ? "toward home" : "toward away"})`;
+  };
+  const formatMLMovement = (val: number | null, teamAbv: string): string => {
+    if (val === null) return "";
+    if (val === 0) return `${teamAbv} ML: no movement`;
+    return `${teamAbv} ML: ${val > 0 ? "+" : ""}${val} (${val > 0 ? "money coming in" : "money going out"})`;
+  };
+  const formatTotalMovement = (val: number | null): string => {
+    if (val === null) return "";
+    if (val === 0) return "Total: no movement";
+    return `Total: ${val > 0 ? "+" : ""}${val} (moved ${val > 0 ? "up — more runs expected" : "down — fewer runs expected"})`;
+  };
+
+  const movementLines = lineMovement ? [
+    formatMovement(lineMovement.spreadMovement, "Run line"),
+    formatTotalMovement(lineMovement.totalMovement),
+    formatMLMovement(lineMovement.homeMLMovement, homeTeam.teamAbv),
+    formatMLMovement(lineMovement.awayMLMovement, awayTeam.teamAbv),
+  ].filter(Boolean) : [];
+
   return `Game: ${awayTeam.teamName} @ ${homeTeam.teamName}
 Date: ${game.gameDate} — ${game.gameTime}
 Sport: MLB
@@ -227,6 +250,7 @@ Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds?.homeMoneyline ?? null)} / ${aw
 Run Line: ${homeTeam.teamAbv} ${odds?.runLine !== null && odds?.runLine !== undefined ? (odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine) : "N/A"}
 Total (O/U): ${odds?.total ?? "N/A"} runs
 Implied probability: ${homeTeam.teamAbv} ${odds?.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds?.impliedAwayProbability ?? "?"}%
+${movementLines.length > 0 ? `\n━━━ LINE MOVEMENT (opening → current) ━━━\n${movementLines.join("\n")}` : "\n━━━ LINE MOVEMENT ━━━\nOpening line not yet recorded — first fetch of the day"}
 
 ━━━ SEASON SERIES (H2H) ━━━
 ${formatH2H(h2h)}

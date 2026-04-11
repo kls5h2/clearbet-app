@@ -151,6 +151,13 @@ export interface H2HRecord {
   avgMarginAgainst: number;
 }
 
+export interface LineMovement {
+  spreadMovement: number | null;
+  totalMovement: number | null;
+  homeMLMovement: number | null;
+  awayMLMovement: number | null;
+}
+
 export interface GameDetailData {
   game: NBAGame;
   homeTeamStats: TeamSeasonStats;
@@ -161,6 +168,7 @@ export interface GameDetailData {
   homePlayoffContext: PlayoffContext | null;
   awayPlayoffContext: PlayoffContext | null;
   h2h: H2HRecord | null;
+  lineMovement: LineMovement | null;
 }
 
 // ─── MLB ──────────────────────────────────────────────────────────────────────
@@ -256,6 +264,7 @@ export interface MLBGameDetailData {
   h2h: H2HRecord | null;
   parkFactor: MLBParkFactor | null;
   umpire: MLBUmpire | null;
+  lineMovement: LineMovement | null;
 }
 
 // ─── Union type used by GameCard and BreakdownView ────────────────────────────
