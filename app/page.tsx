@@ -20,6 +20,7 @@ export default function HomePage() {
   const router = useRouter();
   const [activeSport, setActiveSport] = useState<Sport>("NBA");
   const [games, setGames] = useState<AnyGame[]>([]);
+  const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,14 +28,22 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
     setGames([]);
+    setTomorrowGames([]);
 
-    fetch(`/api/games?sport=${activeSport.toLowerCase()}`)
-      .then((r) => {
+    const sport = activeSport.toLowerCase();
+    Promise.all([
+      fetch(`/api/games?sport=${sport}`).then((r) => {
         if (!r.ok) throw new Error("Failed to load slate");
         return r.json();
-      })
-      .then((data) => {
-        setGames(data.games ?? []);
+      }),
+      fetch(`/api/games?sport=${sport}&date=tomorrow`).then((r) => {
+        if (!r.ok) return { games: [] };
+        return r.json();
+      }).catch(() => ({ games: [] })),
+    ])
+      .then(([todayData, tomorrowData]) => {
+        setGames(todayData.games ?? []);
+        setTomorrowGames(tomorrowData.games ?? []);
         setLoading(false);
       })
       .catch((e) => {
@@ -162,6 +171,31 @@ export default function HomePage() {
                 ))}
               </div>
             </>
+          );
+        })()}
+
+        {/* Tomorrow's Slate */}
+        {!loading && !error && tomorrowGames.length > 0 && (() => {
+          const sorted = [...tomorrowGames].sort((a, b) => parseGameTime(a.gameTime) - parseGameTime(b.gameTime));
+          const tomorrowDate = new Date();
+          tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+          const tomorrowLabel = tomorrowDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+          return (
+            <div className="mt-10">
+              <div className="mb-6">
+                <h2 className="font-heading text-2xl font-extrabold text-[#6B7A90] border-b-2 border-[#B0BAC9] inline-block pb-1">
+                  Tomorrow&#8217;s Slate
+                </h2>
+                <p className="mt-2 font-mono text-xs text-[#B0BAC9] tracking-wide">
+                  {tomorrowLabel} — preview only, no breakdowns yet
+                </p>
+              </div>
+              <div className="space-y-4">
+                {sorted.map((game) => (
+                  <GameCard key={game.gameId} game={game} onClick={() => {}} preview />
+                ))}
+              </div>
+            </div>
           );
         })()}
 

@@ -73,6 +73,7 @@ function getMutedTextColor(teamAbv: string, sport: "NBA" | "MLB"): string {
 interface Props {
   game: AnyGame;
   onClick: (gameId: string) => void;
+  preview?: boolean; // tomorrow's slate — no signal, no CTA, not clickable
 }
 
 /**
@@ -174,12 +175,12 @@ function getEffectiveStatus(apiStatus: GameStatus, gameTime: string): GameStatus
   return "live";
 }
 
-export default function GameCard({ game, onClick }: Props) {
+export default function GameCard({ game, onClick, preview = false }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
 
   const effectiveStatus = getEffectiveStatus(gameStatus, gameTime);
-  const isClickable = effectiveStatus === "scheduled";
+  const isClickable = effectiveStatus === "scheduled" && !preview;
 
   const spread = game.odds && "spread" in game.odds ? game.odds.spread : null;
   const runLine = game.odds && "runLine" in game.odds ? game.odds.runLine : null;
@@ -194,7 +195,7 @@ export default function GameCard({ game, onClick }: Props) {
     return !g.homePitcher || !g.awayPitcher || unknown(g.homePitcher?.name) || unknown(g.awayPitcher?.name);
   })();
 
-  const signal = effectiveStatus === "scheduled"
+  const signal = effectiveStatus === "scheduled" && !preview
     ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
     : null;
 
@@ -260,6 +261,8 @@ export default function GameCard({ game, onClick }: Props) {
       className={`group w-full text-left bg-white border rounded-xl overflow-hidden transition-all duration-200 focus:outline-none ${
         isClickable
           ? "border-[#D4DAE6] hover:border-[#0A7A6C] hover:bg-[#FAFCFC] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0A7A6C] cursor-pointer"
+          : preview
+          ? "border-[#E8ECF2] cursor-default opacity-80"
           : "border-[#E0E5EE] cursor-default"
       }`}
     >
@@ -358,28 +361,29 @@ export default function GameCard({ game, onClick }: Props) {
           {/* Odds strip */}
           {oddsRow}
 
-          {/* CTA — "Get breakdown" only shows for scheduled games (before first pitch/tip-off).
-               This is correct and intentional: breakdowns are pre-game only. */}
-          <div className="px-5 py-3 flex items-center justify-between">
-            {effectiveStatus === "live" && (
-              <div className="w-full text-center">
-                <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game in progress</p>
-                <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.</p>
-              </div>
-            )}
-            {effectiveStatus === "final" && (
-              <div className="w-full text-center">
-                <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game ended</p>
-                <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Come back tomorrow for a new slate.</p>
-              </div>
-            )}
-            {effectiveStatus === "scheduled" && <span />}
-            {effectiveStatus === "scheduled" && (
-              <span className="text-xs font-mono font-medium text-[#0A7A6C] tracking-wide group-hover:underline">
-                Get breakdown →
-              </span>
-            )}
-          </div>
+          {/* CTA — hidden for preview (tomorrow) cards */}
+          {!preview && (
+            <div className="px-5 py-3 flex items-center justify-between">
+              {effectiveStatus === "live" && (
+                <div className="w-full text-center">
+                  <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game in progress</p>
+                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.</p>
+                </div>
+              )}
+              {effectiveStatus === "final" && (
+                <div className="w-full text-center">
+                  <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game ended</p>
+                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Come back tomorrow for a new slate.</p>
+                </div>
+              )}
+              {effectiveStatus === "scheduled" && <span />}
+              {effectiveStatus === "scheduled" && (
+                <span className="text-xs font-mono font-medium text-[#0A7A6C] tracking-wide group-hover:underline">
+                  Get breakdown →
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </button>

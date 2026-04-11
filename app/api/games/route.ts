@@ -7,22 +7,24 @@ import { fetchMLBProbableStarters } from "@/lib/mlb-stats-api";
 import type { NBAGame, MLBGame, GamesApiResponse, MLBGamesApiResponse } from "@/lib/types";
 
 /**
- * GET /api/games?sport=nba (default) | ?sport=mlb
- * Returns today's slate with odds attached.
+ * GET /api/games?sport=nba (default) | ?sport=mlb | &date=tomorrow
+ * Returns today's (or tomorrow's) slate with odds attached.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const sport = (searchParams.get("sport") ?? "nba").toLowerCase();
+  const dateParam = searchParams.get("date");
+  const dateStr = dateParam === "tomorrow" ? getTomorrowDateString() : getTodayDateString();
 
   if (sport === "mlb") {
-    return handleMLB();
+    return handleMLB(dateStr);
   }
-  return handleNBA();
+  return handleNBA(dateStr);
 }
 
-async function handleNBA(): Promise<NextResponse> {
+async function handleNBA(dateStr: string): Promise<NextResponse> {
   try {
-    const today = getTodayDateString();
+    const today = dateStr;
     const [rawGames, oddsMap] = await Promise.all([
       getGamesForDate(today),
       fetchNBAOdds().catch(() => new Map()),
@@ -56,9 +58,9 @@ async function handleNBA(): Promise<NextResponse> {
   }
 }
 
-async function handleMLB(): Promise<NextResponse> {
+async function handleMLB(dateStr: string): Promise<NextResponse> {
   try {
-    const today = getTodayDateString();
+    const today = dateStr;
     const [rawGames, oddsMap, mlbStatsPitchers] = await Promise.all([
       getMLBGamesForDate(today),
       fetchMLBOdds().catch(() => new Map()),
@@ -119,6 +121,19 @@ function getTodayDateString(): string {
     month: "2-digit",
     day: "2-digit",
   }).format(now);
+  const [month, day, year] = et.split("/");
+  return `${year}${month}${day}`;
+}
+
+function getTomorrowDateString(): string {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const et = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(tomorrow);
   const [month, day, year] = et.split("/");
   return `${year}${month}${day}`;
 }
