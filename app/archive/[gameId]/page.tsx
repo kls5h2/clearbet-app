@@ -118,7 +118,7 @@ export default async function ArchiveDetailPage({
     <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav backHref="/archive" backLabel="Archive" sportTag={row.sport} />
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Snapshot banner */}
         <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
           Saved {savedDate} before {row.sport === "MLB" ? "first pitch" : "tip-off"}. Lines and injury data reflect conditions at time of generation.

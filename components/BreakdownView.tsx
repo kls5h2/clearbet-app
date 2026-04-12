@@ -120,11 +120,11 @@ function BulletCard({ children }: { children: React.ReactNode }) {
 }
 
 const proseBodyStyle: React.CSSProperties = {
-  fontSize: "14px", fontWeight: 500, color: "#3A5470", lineHeight: 1.75,
+  fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.75,
 };
 const bulletStyle: React.CSSProperties = {
   display: "flex", alignItems: "flex-start", gap: "10px",
-  fontSize: "14px", fontWeight: 500, color: "#3A5470", lineHeight: 1.65,
+  fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.65,
 };
 const legendStyle: React.CSSProperties = {
   display: "flex", flexWrap: "wrap" as const, gap: "12px",
@@ -212,7 +212,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
             {!isMLB && "spread" in odds && odds.spread !== null && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Spread</p>
-                <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
                   {homeTeam.teamAbv} {odds.spread > 0 ? `+${odds.spread}` : odds.spread}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
             {isMLB && "runLine" in odds && odds.runLine !== null && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Run Line</p>
-                <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
                   {homeTeam.teamAbv} {odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}
                 </p>
               </div>
@@ -228,13 +228,13 @@ export default function BreakdownView({ breakdown, game }: Props) {
             {odds.total !== null && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Total</p>
-                <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>O/U {odds.total}</p>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>O/U {odds.total}</p>
               </div>
             )}
             {odds.impliedHomeProbability !== null && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{homeTeam.teamAbv} Win%</p>
-                <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>{odds.impliedHomeProbability}%</p>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>{odds.impliedHomeProbability}%</p>
               </div>
             )}
           </div>

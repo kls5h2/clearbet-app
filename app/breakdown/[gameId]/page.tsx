@@ -92,7 +92,7 @@ export default function BreakdownPage() {
     <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav backHref="/" sportTag={sport} />
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Loading state */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>

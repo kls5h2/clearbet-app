@@ -67,12 +67,12 @@ export default function HomePage() {
     <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "4rem" }}>
       <Nav />
 
-      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
         {/* Page title */}
-        <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "3px" }}>
-          Today&#8217;s Slate
+        <h1 style={{ fontSize: "32px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "3px", lineHeight: 1.15 }}>
+          <span style={{ borderBottom: "3px solid #0A7A6C", paddingBottom: "1px" }}>Today&#8217;s</span>{" Slate"}
         </h1>
-        <p style={{ fontSize: "13px", color: "#9FADBF", fontWeight: 500, marginBottom: "1.5rem" }}>
+        <p style={{ fontSize: "14px", color: "#9FADBF", fontWeight: 500, marginBottom: "1.5rem" }}>
           {todayLabel}
         </p>
 
@@ -183,7 +183,7 @@ export default function HomePage() {
                 margin: "0 0 1rem", paddingBottom: "10px",
                 borderBottom: "1px solid #DDE2EB",
               }}>
-                Tomorrow · Preview only
+                Tomorrow · Preview only, no breakdowns yet
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {sorted.map((game) => (

@@ -72,7 +72,7 @@ export default function GlossaryPage() {
     <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav activePage="glossary" />
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
         {/* Header */}
         <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "6px" }}>
           Glossary
@@ -81,7 +81,7 @@ export default function GlossaryPage() {
           Plain-English Terms
         </h1>
         <p style={{ fontSize: "13px", color: "#9FADBF", fontWeight: 500, marginBottom: "2rem" }}>
-          Every term used in Clearbet breakdowns, defined simply.
+          Terms used in Clearbet breakdowns, defined simply.
         </p>
 
         {/* Search */}
@@ -132,7 +132,7 @@ export default function GlossaryPage() {
                   <p style={{ fontSize: "16px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.02em", marginBottom: "8px", lineHeight: 1.2 }}>
                     {entry.term}
                   </p>
-                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#637A96", lineHeight: 1.65 }}>
+                  <p style={{ fontSize: "14px", fontWeight: 500, color: "#637A96", lineHeight: 1.65 }}>
                     {entry.definition}
                   </p>
                 </div>

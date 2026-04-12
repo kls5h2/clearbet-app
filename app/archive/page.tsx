@@ -71,7 +71,7 @@ export default async function ArchivePage() {
     <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
         {/* Header */}
         <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "6px" }}>
           Archive

@@ -20,6 +20,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         position: "sticky",
         top: 0,
         zIndex: 10,
+        borderBottom: "1px solid #E8ECF2",
       }}
     >
       {/* Left side */}
@@ -58,7 +59,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           <Link
             href="/how-it-works"
             style={{
-              fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em",
+              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
               color: activePage === "how-it-works" ? "#0D1B2E" : "#9FADBF",
               textDecoration: "none",
             }}
@@ -68,7 +69,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           <Link
             href="/glossary"
             style={{
-              fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em",
+              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
               color: activePage === "glossary" ? "#0D1B2E" : "#9FADBF",
               textDecoration: "none",
             }}

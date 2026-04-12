@@ -96,7 +96,7 @@ export default function HowItWorksPage() {
 
       {/* Dark navy page header */}
       <div style={{ background: "#0D1B2E", padding: "2.5rem 1.5rem 2rem", marginBottom: "0" }}>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
           <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "8px" }}>
             How It Works
           </p>
@@ -109,7 +109,7 @@ export default function HowItWorksPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
 
         {/* What ClearBet is */}
         <div style={{ marginBottom: "2.5rem" }}>

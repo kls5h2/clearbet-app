@@ -83,7 +83,7 @@ export default function ArchiveCard({
                 The Read
               </p>
               <p style={{
-                fontSize: "12px", fontWeight: 600, color: "#637A96", lineHeight: 1.5,
+                fontSize: "13px", fontWeight: 600, color: "#637A96", lineHeight: 1.5,
                 paddingTop: "10px", borderTop: "1px solid #F0F3F7",
                 display: "-webkit-box", WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical" as const, overflow: "hidden",

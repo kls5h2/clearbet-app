@@ -216,7 +216,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     if (!game.odds) return null;
     if (effectiveStatus !== "scheduled" || preview) return null;
     const labelCls = "text-[9px] font-bold uppercase tracking-[0.1em] text-[#B0BAC9] mb-1";
-    const valCls = "text-[13px] font-extrabold text-[#0D1B2E] tracking-[-0.01em]";
+    const valCls = "text-[14px] font-extrabold text-[#0D1B2E] tracking-[-0.01em]";
     if (sport === "MLB") {
       const o = game.odds;
       return (
@@ -277,13 +277,13 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
       >
         {/* Time row */}
         <div className="flex justify-between items-center mb-[14px]">
-          <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+          <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
         </div>
 
         {/* Matchup */}
         <div className="flex items-center gap-3 mb-[14px]">
           <div className="flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
             <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
             {sport === "MLB" && game.awayPitcher && (
               <p className="text-[10px] text-[#9FADBF] mt-1 leading-none">
@@ -294,7 +294,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
           </div>
           {atConnector}
           <div className="flex-1 text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
             <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
             {sport === "MLB" && game.homePitcher && (
               <p className="text-[10px] text-[#9FADBF] mt-1 leading-none">
@@ -331,7 +331,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
       <div className={wrapperClass} style={cardStyle}>
         {/* Time row */}
         <div className="flex justify-between items-center mb-[10px]">
-          <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+          <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
           {effectiveStatus === "live" ? (
             <div className="flex items-center gap-[5px]">
               <span className="w-[5px] h-[5px] rounded-full bg-[#DC2626] animate-pulse block" />
@@ -345,12 +345,12 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
         {/* Matchup */}
         <div className="flex items-center gap-3 mb-[10px]">
           <div className="flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
             <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
           </div>
           {atConnector}
           <div className="flex-1 text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
             <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
           </div>
         </div>
@@ -369,18 +369,18 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     <div className={wrapperClass} style={cardStyle}>
       {/* Time row */}
       <div className="flex justify-between items-center mb-[10px]">
-        <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+        <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
       </div>
 
       {/* Matchup */}
       <div className="flex items-center gap-3 mb-[10px]">
         <div className="flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
           <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
         </div>
         {atConnector}
         <div className="flex-1 text-right">
-          <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
           <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
         </div>
       </div>
