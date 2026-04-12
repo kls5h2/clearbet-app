@@ -24,6 +24,8 @@ const TERMS: GlossaryEntry[] = [
   { term: "ERA", definition: "Earned Run Average — the average runs a pitcher allows per nine innings. Under 3.00 is elite. Over 5.00 is a real concern.", sport: "MLB", sportTagBg: "#FEF9EC", sportTagColor: "#92400E" },
   // I
   { term: "Implied probability", definition: "What the moneyline translates to as a percentage chance of winning. A −164 moneyline implies roughly a 62% chance. A +130 implies roughly 43%.", sport: "All sports", sportTagBg: "#E6F4F2", sportTagColor: "#0A7A6C" },
+  // F
+  { term: "First five innings", definition: "A bet that only covers what happens through the first five innings of a game, before either team's bullpen takes over. Useful when one starting pitcher is clearly better than the other but you don't trust the relief pitching on either side.", sport: "MLB", sportTagBg: "#FEF9EC", sportTagColor: "#92400E" },
   // L
   { term: "Line movement", definition: "How the spread or total has changed since it first opened. Significant movement usually signals where informed money is going.", sport: "All sports", sportTagBg: "#E6F4F2", sportTagColor: "#0A7A6C" },
   { term: "Load management", definition: "When a team intentionally limits a healthy star player's minutes — usually near the end of the season — to keep them fresh for the playoffs.", sport: "NBA", sportTagBg: "#EEF1F5", sportTagColor: "#3A5470" },

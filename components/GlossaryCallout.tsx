@@ -3,7 +3,13 @@ interface Props {
   definition: string;
 }
 
+function toTitleCase(str: string): string {
+  return str.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
 export default function GlossaryCallout({ term, definition }: Props) {
+  if (!term || !definition) return null;
+
   return (
     <div
       style={{ background: "#F0FAF8", borderRadius: "12px", padding: "16px 18px", marginTop: "10px" }}
@@ -22,22 +28,16 @@ export default function GlossaryCallout({ term, definition }: Props) {
           marginBottom: "6px", letterSpacing: "-0.01em",
         }}
       >
-        {term}
+        {toTitleCase(term)}
       </p>
       <p
         style={{
           fontSize: "13px", fontWeight: 500, color: "#3A5470",
-          lineHeight: 1.6, marginBottom: "8px",
+          lineHeight: 1.6,
         }}
       >
         {definition}
       </p>
-      <a
-        href="/glossary"
-        style={{ fontSize: "11px", fontWeight: 700, color: "#0A7A6C", letterSpacing: "0.02em" }}
-      >
-        View full glossary →
-      </a>
     </div>
   );
 }

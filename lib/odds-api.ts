@@ -50,11 +50,17 @@ export async function fetchNBAOdds(): Promise<Map<string, OddsMatchup>> {
   url.searchParams.set("oddsFormat", "american");
 
   const res = await fetch(url.toString(), { next: { revalidate: 900 } });
+  const remaining = res.headers.get("x-requests-remaining");
+  const used = res.headers.get("x-requests-used");
+  if (remaining !== null) {
+    console.log(`[OddsAPI NBA] requests used: ${used}, remaining: ${remaining}`);
+  }
   if (!res.ok) {
     throw new Error(`Odds API error: ${res.status} ${res.statusText}`);
   }
 
   const games: OddsApiGame[] = await res.json();
+  console.log(`[OddsAPI NBA] ${games.length} games returned`);
   const result = new Map<string, OddsMatchup>();
 
   for (const game of games) {
