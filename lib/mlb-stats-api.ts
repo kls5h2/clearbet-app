@@ -15,9 +15,21 @@ interface RawProbablePitcher {
 }
 
 interface RawTeamEntry {
-  team: { id: number; name: string; abbreviation: string };
+  // abbreviation is absent from the schedule endpoint — use MLB_STATS_ID_TO_ABV
+  team: { id: number; name: string; abbreviation?: string };
   probablePitcher?: RawProbablePitcher;
 }
+
+// Stable MLB team ID → abbreviation, normalized to match Tank01/our system.
+// (MLB Stats API uses "AZ" for Arizona and "ATH" for Athletics; we normalize both.)
+const MLB_STATS_ID_TO_ABV: Record<number, string> = {
+  108: "LAA", 109: "ARI", 110: "BAL", 111: "BOS", 112: "CHC",
+  113: "CIN", 114: "CLE", 115: "COL", 116: "DET", 117: "HOU",
+  118: "KC",  119: "LAD", 120: "WSH", 121: "NYM", 133: "ATH",
+  134: "PIT", 135: "SD",  136: "SEA", 137: "SF",  138: "STL",
+  139: "TB",  140: "TEX", 141: "TOR", 142: "MIN", 143: "PHI",
+  144: "ATL", 145: "CWS", 146: "MIA", 147: "NYY", 158: "MIL",
+};
 
 interface RawGame {
   teams: { home: RawTeamEntry; away: RawTeamEntry };
@@ -165,9 +177,13 @@ export async function fetchMLBProbableStarters(
 
   for (const d of schedData.dates ?? []) {
     for (const g of d.games) {
+      // Use static ID map — schedule endpoint omits abbreviation from team objects
+      const homeAbv = MLB_STATS_ID_TO_ABV[g.teams.home.team.id] ?? g.teams.home.team.abbreviation ?? "";
+      const awayAbv = MLB_STATS_ID_TO_ABV[g.teams.away.team.id] ?? g.teams.away.team.abbreviation ?? "";
+      if (!homeAbv || !awayAbv) continue; // skip unrecognized teams
       entries.push({
-        homeAbv: g.teams.home.team.abbreviation,
-        awayAbv: g.teams.away.team.abbreviation,
+        homeAbv,
+        awayAbv,
         home: g.teams.home.probablePitcher
           ? { id: g.teams.home.probablePitcher.id, name: g.teams.home.probablePitcher.fullName }
           : null,
