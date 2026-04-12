@@ -207,6 +207,40 @@ export default function BreakdownView({ breakdown, game }: Props) {
           </div>
         </div>
 
+        {/* MLB probable starters */}
+        {isMLB && (() => {
+          const g = game as MLBGame;
+          const fmtHand = (hand: "L" | "R" | null) => hand ? (hand === "L" ? "LHP" : "RHP") : null;
+          const awayName = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? g.awayPitcher.name : "Starter TBD";
+          const awayHand = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? fmtHand(g.awayPitcher.hand) : null;
+          const awayERA = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) && g.awayPitcher.seasonERA > 0 ? g.awayPitcher.seasonERA.toFixed(2) : null;
+          const homeName = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? g.homePitcher.name : "Starter TBD";
+          const homeHand = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? fmtHand(g.homePitcher.hand) : null;
+          const homeERA = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) && g.homePitcher.seasonERA > 0 ? g.homePitcher.seasonERA.toFixed(2) : null;
+          return (
+            <div style={{ display: "flex", marginBottom: "16px", gap: "8px" }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Away Starter</p>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: "#0D1B2E", letterSpacing: "-0.01em", marginBottom: "2px" }}>{awayName}</p>
+                {(awayHand || awayERA) && (
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: "#637A96" }}>
+                    {[awayHand, awayERA ? `${awayERA} ERA` : null].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </div>
+              <div style={{ flex: 1, textAlign: "right" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Home Starter</p>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: "#0D1B2E", letterSpacing: "-0.01em", marginBottom: "2px" }}>{homeName}</p>
+                {(homeHand || homeERA) && (
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: "#637A96" }}>
+                    {[homeERA ? `${homeERA} ERA` : null, homeHand].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Odds row */}
         {odds && (
           <div style={{ display: "flex", background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>

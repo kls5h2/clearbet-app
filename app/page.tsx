@@ -4,7 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import GameCard from "@/components/GameCard";
 import Nav from "@/components/Nav";
-import type { AnyGame, Sport } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+import type { AnyGame, Sport, BreakdownResult } from "@/lib/types";
+
+function getTodayDateString(): string {
+  const now = new Date();
+  const et = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  const [month, day, year] = et.split("/");
+  return `${year}${month}${day}`;
+}
 
 function parseGameTime(time: string): number {
   const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -22,6 +35,7 @@ export default function HomePage() {
   const [activeSport, setActiveSport] = useState<Sport>("NBA");
   const [games, setGames] = useState<AnyGame[]>([]);
   const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
+  const [breakdownMap, setBreakdownMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +46,7 @@ export default function HomePage() {
     setTomorrowGames([]);
 
     const sport = activeSport.toLowerCase();
+    const todayStr = getTodayDateString();
     Promise.all([
       fetch(`/api/games?sport=${sport}`).then((r) => {
         if (!r.ok) throw new Error("Failed to load slate");
@@ -41,10 +56,26 @@ export default function HomePage() {
         if (!r.ok) return { games: [] };
         return r.json();
       }).catch(() => ({ games: [] })),
+      Promise.resolve(
+        supabase
+          .from("breakdowns")
+          .select("game_id, breakdown_content")
+          .eq("game_date", todayStr)
+      ).then(({ data }) => (data ?? []) as { game_id: string; breakdown_content: unknown }[])
+        .catch(() => [] as { game_id: string; breakdown_content: unknown }[]),
     ])
-      .then(([todayData, tomorrowData]) => {
+      .then(([todayData, tomorrowData, breakdownRows]) => {
         setGames(todayData.games ?? []);
         setTomorrowGames(tomorrowData.games ?? []);
+        const map = new Map<string, string>();
+        for (const row of breakdownRows as { game_id: string; breakdown_content: unknown }[]) {
+          const content = row.breakdown_content as BreakdownResult;
+          if (content?.decisionLens) {
+            const firstSentence = content.decisionLens.match(/^[^.]+\./)?.[0] ?? content.decisionLens;
+            map.set(row.game_id, firstSentence);
+          }
+        }
+        setBreakdownMap(map);
         setLoading(false);
       })
       .catch((e) => {
@@ -165,7 +196,7 @@ export default function HomePage() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {sorted.map((game) => (
-                  <GameCard key={game.gameId} game={game} onClick={handleGameSelect} />
+                  <GameCard key={game.gameId} game={game} onClick={handleGameSelect} whatThisMeans={breakdownMap.get(game.gameId) ?? null} />
                 ))}
               </div>
             </>

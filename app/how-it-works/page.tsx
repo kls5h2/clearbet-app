@@ -153,11 +153,8 @@ export default function HowItWorksPage() {
                   <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: "6px" }}>
                     {step.name}
                   </p>
-                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", lineHeight: 1.55, marginBottom: "6px" }}>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", lineHeight: 1.55 }}>
                     {step.what}
-                  </p>
-                  <p style={{ fontSize: "11px", fontWeight: 600, color: "#B0BAC9", letterSpacing: "0.02em" }}>
-                    <strong style={{ color: "#637A96", fontWeight: 700 }}>Data:</strong> {step.source}
                   </p>
                 </div>
               </div>

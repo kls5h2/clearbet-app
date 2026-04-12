@@ -1,6 +1,6 @@
 "use client";
 
-import type { AnyGame, GameStatus, MLBGame, GameOdds, MLBGameOdds } from "@/lib/types";
+import type { AnyGame, GameStatus, GameOdds, MLBGameOdds } from "@/lib/types";
 import {
   getActiveTeamColor,
   getDeadTeamColor,
@@ -11,46 +11,9 @@ interface Props {
   game: AnyGame;
   onClick: (gameId: string) => void;
   preview?: boolean;
+  whatThisMeans?: string | null;
 }
 
-function getGameSignal(
-  spread: number | null,
-  total: number | null,
-  isMLB: boolean,
-  pitchersUnconfirmed = false
-): string | null {
-  if (isMLB) {
-    if (pitchersUnconfirmed) return "Starters unconfirmed — pitching matchup TBD";
-    if (total === null) return "Pitching matchup is the key variable tonight";
-    if (total >= 9.5) return "High run environment — offense likely active";
-    if (total >= 8.5) return "Run environment favors both offenses";
-    if (total <= 7.5) return "Pitcher's game — starters will decide this";
-    return "Pitching matchup is the key variable tonight";
-  }
-  const absSpread = spread !== null ? Math.abs(spread) : null;
-  let spreadSignal: string | null = null;
-  if (absSpread !== null) {
-    if (absSpread >= 10) spreadSignal = "Large favorite — outcome likely decided early";
-    else if (absSpread >= 5) spreadSignal = "Clear favorite with room for the underdog";
-    else if (absSpread >= 2) spreadSignal = "Competitive game — either side has a real path";
-    else spreadSignal = "Too close to call on paper — environment matters more than matchup";
-  }
-  let totalSignal: string | null = null;
-  if (total !== null) {
-    if (total >= 230) totalSignal = "high-scoring environment";
-    else if (total <= 209) totalSignal = "defensive game — scoring at a premium";
-  }
-  if (spreadSignal && totalSignal) {
-    if (totalSignal === "high-scoring environment") {
-      return spreadSignal.replace(" — ", " in a high-scoring environment — ");
-    }
-    return `${spreadSignal}. ${totalSignal.charAt(0).toUpperCase() + totalSignal.slice(1)}.`;
-  }
-  if (totalSignal === "high-scoring environment") return "High-scoring environment expected";
-  if (totalSignal) return "Defensive game — scoring will be at a premium";
-  // Return null when no odds data — THE READ zone won't render
-  return spreadSignal ?? null;
-}
 
 function formatML(ml: number | null): string {
   if (ml === null) return "—";
@@ -131,7 +94,7 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: {
   );
 }
 
-export default function GameCard({ game, onClick, preview = false }: Props) {
+export default function GameCard({ game, onClick, preview = false, whatThisMeans = null }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
 
@@ -139,22 +102,8 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
   const isClickable = effectiveStatus === "scheduled" && !preview;
   const isDead = effectiveStatus === "final" || effectiveStatus === "live";
 
-  const spread = game.odds && "spread" in game.odds ? game.odds.spread : null;
-  const runLine = game.odds && "runLine" in game.odds ? game.odds.runLine : null;
-  const total = game.odds?.total ?? null;
-  const signalSpread = sport === "MLB" ? runLine : spread;
-
-  const pitchersUnconfirmed = (() => {
-    if (sport !== "MLB") return false;
-    const g = game as MLBGame;
-    const unknown = (name: string | null | undefined) =>
-      !name || name.toLowerCase() === "tbd" || name.toLowerCase().startsWith("unknown");
-    return !g.homePitcher || !g.awayPitcher || unknown(g.homePitcher?.name) || unknown(g.awayPitcher?.name);
-  })();
-
-  const signal: string | null = isClickable
-    ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
-    : null;
+  // THE READ only shows when a breakdown already exists (whatThisMeans set by slate page)
+  const signal: string | null = isClickable && whatThisMeans ? whatThisMeans : null;
 
   const awayColor = preview
     ? getTomorrowTeamColor(awayTeam.teamAbv, sport)
@@ -221,10 +170,11 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
           <div className="flex-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{awayCity}</p>
             <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
-            {sport === "MLB" && game.awayPitcher && (
-              <p style={{ fontSize: "13px", color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
-                {game.awayPitcher.hand ? `${game.awayPitcher.hand}HP · ` : ""}{game.awayPitcher.name}
-                {game.awayPitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}
+            {sport === "MLB" && (
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
+                {game.awayPitcher
+                  ? <>{game.awayPitcher.hand ? `${game.awayPitcher.hand === "L" ? "LHP" : "RHP"} · ` : ""}{game.awayPitcher.name}{game.awayPitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  : "Starter TBD"}
               </p>
             )}
           </div>
@@ -232,10 +182,11 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
           <div className="flex-1 text-right">
             <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{homeCity}</p>
             <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
-            {sport === "MLB" && game.homePitcher && (
-              <p style={{ fontSize: "13px", color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
-                {game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand}HP` : ""}
-                {game.homePitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}
+            {sport === "MLB" && (
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
+                {game.homePitcher
+                  ? <>{game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand === "L" ? "LHP" : "RHP"}` : ""}{game.homePitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  : "Starter TBD"}
               </p>
             )}
           </div>
@@ -244,8 +195,8 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
         {/* THE READ */}
         {signal && (
           <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "10px 13px", marginBottom: "14px" }}>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#0A7A6C] mb-[5px]">The Read</p>
-            <p className="text-[13px] font-semibold text-[#096059] leading-[1.5]">{signal}</p>
+            <p style={{ fontSize: "9px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.14em", color: "#3A5470", marginBottom: "5px" }}>The Read</p>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", lineHeight: 1.5 }}>{signal}</p>
           </div>
         )}
 
