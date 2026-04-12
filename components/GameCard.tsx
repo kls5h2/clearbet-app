@@ -87,7 +87,7 @@ function getGameSignal(
   total: number | null,
   isMLB: boolean,
   pitchersUnconfirmed = false
-): string | null {
+): string {
   if (isMLB) {
     if (pitchersUnconfirmed) return "Starters unconfirmed — pitching matchup TBD";
     if (total === null) return "Pitching matchup is the key variable tonight";
@@ -117,7 +117,7 @@ function getGameSignal(
   }
   if (totalSignal === "high-scoring environment") return "High-scoring environment expected";
   if (totalSignal) return "Defensive game — scoring will be at a premium";
-  return spreadSignal;
+  return spreadSignal ?? "Odds not yet posted — check back closer to game time";
 }
 
 function formatML(ml: number | null): string {
@@ -182,7 +182,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     return !g.homePitcher || !g.awayPitcher || unknown(g.homePitcher?.name) || unknown(g.awayPitcher?.name);
   })();
 
-  const signal = effectiveStatus === "scheduled" && !preview
+  const signal: string | null = effectiveStatus === "scheduled" && !preview
     ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
     : null;
 
@@ -200,10 +200,10 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
 
   // Card wrapper styles
   const wrapperClass = preview
-    ? "w-full text-left rounded-[14px] overflow-hidden"
+    ? "w-full text-left rounded-[14px]"
     : isDead
-    ? "w-full text-left rounded-[14px] overflow-hidden"
-    : "w-full text-left rounded-[14px] overflow-hidden cursor-pointer";
+    ? "w-full text-left rounded-[14px]"
+    : "w-full text-left rounded-[14px] cursor-pointer";
 
   const cardStyle: React.CSSProperties = preview
     ? { background: "#EDF1F6", border: "1px solid #DDE2EB", borderRadius: "14px", padding: "18px 22px" }
@@ -239,14 +239,15 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     );
   })();
 
-  // @ circle connector
-  const atCircle = (
+  // "at" connector
+  const atConnector = (
     <div style={{
-      width: "24px", height: "24px", borderRadius: "50%",
-      background: "#E2E8F0", display: "flex", alignItems: "center",
-      justifyContent: "center", flexShrink: 0,
-      fontSize: "12px", fontWeight: 800, color: "#7A8FA6",
-    }}>@</div>
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "flex-end",
+      flexShrink: 0, padding: "0 6px", paddingBottom: "2px",
+    }}>
+      <span style={{ fontSize: "11px", fontWeight: 700, color: "#9FADBF" }}>at</span>
+    </div>
   );
 
   const awayCity = awayTeam.teamCity || awayTeam.teamName.split(" ").slice(0, -1).join(" ");
@@ -291,7 +292,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
               </p>
             )}
           </div>
-          {atCircle}
+          {atConnector}
           <div className="flex-1 text-right">
             <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
             <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
@@ -347,7 +348,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
             <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
             <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
           </div>
-          {atCircle}
+          {atConnector}
           <div className="flex-1 text-right">
             <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
             <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
@@ -377,7 +378,7 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
           <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
           <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
         </div>
-        {atCircle}
+        {atConnector}
         <div className="flex-1 text-right">
           <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
           <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
