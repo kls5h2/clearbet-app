@@ -89,32 +89,42 @@ export default function BreakdownPage() {
   }, [gameId]);
 
   return (
-    <div className="min-h-screen bg-[#F0F3F7]">
+    <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav backHref="/" sportTag={sport} />
 
-      <main className="max-w-2xl mx-auto px-4 pt-6 pb-24">
+      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Loading state */}
         {status === "loading" && (
-          <div className="space-y-3">
-            {/* Pulsing header card */}
-            <div className="bg-white border border-[#E8ECF2] rounded-xl p-6 animate-pulse shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-              <div className="h-2.5 bg-[#E8ECF2] rounded w-16 mb-3" />
-              <div className="h-7 bg-[#E8ECF2] rounded w-44 mb-2" />
-              <div className="h-4 bg-[#E8ECF2] rounded w-60" />
-              <div className="mt-5 pt-4 border-t border-[#E8ECF2] flex gap-3">
-                <div className="h-6 bg-[#E8ECF2] rounded-full w-20" />
-                <div className="h-6 bg-[#E8ECF2] rounded-full w-28" />
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {/* Pulsing game header */}
+            <div style={{ background: "#FFFFFF", borderRadius: "14px", padding: "22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)" }} className="animate-pulse">
+              <div style={{ height: "11px", background: "#E8ECF2", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
+              <div style={{ display: "flex", gap: "14px", marginBottom: "16px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
+                  <div style={{ height: "26px", background: "#E8ECF2", borderRadius: "4px", width: "120px" }} />
+                </div>
+                <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                  <div>
+                    <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
+                    <div style={{ height: "26px", background: "#E8ECF2", borderRadius: "4px", width: "120px" }} />
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                {[1,2,3,4].map(j => <div key={j} style={{ flex: 1, height: "40px", background: "#F7F9FB", borderRadius: "6px" }} />)}
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ height: "24px", background: "#E8ECF2", borderRadius: "999px", width: "72px" }} />
+                <div style={{ height: "24px", background: "#E8ECF2", borderRadius: "4px", width: "160px" }} />
               </div>
             </div>
 
-            {/* Rotating message card */}
-            <div className="bg-white border border-[#E8ECF2] rounded-xl px-6 py-8 text-center shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-              <p className="font-heading text-[17px] font-bold text-[#0D1B2E] mb-3">
-                Building your breakdown
-              </p>
+            {/* Loading message card */}
+            <div style={{ background: "#FFFFFF", borderRadius: "14px", padding: "32px 22px", textAlign: "center", boxShadow: "0 1px 4px rgba(13,27,46,0.05)" }}>
+              <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", marginBottom: "12px" }}>Building your breakdown</p>
               <p
-                className="text-[13px] text-[#637A96] min-h-[1.4rem]"
-                style={{ opacity: visible ? 1 : 0, transition: "opacity 0.4s ease" }}
+                style={{ fontSize: "13px", fontWeight: 500, color: "#637A96", minHeight: "1.4rem", transition: "opacity 0.4s ease", opacity: visible ? 1 : 0 }}
               >
                 {message}
               </p>
@@ -122,19 +132,16 @@ export default function BreakdownPage() {
 
             {/* Pulsing section skeletons */}
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-white border border-[#E8ECF2] rounded-xl p-6 animate-pulse shadow-[0_1px_4px_rgba(13,27,46,0.05)]"
-              >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="h-3 bg-[#E8ECF2] rounded w-6" />
-                  <div className="h-3 bg-[#E8ECF2] rounded w-24" />
-                  <div className="flex-1 h-px bg-[#E8ECF2]" />
+              <div key={i} style={{ background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px", boxShadow: "0 1px 4px rgba(13,27,46,0.05)" }} className="animate-pulse">
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                  <div style={{ height: "10px", background: "#E8ECF2", borderRadius: "4px", width: "20px" }} />
+                  <div style={{ height: "10px", background: "#E8ECF2", borderRadius: "4px", width: "80px" }} />
+                  <div style={{ flex: 1, height: "1px", background: "#EEF1F5" }} />
                 </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-[#E8ECF2] rounded w-full" />
-                  <div className="h-4 bg-[#E8ECF2] rounded w-5/6" />
-                  <div className="h-4 bg-[#E8ECF2] rounded w-4/6" />
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ height: "14px", background: "#E8ECF2", borderRadius: "4px", width: "100%" }} />
+                  <div style={{ height: "14px", background: "#E8ECF2", borderRadius: "4px", width: "85%" }} />
+                  <div style={{ height: "14px", background: "#E8ECF2", borderRadius: "4px", width: "70%" }} />
                 </div>
               </div>
             ))}
@@ -143,14 +150,12 @@ export default function BreakdownPage() {
 
         {/* Error state */}
         {status === "error" && (
-          <div className="bg-white border border-[#FECACA] rounded-xl p-8 text-center shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-            <p className="font-heading text-[17px] font-bold text-[#0D1B2E] mb-2">
-              Something went wrong
-            </p>
-            <p className="text-[13px] text-[#D0342C] mb-5">{error}</p>
+          <div style={{ background: "#FFFFFF", border: "1px solid #FECACA", borderRadius: "14px", padding: "32px", textAlign: "center" }}>
+            <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", marginBottom: "8px" }}>Something went wrong</p>
+            <p style={{ fontSize: "13px", color: "#D0342C", marginBottom: "20px" }}>{error}</p>
             <button
               onClick={() => router.push("/")}
-              className="font-mono text-[11px] font-semibold text-[#0A7A6C] hover:underline"
+              style={{ fontSize: "12px", fontWeight: 700, color: "#0A7A6C", background: "none", border: "none", cursor: "pointer" }}
             >
               ← Back to slate
             </button>
@@ -160,23 +165,23 @@ export default function BreakdownPage() {
         {/* Done state */}
         {status === "done" && breakdown && game && (
           <>
-            {/* Pre-game data notice */}
-            <div className="bg-[#F0F3F7] border border-[#E8ECF2] rounded-xl px-5 py-3 mb-3">
-              <p className="font-mono text-[10px] font-medium text-[#9FADBF] leading-relaxed">
-                Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
-              </p>
+            {/* Pre-game data banner */}
+            <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
+              Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
             </div>
             <BreakdownView breakdown={breakdown} game={game} />
           </>
         )}
 
-        {/* Tagline */}
+        {/* Tagline + timestamp */}
         {status === "done" && (
-          <p className="mt-10 text-center font-mono text-[11px] font-medium text-[#B0BAC9] tracking-wide">
-            What the data says. Your decision to make.
-          </p>
+          <div style={{ textAlign: "center", padding: "1.5rem 0 0" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+              What the data says. Your decision to make.
+            </p>
+          </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

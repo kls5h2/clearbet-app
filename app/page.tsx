@@ -64,31 +64,35 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F0F3F7]">
+    <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "4rem" }}>
       <Nav />
 
-      <main className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {/* Slate header */}
-        <div className="mb-5">
-          <h1 className="font-heading text-[26px] font-extrabold text-[#0D1B2E] leading-tight">
-            Today&#8217;s Slate
-          </h1>
-          <p className="mt-1 font-mono text-[11px] font-medium text-[#9FADBF] tracking-wide">
-            {todayLabel}
-          </p>
-        </div>
+      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
+        {/* Page title */}
+        <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "3px" }}>
+          Today&#8217;s Slate
+        </h1>
+        <p style={{ fontSize: "13px", color: "#9FADBF", fontWeight: 500, marginBottom: "1.5rem" }}>
+          {todayLabel}
+        </p>
 
-        {/* Sport tabs */}
-        <div className="flex gap-2 mb-5">
+        {/* Sport tabs — active tab = dark navy per mockup */}
+        <div style={{ display: "flex", gap: "4px", marginBottom: "1.75rem" }}>
           {(["NBA", "MLB"] as Sport[]).map((sport) => (
             <button
               key={sport}
               onClick={() => setActiveSport(sport)}
-              className={`font-mono text-[10px] font-bold tracking-[0.12em] uppercase px-4 py-2 rounded-full transition-colors ${
-                activeSport === sport
-                  ? "bg-[#0A7A6C] text-white"
-                  : "bg-white border border-[#E8ECF2] text-[#9FADBF] hover:border-[#0A7A6C] hover:text-[#0A7A6C]"
-              }`}
+              style={{
+                padding: "5px 16px",
+                fontSize: "12px",
+                fontWeight: 700,
+                borderRadius: "999px",
+                letterSpacing: "0.04em",
+                cursor: "pointer",
+                border: activeSport === sport ? "none" : "1px solid #DDE2EB",
+                background: activeSport === sport ? "#0D1B2E" : "transparent",
+                color: activeSport === sport ? "#FFFFFF" : "#9FADBF",
+              }}
             >
               {sport}
             </button>
@@ -97,33 +101,27 @@ export default function HomePage() {
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-white border border-[#E8ECF2] rounded-xl overflow-hidden animate-pulse shadow-[0_1px_4px_rgba(13,27,46,0.05)]"
-              >
-                <div className="h-[3px] bg-[#E8ECF2]" />
-                <div className="px-4 py-2 border-b border-[#EEF1F5] bg-[#F7F9FC]">
-                  <div className="h-3 bg-[#E8ECF2] rounded w-20" />
-                </div>
-                <div className="px-4 pt-4 pb-3 flex justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-[17px] bg-[#E8ECF2] rounded w-28" />
-                    <div className="h-[17px] bg-[#E8ECF2] rounded w-20" />
+              <div key={i} style={{ background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)" }} className="animate-pulse">
+                <div style={{ height: "12px", background: "#E8ECF2", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px" }}>
+                  <div>
+                    <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
+                    <div style={{ height: "22px", background: "#E8ECF2", borderRadius: "4px", width: "100px" }} />
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-[17px] bg-[#E8ECF2] rounded w-28 ml-auto" />
-                    <div className="h-[17px] bg-[#E8ECF2] rounded w-20 ml-auto" />
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px", marginLeft: "auto" }} />
+                    <div style={{ height: "22px", background: "#E8ECF2", borderRadius: "4px", width: "100px" }} />
                   </div>
                 </div>
-                <div className="mx-4 mb-3 bg-[#F7F9FC] rounded-lg px-4 py-3 border border-[#EEF1F5]">
-                  <div className="h-2 bg-[#E8ECF2] rounded w-16 mb-2" />
-                  <div className="h-3 bg-[#E8ECF2] rounded w-full" />
+                <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "10px 13px", marginBottom: "14px" }}>
+                  <div style={{ height: "8px", background: "#D4EDE9", borderRadius: "4px", width: "50px", marginBottom: "8px" }} />
+                  <div style={{ height: "12px", background: "#D4EDE9", borderRadius: "4px", width: "85%" }} />
                 </div>
-                <div className="px-4 py-3 border-t border-[#EEF1F5] bg-[#F7F9FC] flex justify-between">
+                <div style={{ display: "flex", gap: "8px" }}>
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="h-3 bg-[#E8ECF2] rounded w-10" />
+                    <div key={j} style={{ flex: 1, height: "32px", background: "#F7F9FB", borderRadius: "6px" }} />
                   ))}
                 </div>
               </div>
@@ -131,13 +129,13 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Error state */}
+        {/* Error */}
         {error && (
-          <div className="bg-white border border-[#FECACA] rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-            <p className="text-[14px] text-[#D0342C]">{error}</p>
+          <div style={{ background: "#FFFFFF", border: "1px solid #FECACA", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
+            <p style={{ fontSize: "14px", color: "#D0342C" }}>{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-3 font-mono text-[11px] font-semibold text-[#0A7A6C] hover:underline"
+              style={{ marginTop: "12px", fontSize: "12px", fontWeight: 700, color: "#0A7A6C", background: "none", border: "none", cursor: "pointer" }}
             >
               Try again
             </button>
@@ -146,11 +144,9 @@ export default function HomePage() {
 
         {/* Empty state */}
         {!loading && !error && games.length === 0 && (
-          <div className="bg-white border border-[#E8ECF2] rounded-xl p-8 text-center shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-            <p className="font-heading text-[17px] font-bold text-[#0D1B2E] mb-1">
-              No {activeSport} games today
-            </p>
-            <p className="text-[13px] text-[#637A96]">Check back on a game day.</p>
+          <div style={{ background: "#FFFFFF", border: "1px solid #E8ECF2", borderRadius: "14px", padding: "32px 24px", textAlign: "center" }}>
+            <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", marginBottom: "4px" }}>No {activeSport} games today</p>
+            <p style={{ fontSize: "13px", color: "#637A96" }}>Check back on a game day.</p>
           </div>
         )}
 
@@ -161,13 +157,13 @@ export default function HomePage() {
           return (
             <>
               {allDone && (
-                <div className="bg-white border border-[#E8ECF2] rounded-xl px-5 py-4 mb-4 shadow-[0_1px_4px_rgba(13,27,46,0.05)]">
-                  <p className="text-[13px] text-[#637A96]">
+                <div style={{ background: "#FFFFFF", border: "1px solid #E8ECF2", borderRadius: "14px", padding: "16px 20px", marginBottom: "12px" }}>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>
                     All of tonight&#8217;s games are underway or have ended. Check back tomorrow for the full slate and fresh breakdowns.
                   </p>
                 </div>
               )}
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {sorted.map((game) => (
                   <GameCard key={game.gameId} game={game} onClick={handleGameSelect} />
                 ))}
@@ -179,24 +175,17 @@ export default function HomePage() {
         {/* Tomorrow's Slate */}
         {!loading && !error && tomorrowGames.length > 0 && (() => {
           const sorted = [...tomorrowGames].sort((a, b) => parseGameTime(a.gameTime) - parseGameTime(b.gameTime));
-          const tomorrowDate = new Date();
-          tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-          const tomorrowLabel = tomorrowDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          });
           return (
-            <div className="mt-10">
-              <div className="mb-5">
-                <h2 className="font-heading text-[22px] font-extrabold text-[#9FADBF] leading-tight">
-                  Tomorrow&#8217;s Slate
-                </h2>
-                <p className="mt-1 font-mono text-[11px] font-medium text-[#B0BAC9] tracking-wide">
-                  {tomorrowLabel} · Preview only, no breakdowns yet
-                </p>
+            <div style={{ marginTop: "2.5rem" }}>
+              <div style={{
+                fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "#7A8FA6",
+                margin: "0 0 1rem", paddingBottom: "10px",
+                borderBottom: "1px solid #DDE2EB",
+              }}>
+                Tomorrow · Preview only
               </div>
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {sorted.map((game) => (
                   <GameCard key={game.gameId} game={game} onClick={() => {}} preview />
                 ))}
@@ -207,11 +196,11 @@ export default function HomePage() {
 
         {/* Tagline */}
         {!loading && (
-          <p className="mt-10 text-center font-mono text-[11px] font-medium text-[#B0BAC9] tracking-wide">
+          <p style={{ marginTop: "2.5rem", textAlign: "center", fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
             What the data says. Your decision to make.
           </p>
         )}
-      </main>
+      </div>
     </div>
   );
 }

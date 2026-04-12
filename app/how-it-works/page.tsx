@@ -1,147 +1,267 @@
+import Link from "next/link";
 import Nav from "@/components/Nav";
 
-interface Step {
-  number: string;
-  title: string;
-  body: string;
+const STEPS = [
+  {
+    num: "01",
+    name: "Game Shape",
+    what: "Sets the context before anything else. What kind of game is this — fast, slow, competitive, lopsided? Are there playoff implications, rest advantages, or motivation gaps?",
+    source: "team records, pace, rest days, playoff standing",
+  },
+  {
+    num: "02",
+    name: "Key Drivers",
+    what: "The 2–4 factors that will actually decide this game tonight. Not everything — just what materially matters. Color coded so you know instantly if each factor helps or hurts the expected outcome.",
+    source: "player stats, injury reports, matchup history, usage rates",
+  },
+  {
+    num: "03",
+    name: "Base Script",
+    what: "If nothing unexpected happens, this is how the game plays out. Not a prediction — a description of the most probable game shape based on the data.",
+    source: "recent form, head-to-head history, team tendencies",
+  },
+  {
+    num: "04",
+    name: "Fragility Check",
+    what: "The 2–3 things that could break the base script. Injury uncertainty, late lineup changes, variance risks. These are the wildcards — read them before you decide anything.",
+    source: "injury reports, rotation instability, bullpen usage, weather",
+  },
+  {
+    num: "05",
+    name: "Market Read",
+    what: "What the betting line is actually saying — in plain English. Every number gets translated into a real probability. Does the market line fit the data, or does something feel off?",
+    source: "spread, total, moneyline, line movement from open",
+  },
+  {
+    num: "06",
+    name: "The Edge",
+    what: "Where the data environment creates opportunity. Not a pick — a translation. What does all of the above mean for how different types of bettors should think about this game?",
+    source: "synthesized from all previous steps",
+  },
+  {
+    num: "07",
+    name: "What This Means",
+    what: "The lean — and the one thing that changes it. A direct summary of everything above in plain language. Always ends the same way: this is not a pick. Your decision is always yours.",
+    source: "synthesized from all previous steps",
+  },
+];
+
+const COLORS = [
+  { dot: "#16A34A", label: "Green — Supports the script", desc: "This factor reinforces the expected outcome. Things going in the right direction." },
+  { dot: "#DC2626", label: "Red — Works against it", desc: "This factor cuts against the expected outcome. A risk worth weighing." },
+  { dot: "#3A5470", label: "Blue — Neutral context", desc: "Relevant information that isn't clearly positive or negative. Worth knowing." },
+  { dot: "#D97706", label: "Amber — Injury or uncertainty", desc: "A player is questionable, a starter is unconfirmed, or something is unresolved. Check back closer to game time." },
+];
+
+const CONFIDENCE = [
+  {
+    strip: "#16A34A",
+    badgeBg: "#DCFCE7", badgeColor: "#166534", label: "Clear",
+    title: "One of the cleaner spots on the slate",
+    desc: "The data points clearly in one direction. The environment is stable and the logic holds. Still not a lock — no game is — but the picture is unusually clear.",
+  },
+  {
+    strip: "#0A7A6C",
+    badgeBg: "#E6F4F2", badgeColor: "#0A7A6C", label: "Lean",
+    title: "The game leans this way on paper",
+    desc: "A directional read with real logic behind it. There are factors on both sides, but the stronger case sits in one direction. Read the Fragility Check before deciding.",
+  },
+  {
+    strip: "#F59E0B",
+    badgeBg: "#FEF3C7", badgeColor: "#92400E", label: "Fragile",
+    title: "There is logic here, but it's fragile",
+    desc: "The analysis holds — but it depends on a few things going right. One injury, one lineup change, one variance swing could flip the script entirely.",
+  },
+  {
+    strip: "#C9D2DE",
+    badgeBg: "#F1F4F8", badgeColor: "#64748B", label: "Pass",
+    title: "This is a harder game to trust",
+    desc: "Too many moving parts, too much uncertainty, or too little signal. The data doesn't land cleanly enough to form a strong view. Some games are better left alone.",
+  },
+];
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+      {children}
+      <div style={{ flex: 1, height: "1px", background: "#E8ECF2" }} />
+    </div>
+  );
 }
-
-const HOW_IT_WORKS: Step[] = [
-  {
-    number: "01",
-    title: "We pull live pre-game data",
-    body: "Before every game, Clearbet fetches injury reports, starting lineups, pitching matchups, recent form, standings, and the current betting market. Nothing is manually curated — it's all live.",
-  },
-  {
-    number: "02",
-    title: "The data gets analyzed, not summarized",
-    body: "We don't just display the numbers. We run the data through a structured analytical framework that looks for meaningful patterns: who has the edge, where the market might be mispriced, and what variables could flip the outcome.",
-  },
-  {
-    number: "03",
-    title: "You get a plain-English breakdown",
-    body: "Every breakdown follows the same seven-section structure — Game Shape, Key Drivers, Base Script, Fragility Check, Market Read, The Edge, and What This Means. No jargon without explanation. No conclusions without logic.",
-  },
-  {
-    number: "04",
-    title: "A confidence rating anchors the read",
-    body: "Each breakdown ends with one of four ratings: CLEAR (strong alignment), LEAN (directional but not clean), FRAGILE (logic exists but risks are real), or PASS (too many unknowns to trust). These aren't win probabilities — they reflect how much the data agrees with itself.",
-  },
-  {
-    number: "05",
-    title: "You decide what to do with it",
-    body: "Clearbet tells you what the data says. It doesn't tell you what to bet. The breakdown is designed to help you think clearly, not to think for you. Every section ends with a question, not a directive.",
-  },
-];
-
-const CONFIDENCE_TIERS = [
-  {
-    label: "CLEAR",
-    bg: "bg-[#DCFCE7]",
-    text: "text-[#166534]",
-    description: "Strong data alignment. The key variables point the same direction and the market hasn't fully priced it in.",
-  },
-  {
-    label: "LEAN",
-    bg: "bg-[#E6F4F2]",
-    text: "text-[#0A7A6C]",
-    description: "The game leans one way on paper. There's a logical case, but not without meaningful uncertainty.",
-  },
-  {
-    label: "FRAGILE",
-    bg: "bg-[#FEF3C7]",
-    text: "text-[#92400E]",
-    description: "There's a reading here, but it's built on assumptions that could easily break. Proceed with caution.",
-  },
-  {
-    label: "PASS",
-    bg: "bg-[#F1F4F8]",
-    text: "text-[#64748B]",
-    description: "Too many unknowns, too much noise, or no clear edge in either direction. Sitting out is a valid decision.",
-  },
-];
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-[#F0F3F7]">
-      <Nav backHref="/" />
+    <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
+      <Nav activePage="how-it-works" />
 
-      <main className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-heading text-[26px] font-extrabold text-[#0D1B2E] leading-tight">
+      {/* Dark navy page header */}
+      <div style={{ background: "#0D1B2E", padding: "2.5rem 1.5rem 2rem", marginBottom: "0" }}>
+        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "8px" }}>
             How It Works
+          </p>
+          <h1 style={{ fontSize: "30px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "10px" }}>
+            Understand the game.<br />Make your own call.
           </h1>
-          <p className="mt-2 text-[15px] text-[#637A96] leading-[1.7]">
-            Clearbet turns raw pre-game data into structured analysis so you can make better-informed betting decisions in under 60 seconds.
+          <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, lineHeight: 1.6, maxWidth: "440px" }}>
+            ClearBet turns raw sports data into plain-English analysis. No picks. No pressure. Just a clear picture of what the data says.
           </p>
         </div>
+      </div>
 
-        {/* Steps */}
-        <div className="bg-white border border-[#E8ECF2] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(13,27,46,0.05)] mb-6">
-          {HOW_IT_WORKS.map((step, idx) => (
-            <div
-              key={step.number}
-              className={`px-6 py-5 ${idx !== HOW_IT_WORKS.length - 1 ? "border-b border-[#EEF1F5]" : ""}`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="font-mono text-[11px] font-bold text-[#0A7A6C] tracking-[0.12em] shrink-0">
-                  {step.number}
-                </span>
-                <h2 className="font-heading text-[15px] font-bold text-[#0D1B2E]">{step.title}</h2>
-                <div className="flex-1 h-px bg-[#E8ECF2]" />
-              </div>
-              <p className="text-[14px] text-[#637A96] leading-[1.7] pl-9">{step.body}</p>
-            </div>
-          ))}
-        </div>
+      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
 
-        {/* Confidence system */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="font-heading text-[15px] font-bold text-[#0D1B2E] whitespace-nowrap">The Confidence System</h2>
-            <div className="flex-1 h-px bg-[#E8ECF2]" />
+        {/* What ClearBet is */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <SectionLabel>What ClearBet is</SectionLabel>
+          <div style={{ background: "#FFFFFF", borderRadius: "14px", padding: "22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)", marginBottom: "10px" }}>
+            <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.55, letterSpacing: "-0.01em", marginBottom: "12px" }}>
+              ClearBet is a decision-support tool — not a picks service.
+            </p>
+            <p style={{ fontSize: "14px", fontWeight: 500, color: "#637A96", lineHeight: 1.7 }}>
+              Every breakdown gives you a structured read on a game: what kind of game it is, what factors matter most, what the market is implying, and where the edge lives. What you do with that information is always your call.
+            </p>
           </div>
-          <p className="text-[14px] text-[#637A96] leading-[1.7] mb-4">
-            Every breakdown ends with a confidence rating. This isn&apos;t a win probability — it&apos;s a measure of how clearly the data points in one direction and how much we trust that signal.
-          </p>
-          <div className="space-y-2">
-            {CONFIDENCE_TIERS.map((tier) => (
+        </div>
+
+        {/* The seven-step breakdown */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <SectionLabel>The seven-step breakdown</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {STEPS.map((step) => (
               <div
-                key={tier.label}
-                className="bg-white border border-[#E8ECF2] rounded-xl px-5 py-4 flex items-start gap-4 shadow-[0_1px_4px_rgba(13,27,46,0.05)]"
+                key={step.num}
+                style={{
+                  background: "#FFFFFF", borderRadius: "14px", padding: "18px 20px",
+                  boxShadow: "0 1px 4px rgba(13,27,46,0.05)",
+                  display: "flex", gap: "16px", alignItems: "flex-start",
+                }}
               >
-                <span className={`shrink-0 inline-flex items-center px-[10px] py-[3px] rounded-full font-mono text-[10px] font-extrabold uppercase tracking-widest ${tier.bg} ${tier.text}`}>
-                  {tier.label}
-                </span>
-                <p className="text-[13px] text-[#637A96] leading-[1.6] pt-0.5">{tier.description}</p>
+                {/* Circle number */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                  <div style={{
+                    width: "32px", height: "32px", borderRadius: "50%",
+                    background: "#E6F4F2", display: "flex", alignItems: "center",
+                    justifyContent: "center", fontSize: "12px", fontWeight: 800, color: "#0A7A6C",
+                  }}>
+                    {step.num}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, paddingTop: "4px" }}>
+                  <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: "6px" }}>
+                    {step.name}
+                  </p>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", lineHeight: 1.55, marginBottom: "6px" }}>
+                    {step.what}
+                  </p>
+                  <p style={{ fontSize: "11px", fontWeight: 600, color: "#B0BAC9", letterSpacing: "0.02em" }}>
+                    <strong style={{ color: "#9FADBF", fontWeight: 700 }}>Data:</strong> {step.source}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* What we don't do */}
-        <div className="bg-[#F0F3F7] border border-[#E8ECF2] rounded-xl px-6 py-5">
-          <h2 className="font-heading text-[14px] font-bold text-[#0D1B2E] mb-3">What Clearbet doesn&apos;t do</h2>
-          <ul className="space-y-2">
-            {[
-              "We don't pick your bets. Every breakdown ends with analysis, not a directive.",
-              "We don't guarantee outcomes. Sports are unpredictable by design.",
-              "We don't update in real time. Breakdowns are generated pre-game and reflect data at that moment.",
-              "We don't account for in-game injuries or last-minute scratches after generation.",
-            ].map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="mt-[7px] shrink-0 w-[5px] h-[5px] rounded-full bg-[#B0BAC9]" />
-                <p className="text-[13px] text-[#637A96] leading-[1.6]">{item}</p>
-              </li>
+        {/* What the colors mean */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <SectionLabel>What the colors mean</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {COLORS.map((c) => (
+              <div
+                key={c.label}
+                style={{
+                  background: "#FFFFFF", borderRadius: "12px", padding: "14px 18px",
+                  display: "flex", alignItems: "center", gap: "14px",
+                  boxShadow: "0 1px 4px rgba(13,27,46,0.05)",
+                }}
+              >
+                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: "12px", fontWeight: 800, color: "#0D1B2E", marginBottom: "2px" }}>{c.label}</p>
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: "#637A96", lineHeight: 1.5 }}>{c.desc}</p>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <p className="mt-10 text-center font-mono text-[11px] font-medium text-[#B0BAC9] tracking-wide">
-          What the data says. Your decision to make.
-        </p>
-      </main>
+        {/* Confidence levels */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <SectionLabel>Confidence levels</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {CONFIDENCE.map((c) => (
+              <div
+                key={c.label}
+                style={{
+                  background: "#FFFFFF", borderRadius: "12px", padding: "14px 18px",
+                  display: "flex", gap: "14px", alignItems: "flex-start",
+                  boxShadow: "0 1px 4px rgba(13,27,46,0.05)",
+                }}
+              >
+                <div style={{ width: "3px", borderRadius: "3px", alignSelf: "stretch", flexShrink: 0, background: c.strip }} />
+                <div>
+                  <span style={{
+                    fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em",
+                    textTransform: "uppercase", padding: "3px 10px", borderRadius: "999px",
+                    display: "inline-flex", marginBottom: "8px",
+                    background: c.badgeBg, color: c.badgeColor,
+                  }}>
+                    {c.label}
+                  </span>
+                  <p style={{ fontSize: "13px", fontWeight: 800, color: "#0D1B2E", marginBottom: "4px" }}>{c.title}</p>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#637A96", lineHeight: 1.55 }}>{c.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Understanding The Edge */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <SectionLabel>Understanding The Edge</SectionLabel>
+          <div style={{ background: "#FFFFFF", borderRadius: "14px", padding: "22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)", marginBottom: "10px" }}>
+            <p style={{ fontSize: "16px", fontWeight: 800, color: "#0D1B2E", marginBottom: "10px", letterSpacing: "-0.01em" }}>
+              The Edge isn&apos;t a pick. It&apos;s a translation.
+            </p>
+            <p style={{ fontSize: "14px", fontWeight: 500, color: "#637A96", lineHeight: 1.7, marginBottom: "14px" }}>
+              Most betting tools either give you raw data or tell you what to bet. ClearBet does neither. The Edge takes everything in the breakdown and identifies what kind of environment this game creates — for the spread, the total, or player props. You take it from there.
+            </p>
+            <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "12px 14px" }}>
+              <p style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "6px" }}>
+                Example
+              </p>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#096059", lineHeight: 1.55 }}>
+                &ldquo;The season series data — two games decided by single digits — creates an environment that challenges a spread this large, regardless of Houston&apos;s current form.&rdquo;
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{ background: "#0D1B2E", borderRadius: "14px", padding: "24px 22px", textAlign: "center", marginTop: "2.5rem" }}>
+          <p style={{ fontSize: "18px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+            Ready to read a breakdown?
+          </p>
+          <p style={{ fontSize: "13px", color: "#637A96", fontWeight: 500, marginBottom: "18px", lineHeight: 1.6 }}>
+            Pick any game on tonight&apos;s slate and see the full seven-step analysis in under 60 seconds.
+          </p>
+          <Link
+            href="/"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              background: "#0A7A6C", color: "white", fontSize: "13px", fontWeight: 800,
+              padding: "10px 22px", borderRadius: "999px", letterSpacing: "0.01em",
+              textDecoration: "none",
+            }}
+          >
+            View Tonight&apos;s Slate →
+          </Link>
+        </div>
+
+      </div>
     </div>
   );
 }

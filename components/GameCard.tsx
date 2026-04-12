@@ -15,7 +15,6 @@ const NBA_COLORS: Record<string, string> = {
   UTA: "#002B5C", WAS: "#002B5C",
 };
 
-// ─── MLB team colors ──────────────────────────────────────────────────────────
 const MLB_COLORS: Record<string, string> = {
   ARI: "#A71930", ATL: "#CE1141", BAL: "#DF4601", BOS: "#BD3039",
   CHC: "#0E3386", CWS: "#27251F", CIN: "#C6011F", CLE: "#00385D",
@@ -28,10 +27,7 @@ const MLB_COLORS: Record<string, string> = {
   TOR: "#134A8E", WSH: "#AB0003",
 };
 
-const NBA_LIGHTEN = new Set(["BKN", "IND", "MIN", "NO", "NOP", "UTA", "WAS"]);
-const MLB_LIGHTEN = new Set(["CHC", "CLE", "COL", "DET", "HOU", "KC", "MIN", "NYM", "NYY", "OAK", "ATH", "SAC", "LV", "LAS", "SD", "SEA", "TB", "TEX", "WSH", "CWS"]);
-
-function lighten(hex: string, amount = 0.4): string {
+function lighten(hex: string, amount: number): string {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2), 16);
   const g = parseInt(h.slice(2, 4), 16);
@@ -45,27 +41,39 @@ function getRawColor(teamAbv: string, sport: "NBA" | "MLB"): string {
   return map[teamAbv] ?? "#0A7A6C";
 }
 
-function getBorderColor(teamAbv: string, sport: "NBA" | "MLB"): string {
+// For live/active game cards: blend team color with navy for readability
+function getActiveTeamColor(teamAbv: string, sport: "NBA" | "MLB"): string {
   const raw = getRawColor(teamAbv, sport);
-  const lightenSet = sport === "MLB" ? MLB_LIGHTEN : NBA_LIGHTEN;
-  if (lightenSet.has(teamAbv)) return lighten(raw);
-  if (raw === "#000000") return "#4a4a4a";
+  if (raw === "#000000") return "#3A4A5A";
+  // Very dark teams: lighten slightly
+  const h = raw.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (luminance < 0.2) return lighten(raw, 0.35);
   return raw;
 }
 
-function getTeamTextColor(teamAbv: string, sport: "NBA" | "MLB", isDead = false): string {
-  if (isDead) return "#9FADBF";
+// For dead (final/live) cards: muted version of team color
+function getDeadTeamColor(teamAbv: string, sport: "NBA" | "MLB"): string {
   const raw = getRawColor(teamAbv, sport);
-  const lightenSet = sport === "MLB" ? MLB_LIGHTEN : NBA_LIGHTEN;
-  if (lightenSet.has(teamAbv) || raw === "#000000") return lighten(raw, 0.35);
-  const navy = { r: 0x0D, g: 0x1B, b: 0x2E };
+  if (raw === "#000000") return "#94A5BC";
   const h = raw.replace("#", "");
-  const tr = parseInt(h.slice(0, 2), 16);
-  const tg = parseInt(h.slice(2, 4), 16);
-  const tb = parseInt(h.slice(4, 6), 16);
-  const mix = (team: number, base: number) =>
-    Math.round(team * 0.7 + base * 0.3).toString(16).padStart(2, "0");
-  return `#${mix(tr, navy.r)}${mix(tg, navy.g)}${mix(tb, navy.b)}`;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // Blend 35% team color + 65% muted navy (#637A96)
+  const nr = 99; const ng = 122; const nb = 150;
+  const mr = Math.round(r * 0.35 + nr * 0.65);
+  const mg = Math.round(g * 0.35 + ng * 0.65);
+  const mb = Math.round(b * 0.35 + nb * 0.65);
+  return `#${mr.toString(16).padStart(2,"0")}${mg.toString(16).padStart(2,"0")}${mb.toString(16).padStart(2,"0")}`;
+}
+
+// For tomorrow preview cards: slightly lighter than dead
+function getTomorrowTeamColor(teamAbv: string, sport: "NBA" | "MLB"): string {
+  return getDeadTeamColor(teamAbv, sport);
 }
 
 interface Props {
@@ -178,231 +186,205 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
     : null;
 
-  // Card surface and border based on state
-  const cardBg = preview
-    ? "bg-[#EDF1F6]"
-    : effectiveStatus === "final"
-    ? "bg-[#F2F5F8]"
-    : "bg-white";
+  const awayColor = preview
+    ? getTomorrowTeamColor(awayTeam.teamAbv, sport)
+    : isDead
+    ? getDeadTeamColor(awayTeam.teamAbv, sport)
+    : getActiveTeamColor(awayTeam.teamAbv, sport);
 
-  const cardBorder = preview || effectiveStatus === "final"
-    ? "border-[#E2E8F0]"
-    : effectiveStatus === "live"
-    ? "border-[#D4EDE9]"
-    : "border-[#E8ECF2]";
+  const homeColor = preview
+    ? getTomorrowTeamColor(homeTeam.teamAbv, sport)
+    : isDead
+    ? getDeadTeamColor(homeTeam.teamAbv, sport)
+    : getActiveTeamColor(homeTeam.teamAbv, sport);
 
-  const borderGradient = isDead || preview
-    ? `linear-gradient(to right, ${lighten(getBorderColor(awayTeam.teamAbv, sport), 0.3)} 50%, ${lighten(getBorderColor(homeTeam.teamAbv, sport), 0.3)} 50%)`
-    : `linear-gradient(to right, ${getBorderColor(awayTeam.teamAbv, sport)} 50%, ${getBorderColor(homeTeam.teamAbv, sport)} 50%)`;
+  // Card wrapper styles
+  const wrapperClass = preview
+    ? "w-full text-left rounded-[14px] overflow-hidden"
+    : isDead
+    ? "w-full text-left rounded-[14px] overflow-hidden"
+    : "w-full text-left rounded-[14px] overflow-hidden cursor-pointer";
 
-  const awayTextColor = getTeamTextColor(awayTeam.teamAbv, sport, isDead || preview);
-  const homeTextColor = getTeamTextColor(homeTeam.teamAbv, sport, isDead || preview);
+  const cardStyle: React.CSSProperties = preview
+    ? { background: "#EDF1F6", border: "1px solid #DDE2EB", borderRadius: "14px", padding: "18px 22px" }
+    : isDead
+    ? { background: "#F2F5F8", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 22px" }
+    : { background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px 18px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)" };
 
+  // Odds row
   const oddsRow = (() => {
     if (!game.odds) return null;
-    if (effectiveStatus !== "scheduled") return null;
-    if (preview) return null;
-    const oddsLabelCls = "font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1";
-    const oddsValueCls = "font-mono text-[14px] font-semibold text-[#0D1B2E]";
+    if (effectiveStatus !== "scheduled" || preview) return null;
+    const labelCls = "text-[9px] font-bold uppercase tracking-[0.1em] text-[#B0BAC9] mb-1";
+    const valCls = "text-[13px] font-extrabold text-[#0D1B2E] tracking-[-0.01em]";
     if (sport === "MLB") {
       const o = game.odds;
       return (
-        <div className="px-4 py-3 bg-[#F7F9FC] border-t border-[#EEF1F5] flex items-center justify-between">
-          <div className="text-center">
-            <p className={oddsLabelCls}>Run Line</p>
-            <p className={oddsValueCls}>{formatSpread(o.runLine, homeTeam.teamAbv)}</p>
-          </div>
-          <div className="text-center">
-            <p className={oddsLabelCls}>Total</p>
-            <p className={oddsValueCls}>{formatTotal(o.total, "O/U")}</p>
-          </div>
-          <div className="text-center">
-            <p className={oddsLabelCls}>{awayTeam.teamAbv} ML</p>
-            <p className={oddsValueCls}>{formatML(o.awayMoneyline)}</p>
-          </div>
-          <div className="text-center">
-            <p className={oddsLabelCls}>{homeTeam.teamAbv} ML</p>
-            <p className={oddsValueCls}>{formatML(o.homeMoneyline)}</p>
-          </div>
+        <div style={{ background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px", display: "flex", marginBottom: "14px" }}>
+          <div className="flex-1"><p className={labelCls}>Run Line</p><p className={valCls}>{formatSpread(o.runLine, homeTeam.teamAbv)}</p></div>
+          <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total, "O/U")}</p></div>
+          <div className="flex-1"><p className={labelCls}>{awayTeam.teamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
+          <div className="flex-1"><p className={labelCls}>{homeTeam.teamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
         </div>
       );
     }
     const o = game.odds;
     return (
-      <div className="px-4 py-3 bg-[#F7F9FC] border-t border-[#EEF1F5] flex items-center justify-between">
-        <div className="text-center">
-          <p className={oddsLabelCls}>Spread</p>
-          <p className={oddsValueCls}>{formatSpread(o.spread, homeTeam.teamAbv)}</p>
-        </div>
-        <div className="text-center">
-          <p className={oddsLabelCls}>Total</p>
-          <p className={oddsValueCls}>{formatTotal(o.total)}</p>
-        </div>
-        <div className="text-center">
-          <p className={oddsLabelCls}>{awayTeam.teamAbv} ML</p>
-          <p className={oddsValueCls}>{formatML(o.awayMoneyline)}</p>
-        </div>
-        <div className="text-center">
-          <p className={oddsLabelCls}>{homeTeam.teamAbv} ML</p>
-          <p className={oddsValueCls}>{formatML(o.homeMoneyline)}</p>
-        </div>
+      <div style={{ background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px", display: "flex", marginBottom: "14px" }}>
+        <div className="flex-1"><p className={labelCls}>Spread</p><p className={valCls}>{formatSpread(o.spread, homeTeam.teamAbv)}</p></div>
+        <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total)}</p></div>
+        <div className="flex-1"><p className={labelCls}>{awayTeam.teamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
+        <div className="flex-1"><p className={labelCls}>{homeTeam.teamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
       </div>
     );
   })();
 
-  return (
-    <button
-      onClick={() => isClickable && onClick(game.gameId)}
-      disabled={!isClickable}
-      className={`group w-full text-left ${cardBg} border ${cardBorder} rounded-xl overflow-hidden transition-all duration-200 focus:outline-none ${
-        isClickable
-          ? "hover:border-[#0A7A6C] hover:shadow-[0_2px_10px_rgba(13,27,46,0.07),0_1px_3px_rgba(13,27,46,0.04)] focus-visible:ring-2 focus-visible:ring-[#0A7A6C] cursor-pointer"
-          : "cursor-default"
-      }`}
-    >
-      {/* Two-tone top border strip */}
-      <div className="h-[3px]" style={{ background: borderGradient }} />
+  // @ circle connector
+  const atCircle = (
+    <div style={{
+      width: "24px", height: "24px", borderRadius: "50%",
+      background: "#E2E8F0", display: "flex", alignItems: "center",
+      justifyContent: "center", flexShrink: 0,
+      fontSize: "12px", fontWeight: 800, color: "#7A8FA6",
+    }}>@</div>
+  );
 
-      <div className="flex">
-        {/* Teal hover accent bar (scheduled only) */}
-        {isClickable && (
-          <div className="w-[3px] bg-transparent group-hover:bg-[#0A7A6C] transition-colors duration-200 shrink-0" />
+  const awayCity = awayTeam.teamCity || awayTeam.teamName.split(" ").slice(0, -1).join(" ");
+  const awayNickname = awayTeam.teamCity
+    ? awayTeam.teamName.replace(awayTeam.teamCity, "").trim()
+    : awayTeam.teamName;
+  const homeCity = homeTeam.teamCity || homeTeam.teamName.split(" ").slice(0, -1).join(" ");
+  const homeNickname = homeTeam.teamCity
+    ? homeTeam.teamName.replace(homeTeam.teamCity, "").trim()
+    : homeTeam.teamName;
+
+  // Scheduled upcoming card
+  if (isClickable) {
+    return (
+      <button
+        onClick={() => onClick(game.gameId)}
+        className={`group ${wrapperClass} transition-all duration-150 focus:outline-none`}
+        style={cardStyle}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(13,27,46,0.10), 0 1px 4px rgba(13,27,46,0.05)";
+          (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)";
+          (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+        }}
+      >
+        {/* Time row */}
+        <div className="flex justify-between items-center mb-[14px]">
+          <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+        </div>
+
+        {/* Matchup */}
+        <div className="flex items-center gap-3 mb-[14px]">
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+            <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+            {sport === "MLB" && game.awayPitcher && (
+              <p className="text-[10px] text-[#9FADBF] mt-1 leading-none">
+                {game.awayPitcher.hand ? `${game.awayPitcher.hand}HP · ` : ""}{game.awayPitcher.name}
+                {game.awayPitcher.seasonERA > 0 && <span className="text-[#B0BAC9]"> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}
+              </p>
+            )}
+          </div>
+          {atCircle}
+          <div className="flex-1 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+            <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+            {sport === "MLB" && game.homePitcher && (
+              <p className="text-[10px] text-[#9FADBF] mt-1 leading-none">
+                {game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand}HP` : ""}
+                {game.homePitcher.seasonERA > 0 && <span className="text-[#B0BAC9]"> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* THE READ */}
+        {signal && (
+          <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "10px 13px", marginBottom: "14px" }}>
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#0A7A6C] mb-[5px]">The Read</p>
+            <p className="text-[13px] font-semibold text-[#096059] leading-[1.5]">{signal}</p>
+          </div>
         )}
-        {!isClickable && <div className="w-[3px] shrink-0" />}
 
-        <div className="flex-1 min-w-0">
-          {/* Time / status strip */}
-          <div className={`px-4 py-2 border-b ${
-            preview
-              ? "bg-[#EDF1F6] border-[#E2E8F0]"
-              : effectiveStatus === "final"
-              ? "bg-[#F2F5F8] border-[#E2E8F0]"
-              : effectiveStatus === "live"
-              ? "bg-[#F0FAF8] border-[#D4EDE9]"
-              : "bg-[#F0FAF8] border-[#E8ECF2]"
-          } flex items-center justify-between`}>
-            <p className={`font-mono text-[12px] font-semibold tracking-wide ${
-              preview || effectiveStatus === "final"
-                ? "text-[#B0BAC9]"
-                : "text-[#0A7A6C]"
-            }`}>
-              {preview ? `Tomorrow · ${gameTime || "TBD"}` : gameTime || "Time TBD"}
-            </p>
-            {effectiveStatus === "live" && (
-              <span className="flex items-center gap-1.5">
-                <span className="w-[6px] h-[6px] rounded-full bg-[#0A7A6C] animate-pulse" />
-                <span className="font-mono text-[9px] font-bold text-[#0A7A6C] tracking-[0.12em] uppercase">Live</span>
-              </span>
-            )}
-            {effectiveStatus === "final" && !preview && (
-              <span className="font-mono text-[9px] font-bold text-[#B0BAC9] tracking-[0.12em] uppercase">Final</span>
-            )}
-            {preview && (
-              <span className="font-mono text-[9px] font-bold text-[#B0BAC9] tracking-[0.12em] uppercase">Preview</span>
-            )}
-          </div>
+        {/* Odds */}
+        {oddsRow}
 
-          {/* Matchup */}
-          <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1">Away</p>
-              {awayTeam.teamCity ? (
-                <>
-                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: awayTextColor }}>
-                    {awayTeam.teamCity}
-                  </p>
-                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: awayTextColor }}>
-                    {awayTeam.teamName.replace(awayTeam.teamCity, "").trim()}
-                  </p>
-                </>
-              ) : (
-                <p className="font-heading text-[17px] font-extrabold leading-[1.2]" style={{ color: awayTextColor }}>
-                  {awayTeam.teamName}
-                </p>
-              )}
-              {sport === "MLB" && game.awayPitcher && !preview && (
-                <p className="font-mono text-[10px] text-[#9FADBF] mt-1.5 leading-none">
-                  {game.awayPitcher.hand ? `${game.awayPitcher.hand}HP · ` : ""}{game.awayPitcher.name}
-                  {game.awayPitcher.seasonERA > 0 && (
-                    <span className="text-[#B0BAC9]"> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>
-                  )}
-                </p>
-              )}
+        {/* Footer */}
+        <div className="flex justify-between items-center">
+          <span />
+          <span className="text-[12px] font-bold text-[#0A7A6C]">Get breakdown →</span>
+        </div>
+      </button>
+    );
+  }
+
+  // Dead (final / live) card
+  if (isDead) {
+    return (
+      <div className={wrapperClass} style={cardStyle}>
+        {/* Time row */}
+        <div className="flex justify-between items-center mb-[10px]">
+          <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+          {effectiveStatus === "live" ? (
+            <div className="flex items-center gap-[5px]">
+              <span className="w-[5px] h-[5px] rounded-full bg-[#DC2626] animate-pulse block" />
+              <span className="text-[10px] font-bold tracking-[0.08em] text-[#DC2626]">Live</span>
             </div>
-
-            <div className="flex items-center px-1 pt-5">
-              <span className={`text-[13px] font-medium ${preview || isDead ? "text-[#B0BAC9]" : "text-[#0A7A6C]"}`}>@</span>
-            </div>
-
-            <div className="flex-1 min-w-0 text-right">
-              <p className="font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1">Home</p>
-              {homeTeam.teamCity ? (
-                <>
-                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: homeTextColor }}>
-                    {homeTeam.teamCity}
-                  </p>
-                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: homeTextColor }}>
-                    {homeTeam.teamName.replace(homeTeam.teamCity, "").trim()}
-                  </p>
-                </>
-              ) : (
-                <p className="font-heading text-[17px] font-extrabold leading-[1.2]" style={{ color: homeTextColor }}>
-                  {homeTeam.teamName}
-                </p>
-              )}
-              {sport === "MLB" && game.homePitcher && !preview && (
-                <p className="font-mono text-[10px] text-[#9FADBF] mt-1.5 leading-none">
-                  {game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand}HP` : ""}
-                  {game.homePitcher.seasonERA > 0 && (
-                    <span className="text-[#B0BAC9]"> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>
-                  )}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* THE READ zone — signal for scheduled games */}
-          {signal && (
-            <div className="mx-4 mb-3">
-              <div className="bg-[#F7F9FC] rounded-lg px-4 py-3 border border-[#EEF1F5]">
-                <p className="font-mono text-[9px] font-bold text-[#9FADBF] tracking-[0.1em] uppercase mb-1">The Read</p>
-                <p className="text-[12px] text-[#3A5470] leading-[1.5]">{signal}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Odds zone */}
-          {oddsRow}
-
-          {/* CTA / state row */}
-          {!preview && (
-            <div className="px-4 py-3 flex items-center justify-between">
-              {effectiveStatus === "live" && (
-                <div className="w-full">
-                  <p className="font-mono text-[12px] font-medium text-[#637A96]">Game in progress</p>
-                  <p className="font-mono text-[11px] text-[#9FADBF] mt-0.5">
-                    Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.
-                  </p>
-                </div>
-              )}
-              {effectiveStatus === "final" && (
-                <div className="w-full">
-                  <p className="font-mono text-[12px] font-medium text-[#9FADBF]">Game ended.</p>
-                  <p className="font-mono text-[11px] text-[#B0BAC9] mt-0.5">Check back tomorrow for new breakdowns.</p>
-                </div>
-              )}
-              {effectiveStatus === "scheduled" && (
-                <>
-                  <span />
-                  <span className="font-mono text-[11px] font-semibold text-[#0A7A6C] tracking-wide group-hover:underline">
-                    Get breakdown →
-                  </span>
-                </>
-              )}
-            </div>
+          ) : (
+            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#9FADBF]">Final</span>
           )}
         </div>
+
+        {/* Matchup */}
+        <div className="flex items-center gap-3 mb-[10px]">
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+            <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+          </div>
+          {atCircle}
+          <div className="flex-1 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+            <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-[#94A5BC] italic font-semibold">
+          {effectiveStatus === "live"
+            ? `Game in progress · Breakdown generated before ${sport === "MLB" ? "first pitch" : "tip-off"}`
+            : "Game ended · Check back tomorrow"}
+        </p>
       </div>
-    </button>
+    );
+  }
+
+  // Tomorrow preview card
+  return (
+    <div className={wrapperClass} style={cardStyle}>
+      {/* Time row */}
+      <div className="flex justify-between items-center mb-[10px]">
+        <span className="text-[11px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+      </div>
+
+      {/* Matchup */}
+      <div className="flex items-center gap-3 mb-[10px]">
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{awayCity}</p>
+          <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+        </div>
+        {atCircle}
+        <div className="flex-1 text-right">
+          <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9FADBF] mb-[3px]">{homeCity}</p>
+          <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-[#7A8FA6] italic font-semibold">Breakdown available day of game</p>
+    </div>
   );
 }

@@ -70,41 +70,17 @@ function buildGameShell(row: ArchiveDetailRow): AnyGame {
   const homeName = getTeamName(row.home_team, row.sport);
   const awayName = getTeamName(row.away_team, row.sport);
   const homeTeam = {
-    teamId: row.home_team,
-    teamAbv: row.home_team,
-    teamName: homeName,
+    teamId: row.home_team, teamAbv: row.home_team, teamName: homeName,
     teamCity: homeName.split(" ").slice(0, -1).join(" "),
   };
   const awayTeam = {
-    teamId: row.away_team,
-    teamAbv: row.away_team,
-    teamName: awayName,
+    teamId: row.away_team, teamAbv: row.away_team, teamName: awayName,
     teamCity: awayName.split(" ").slice(0, -1).join(" "),
   };
   if (row.sport === "MLB") {
-    return {
-      sport: "MLB",
-      gameId: row.game_id,
-      gameDate: row.game_date,
-      gameTime: "",
-      gameStatus: "final",
-      homeTeam,
-      awayTeam,
-      odds: null,
-      homePitcher: null,
-      awayPitcher: null,
-    };
+    return { sport: "MLB", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "final", homeTeam, awayTeam, odds: null, homePitcher: null, awayPitcher: null };
   }
-  return {
-    sport: "NBA",
-    gameId: row.game_id,
-    gameDate: row.game_date,
-    gameTime: "",
-    gameStatus: "final",
-    homeTeam,
-    awayTeam,
-    odds: null,
-  };
+  return { sport: "NBA", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "final", homeTeam, awayTeam, odds: null };
 }
 
 export default async function ArchiveDetailPage({
@@ -121,9 +97,7 @@ export default async function ArchiveDetailPage({
     .eq("game_id", gameId)
     .single();
 
-  if (error || !data) {
-    notFound();
-  }
+  if (error || !data) notFound();
 
   const row = data as ArchiveDetailRow;
   const game = buildGameShell(row);
@@ -141,23 +115,26 @@ export default async function ArchiveDetailPage({
   });
 
   return (
-    <div className="min-h-screen bg-[#F0F3F7]">
-      <Nav backHref="/archive" backLabel="← Archive" sportTag={row.sport} />
+    <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
+      <Nav backHref="/archive" backLabel="Archive" sportTag={row.sport} />
 
-      <main className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {/* Archive snapshot notice */}
-        <div className="bg-[#F0F3F7] border border-[#E8ECF2] rounded-xl px-5 py-3 mb-3">
-          <p className="font-mono text-[10px] font-medium text-[#9FADBF] leading-relaxed">
-            Saved {savedDate} before {row.sport === "MLB" ? "first pitch" : "tip-off"}. Lines and injury data reflect conditions at time of generation.
-          </p>
+      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
+        {/* Snapshot banner */}
+        <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
+          Saved {savedDate} before {row.sport === "MLB" ? "first pitch" : "tip-off"}. Lines and injury data reflect conditions at time of generation.
         </div>
 
         <BreakdownView breakdown={breakdown} game={game} />
 
-        <p className="mt-10 text-center font-mono text-[11px] font-medium text-[#B0BAC9] tracking-wide">
-          Saved {savedAt} ET
-        </p>
-      </main>
+        <div style={{ textAlign: "center", paddingTop: "1.5rem" }}>
+          <p style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+            What the data says. Your decision to make.
+          </p>
+          <p style={{ fontSize: "11px", color: "#B0BAC9", fontWeight: 500, marginTop: "4px" }}>
+            Saved {savedAt} ET
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
