@@ -107,6 +107,17 @@ export default function HomePage() {
           {todayLabel}
         </p>
 
+        {/* Intro block */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
+            ClearBet turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
+          </p>
+          <p style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.6, marginBottom: 0 }}>
+            Pick a game. Read the breakdown. Make your call.{" "}
+            <a href="/how-it-works" style={{ color: "#0A7A6C", fontWeight: 700, textDecoration: "none" }}>How it works →</a>
+          </p>
+        </div>
+
         {/* Sport tabs — active tab = dark navy per mockup */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "1.75rem" }}>
           {(["NBA", "MLB"] as Sport[]).map((sport) => (

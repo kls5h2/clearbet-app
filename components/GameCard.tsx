@@ -221,13 +221,11 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
       >
         <div className="flex justify-between items-center mb-[10px]">
           <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
-          {effectiveStatus === "live" ? (
+          {effectiveStatus === "live" && (
             <div className="flex items-center gap-[5px]">
               <span className="w-[5px] h-[5px] rounded-full bg-[#DC2626] animate-pulse block" />
               <span className="text-[10px] font-bold tracking-[0.08em] text-[#DC2626]">Live</span>
             </div>
-          ) : (
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#637A96]">Final</span>
           )}
         </div>
 
