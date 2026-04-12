@@ -43,40 +43,34 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         </Link>
       </div>
 
-      {/* Right side */}
-      {sportTag ? (
-        <span
+      {/* Right side — always show nav links; sport tag shown alongside when present */}
+      <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
+        {sportTag && (
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#637A96" }}>
+            {sportTag}
+          </span>
+        )}
+        <Link
+          href="/how-it-works"
           style={{
-            fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-            textTransform: "uppercase", color: "#637A96",
+            fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
+            color: activePage === "how-it-works" ? "#FFFFFF" : "#637A96",
+            textDecoration: "none",
           }}
         >
-          {sportTag}
-        </span>
-      ) : (
-        <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
-          <Link
-            href="/how-it-works"
-            style={{
-              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
-              color: activePage === "how-it-works" ? "#FFFFFF" : "#637A96",
-              textDecoration: "none",
-            }}
-          >
-            How It Works
-          </Link>
-          <Link
-            href="/glossary"
-            style={{
-              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
-              color: activePage === "glossary" ? "#FFFFFF" : "#637A96",
-              textDecoration: "none",
-            }}
-          >
-            Glossary
-          </Link>
-        </div>
-      )}
+          How It Works
+        </Link>
+        <Link
+          href="/glossary"
+          style={{
+            fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
+            color: activePage === "glossary" ? "#FFFFFF" : "#637A96",
+            textDecoration: "none",
+          }}
+        >
+          Glossary
+        </Link>
+      </div>
     </header>
   );
 }

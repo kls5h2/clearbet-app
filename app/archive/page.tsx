@@ -22,14 +22,14 @@ interface ArchiveRow {
 
 const stripColor: Record<number, string> = {
   1: "#16A34A",
-  2: "#0A7A6C",
+  2: "#1D4ED8",
   3: "#F59E0B",
   4: "#C9D2DE",
 };
 
 const badgeStyle: Record<number, { bg: string; color: string }> = {
   1: { bg: "#DCFCE7", color: "#166534" },
-  2: { bg: "#E6F4F2", color: "#0A7A6C" },
+  2: { bg: "#EFF6FF", color: "#1D4ED8" },
   3: { bg: "#FEF3C7", color: "#92400E" },
   4: { bg: "#F1F4F8", color: "#64748B" },
 };

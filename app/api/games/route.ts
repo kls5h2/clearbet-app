@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGamesForDate } from "@/lib/tank01";
-import { fetchNBAOdds, buildMatchupKey } from "@/lib/odds-api";
+import { fetchNBAOdds, fetchMLBOdds, buildMatchupKey } from "@/lib/odds-api";
+import type { OddsMatchup } from "@/lib/odds-api";
 import { getMLBGamesForDate, getMLBStartingPitcher } from "@/lib/tank01-mlb";
-import { fetchMLBOdds } from "@/lib/odds-api";
 import { fetchMLBProbableStarters } from "@/lib/mlb-stats-api";
-import type { NBAGame, MLBGame, GamesApiResponse, MLBGamesApiResponse } from "@/lib/types";
+import type { NBAGame, MLBGame, MLBGameOdds, GamesApiResponse, MLBGamesApiResponse } from "@/lib/types";
+
+/**
+ * Find a matchup in the odds map by direct key, then fall back to matching
+ * by team nickname (last word of team name) to handle known name variations
+ * between Tank01 ("Los Angeles Clippers") and OddsAPI ("LA Clippers").
+ */
+function findOddsMatchup<T extends OddsMatchup>(
+  oddsMap: Map<string, T>,
+  homeTeamName: string,
+  awayTeamName: string
+): T | undefined {
+  // Direct key lookup
+  const direct = oddsMap.get(buildMatchupKey(homeTeamName, awayTeamName));
+  if (direct) return direct;
+
+  // Nickname fallback: match by last word of each team name
+  const homeNick = homeTeamName.split(" ").pop()?.toLowerCase() ?? "";
+  const awayNick = awayTeamName.split(" ").pop()?.toLowerCase() ?? "";
+  if (!homeNick || !awayNick) return undefined;
+
+  for (const matchup of oddsMap.values()) {
+    const mHome = matchup.homeTeam.split(" ").pop()?.toLowerCase() ?? "";
+    const mAway = matchup.awayTeam.split(" ").pop()?.toLowerCase() ?? "";
+    if (
+      (mHome === homeNick && mAway === awayNick) ||
+      (mHome === awayNick && mAway === homeNick)
+    ) {
+      return matchup;
+    }
+  }
+  return undefined;
+}
 
 /**
  * GET /api/games?sport=nba (default) | ?sport=mlb | &date=tomorrow
@@ -27,12 +59,14 @@ async function handleNBA(dateStr: string): Promise<NextResponse> {
     const today = dateStr;
     const [rawGames, oddsMap] = await Promise.all([
       getGamesForDate(today),
-      fetchNBAOdds().catch(() => new Map()),
+      fetchNBAOdds().catch((err) => {
+        console.warn("[/api/games NBA] Odds fetch failed:", err instanceof Error ? err.message : err);
+        return new Map<string, OddsMatchup>();
+      }),
     ]);
 
     const games: NBAGame[] = rawGames.map((g) => {
-      const key = buildMatchupKey(g.homeTeam.teamName, g.awayTeam.teamName);
-      const oddsMatchup = oddsMap.get(key);
+      const oddsMatchup = findOddsMatchup(oddsMap, g.homeTeam.teamName, g.awayTeam.teamName);
       return {
         sport: "NBA",
         gameId: g.gameId,
@@ -63,7 +97,10 @@ async function handleMLB(dateStr: string): Promise<NextResponse> {
     const today = dateStr;
     const [rawGames, oddsMap, mlbStatsPitchers] = await Promise.all([
       getMLBGamesForDate(today),
-      fetchMLBOdds().catch(() => new Map()),
+      fetchMLBOdds().catch((err) => {
+        console.warn("[/api/games MLB] Odds fetch failed:", err instanceof Error ? err.message : err);
+        return new Map<string, OddsMatchup & { mlbOdds: MLBGameOdds }>();
+      }),
       // MLB Stats API is authoritative for probable starters; never blocks the response
       fetchMLBProbableStarters(today).catch(() => new Map()),
     ]);
@@ -89,8 +126,7 @@ async function handleMLB(dateStr: string): Promise<NextResponse> {
     );
 
     const games: MLBGame[] = gamesWithPitchers.map((g) => {
-      const key = buildMatchupKey(g.homeTeam.teamName, g.awayTeam.teamName);
-      const oddsMatchup = oddsMap.get(key);
+      const oddsMatchup = findOddsMatchup(oddsMap, g.homeTeam.teamName, g.awayTeam.teamName);
       return {
         sport: "MLB",
         gameId: g.gameId,

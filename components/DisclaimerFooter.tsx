@@ -1,7 +1,18 @@
 export default function DisclaimerFooter() {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-20 bg-[#F0F3F7] border-t border-[#E8ECF2] px-6 py-[10px]">
-      <p className="text-[11px] font-medium text-[#637A96] text-center leading-[1.5]">
+    <footer
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 20,
+        background: "#F0F3F7",
+        borderTop: "1px solid #E8ECF2",
+        padding: "10px 24px",
+      }}
+    >
+      <p style={{ fontSize: "11px", fontWeight: 500, color: "#637A96", textAlign: "center", lineHeight: 1.5, margin: 0 }}>
         For informational purposes only. ClearBet does not provide financial, betting, or investment advice. Bet responsibly.{" "}
         |{" "}
         Get help:{" "}
@@ -9,7 +20,7 @@ export default function DisclaimerFooter() {
           href="https://www.ncpgambling.org"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-[#637A96] transition-colors"
+          style={{ color: "#637A96", textDecoration: "underline" }}
         >
           ncpgambling.org
         </a>

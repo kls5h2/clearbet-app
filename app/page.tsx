@@ -64,7 +64,7 @@ export default function HomePage() {
   });
 
   return (
-    <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "4rem" }}>
+    <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2.5rem 1.5rem 0" }}>

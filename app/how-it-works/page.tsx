@@ -61,8 +61,8 @@ const CONFIDENCE = [
     desc: "The data points clearly in one direction. The environment is stable and the logic holds. Still not a lock — no game is — but the picture is unusually clear.",
   },
   {
-    strip: "#0A7A6C",
-    badgeBg: "#E6F4F2", badgeColor: "#0A7A6C", label: "Lean",
+    strip: "#1D4ED8",
+    badgeBg: "#EFF6FF", badgeColor: "#1D4ED8", label: "Lean",
     title: "The game leans this way on paper",
     desc: "A directional read with real logic behind it. There are factors on both sides, but the stronger case sits in one direction. Read the Fragility Check before deciding.",
   },

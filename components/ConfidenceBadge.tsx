@@ -7,7 +7,7 @@ interface Props {
 
 const styles: Record<ConfidenceLevel, string> = {
   1: "bg-[#DCFCE7] text-[#166534]",
-  2: "bg-[#E6F4F2] text-[#0A7A6C]",
+  2: "bg-[#EFF6FF] text-[#1D4ED8]",
   3: "bg-[#FEF3C7] text-[#92400E]",
   4: "bg-[#F1F4F8] text-[#64748B]",
 };

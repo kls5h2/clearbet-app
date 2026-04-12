@@ -3,6 +3,7 @@
 import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
 import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
+import { getActiveTeamColor } from "@/lib/team-colors";
 
 interface Props {
   breakdown: BreakdownResult;
@@ -195,14 +196,14 @@ export default function BreakdownView({ breakdown, game }: Props) {
         <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{awayCity}</p>
-            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: "#0D1B2E" }}>{awayNickname}</p>
+            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: getActiveTeamColor(awayTeam.teamAbv, game.sport) }}>{awayNickname}</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 14px", paddingBottom: "2px", flexShrink: 0 }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#637A96", letterSpacing: "0.04em", lineHeight: 1 }}>at</span>
+            <span style={{ fontSize: "11px", fontWeight: 600, color: "#637A96", letterSpacing: "0.04em", lineHeight: 1 }}>at</span>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
             <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{homeCity}</p>
-            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: "#0D1B2E" }}>{homeNickname}</p>
+            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: getActiveTeamColor(homeTeam.teamAbv, game.sport) }}>{homeNickname}</p>
           </div>
         </div>
 
@@ -243,13 +244,6 @@ export default function BreakdownView({ breakdown, game }: Props) {
         {/* Confidence row */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} />
-          {breakdown.confidenceLabel !== "PASS" && (
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
-              {breakdown.confidenceLabel === "CLEAR SPOT" ? "One of the cleaner spots on the slate"
-                : breakdown.confidenceLabel === "LEAN" ? "The game leans this way on paper"
-                : "There is logic here, but it's fragile"}
-            </span>
-          )}
         </div>
 
         {/* Early / pitcher banners */}
@@ -338,23 +332,29 @@ export default function BreakdownView({ breakdown, game }: Props) {
         </p>
       </ProseCard>
 
-      {/* 06 — The Edge (bullet) */}
-      {breakdown.edge && breakdown.edge.length > 0 && (
-        <BulletCard>
-          <SectionHeader number="06" title="The Edge" />
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {breakdown.edge.map((item, i) => (
-              <div key={i} style={bulletStyle}>
-                <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: DOT_BLUE }} />
-                <div>{item}</div>
+      {/* 06 — The Edge (bullet) — always rendered to keep 01–07 sequential */}
+      <BulletCard>
+        <SectionHeader number="06" title="The Edge" />
+        {breakdown.edge && breakdown.edge.length > 0 ? (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {breakdown.edge.map((item, i) => (
+                <div key={i} style={bulletStyle}>
+                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: DOT_BLUE }} />
+                  <div>{item}</div>
+                </div>
+              ))}
+            </div>
+            {breakdown.edgeClosingLine && (
+              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #EEF1F5", fontSize: "12px", fontWeight: 600, color: "#637A96", fontStyle: "italic" }}>
+                {breakdown.edgeClosingLine}
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #EEF1F5", fontSize: "12px", fontWeight: 600, color: "#637A96", fontStyle: "italic" }}>
-            {breakdown.edgeClosingLine}
-          </div>
-        </BulletCard>
-      )}
+            )}
+          </>
+        ) : (
+          <p style={proseBodyStyle}>No specific market edge identified — the line appears to price this game fairly based on available data.</p>
+        )}
+      </BulletCard>
 
       {/* 07 — What This Means (prose) */}
       <ProseCard>
