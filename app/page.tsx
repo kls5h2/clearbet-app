@@ -98,26 +98,30 @@ export default function HomePage() {
     <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2.5rem 1.5rem 0" }}>
-        {/* Page title */}
-        <h1 style={{ fontSize: "34px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "6px", lineHeight: 1.15 }}>
-          Today&#8217;s Slate
-        </h1>
-        <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, marginBottom: "1.5rem" }}>
-          {todayLabel}
-        </p>
-
-        {/* Intro block */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
+      {/* Dark hero section */}
+      <div style={{ background: "#0D1B2E", padding: "2.5rem 1.5rem 2rem" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "8px" }}>
+            Today&#8217;s Slate
+          </p>
+          <h1 style={{ fontSize: "34px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "6px" }}>
+            Today&#8217;s Slate
+          </h1>
+          <p style={{ fontSize: "13px", fontWeight: 500, color: "#637A96", marginBottom: "16px" }}>
+            {todayLabel}
+          </p>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginBottom: "16px" }} />
+          <p style={{ fontSize: "14px", fontWeight: 500, color: "#9FADBF", lineHeight: 1.6, marginBottom: 0 }}>
             ClearBet turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
-          <p style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.6, marginBottom: 0 }}>
-            Pick a game. Read the breakdown. Make your call.{" "}
-            <a href="/how-it-works" style={{ color: "#0A7A6C", fontWeight: 700, textDecoration: "none" }}>How it works →</a>
+          <p style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.6, marginBottom: 0 }}>
+            Pick a game. Read the breakdown. Make your call.
+            <a href="/how-it-works" style={{ color: "#0A7A6C", fontWeight: 700, textDecoration: "none", marginLeft: "6px" }}>How it works →</a>
           </p>
         </div>
+      </div>
 
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
         {/* Sport tabs — active tab = dark navy per mockup */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "1.75rem" }}>
           {(["NBA", "MLB"] as Sport[]).map((sport) => (
