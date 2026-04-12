@@ -127,7 +127,7 @@ export default async function ArchiveDetailPage({
         <BreakdownView breakdown={breakdown} game={game} />
 
         <div style={{ textAlign: "center", paddingTop: "1.5rem" }}>
-          <p style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+          <p style={{ fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
             What the data says. Your decision to make.
           </p>
           <p style={{ fontSize: "11px", color: "#B0BAC9", fontWeight: 500, marginTop: "4px" }}>

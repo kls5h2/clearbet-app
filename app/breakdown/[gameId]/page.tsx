@@ -176,7 +176,7 @@ export default function BreakdownPage() {
         {/* Tagline + timestamp */}
         {status === "done" && (
           <div style={{ textAlign: "center", padding: "1.5rem 0 0" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
               What the data says. Your decision to make.
             </p>
           </div>

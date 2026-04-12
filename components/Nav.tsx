@@ -16,11 +16,10 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         justifyContent: "space-between",
         alignItems: "center",
         padding: "1.25rem 1.5rem",
-        background: "#F0F3F7",
+        background: "#0D1B2E",
         position: "sticky",
         top: 0,
         zIndex: 10,
-        borderBottom: "1px solid #E8ECF2",
       }}
     >
       {/* Left side */}
@@ -31,12 +30,12 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               href={backHref}
               style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}
             >
-              <span style={{ fontSize: "14px", color: "#9FADBF" }}>←</span>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: "#9FADBF", letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: "14px", color: "#637A96" }}>←</span>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "#637A96", letterSpacing: "0.04em" }}>
                 {backLabel}
               </span>
             </Link>
-            <div style={{ width: "1px", height: "14px", background: "#DDE2EB" }} />
+            <div style={{ width: "1px", height: "14px", background: "#2A3F5A" }} />
           </>
         )}
         <Link href="/" style={{ textDecoration: "none" }}>
@@ -49,7 +48,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         <span
           style={{
             fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-            textTransform: "uppercase", color: "#9FADBF",
+            textTransform: "uppercase", color: "#637A96",
           }}
         >
           {sportTag}
@@ -60,7 +59,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             href="/how-it-works"
             style={{
               fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
-              color: activePage === "how-it-works" ? "#0D1B2E" : "#9FADBF",
+              color: activePage === "how-it-works" ? "#FFFFFF" : "#637A96",
               textDecoration: "none",
             }}
           >
@@ -70,7 +69,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             href="/glossary"
             style={{
               fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
-              color: activePage === "glossary" ? "#0D1B2E" : "#9FADBF",
+              color: activePage === "glossary" ? "#FFFFFF" : "#637A96",
               textDecoration: "none",
             }}
           >

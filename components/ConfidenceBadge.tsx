@@ -27,7 +27,7 @@ export default function ConfidenceBadge({ level, label }: Props) {
       >
         {label}
       </span>
-      <span className="text-[12px] font-semibold text-[#9FADBF]">{descriptions[level]}</span>
+      <span className="text-[12px] font-semibold text-[#637A96]">{descriptions[level]}</span>
     </div>
   );
 }

@@ -132,7 +132,7 @@ const legendStyle: React.CSSProperties = {
 };
 const legendItemStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: "5px",
-  fontSize: "10px", fontWeight: 600, color: "#9FADBF",
+  fontSize: "10px", fontWeight: 600, color: "#637A96",
 };
 
 export default function BreakdownView({ breakdown, game }: Props) {
@@ -165,7 +165,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
       {/* Status banners */}
       {gameStatus === "final" && (
         <div style={{ background: "#F2F5F8", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9FADBF" }}>Final</span>
+          <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#637A96" }}>Final</span>
           <span style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>
             This game has ended. Breakdown was generated before {isMLB ? "first pitch" : "tip-off"}.
           </span>
@@ -194,14 +194,14 @@ export default function BreakdownView({ breakdown, game }: Props) {
         {/* Matchup with "at" word */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9FADBF", marginBottom: "3px" }}>{awayCity}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{awayCity}</p>
             <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: "#0D1B2E" }}>{awayNickname}</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 14px", paddingBottom: "2px", flexShrink: 0 }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#9FADBF", letterSpacing: "0.04em", lineHeight: 1 }}>at</span>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#637A96", letterSpacing: "0.04em", lineHeight: 1 }}>at</span>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9FADBF", marginBottom: "3px" }}>{homeCity}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{homeCity}</p>
             <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: "#0D1B2E" }}>{homeNickname}</p>
           </div>
         </div>
@@ -244,7 +244,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} />
           {breakdown.confidenceLabel !== "PASS" && (
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
               {breakdown.confidenceLabel === "CLEAR SPOT" ? "One of the cleaner spots on the slate"
                 : breakdown.confidenceLabel === "LEAN" ? "The game leans this way on paper"
                 : "There is logic here, but it's fragile"}
@@ -350,7 +350,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #EEF1F5", fontSize: "12px", fontWeight: 600, color: "#9FADBF", fontStyle: "italic" }}>
+          <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #EEF1F5", fontSize: "12px", fontWeight: 600, color: "#637A96", fontStyle: "italic" }}>
             {breakdown.edgeClosingLine}
           </div>
         </BulletCard>

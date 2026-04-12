@@ -157,7 +157,7 @@ export default function HowItWorksPage() {
                     {step.what}
                   </p>
                   <p style={{ fontSize: "11px", fontWeight: 600, color: "#B0BAC9", letterSpacing: "0.02em" }}>
-                    <strong style={{ color: "#9FADBF", fontWeight: 700 }}>Data:</strong> {step.source}
+                    <strong style={{ color: "#637A96", fontWeight: 700 }}>Data:</strong> {step.source}
                   </p>
                 </div>
               </div>

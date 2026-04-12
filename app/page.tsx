@@ -67,12 +67,12 @@ export default function HomePage() {
     <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "4rem" }}>
       <Nav />
 
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2.5rem 1.5rem 0" }}>
         {/* Page title */}
-        <h1 style={{ fontSize: "32px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "3px", lineHeight: 1.15 }}>
-          <span style={{ borderBottom: "3px solid #0A7A6C", paddingBottom: "1px" }}>Today&#8217;s</span>{" Slate"}
+        <h1 style={{ fontSize: "34px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "6px", lineHeight: 1.15 }}>
+          Today&#8217;s Slate
         </h1>
-        <p style={{ fontSize: "14px", color: "#9FADBF", fontWeight: 500, marginBottom: "1.5rem" }}>
+        <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, marginBottom: "1.5rem" }}>
           {todayLabel}
         </p>
 
@@ -91,7 +91,7 @@ export default function HomePage() {
                 cursor: "pointer",
                 border: activeSport === sport ? "none" : "1px solid #DDE2EB",
                 background: activeSport === sport ? "#0D1B2E" : "transparent",
-                color: activeSport === sport ? "#FFFFFF" : "#9FADBF",
+                color: activeSport === sport ? "#FFFFFF" : "#637A96",
               }}
             >
               {sport}
@@ -196,7 +196,7 @@ export default function HomePage() {
 
         {/* Tagline */}
         {!loading && (
-          <p style={{ marginTop: "2.5rem", textAlign: "center", fontSize: "12px", fontWeight: 600, color: "#9FADBF" }}>
+          <p style={{ marginTop: "2.5rem", textAlign: "center", fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
             What the data says. Your decision to make.
           </p>
         )}

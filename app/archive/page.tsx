@@ -79,10 +79,10 @@ export default async function ArchivePage() {
         <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "4px" }}>
           Past Breakdowns
         </h1>
-        <p style={{ fontSize: "13px", color: "#9FADBF", fontWeight: 500, marginBottom: "1rem" }}>
+        <p style={{ fontSize: "13px", color: "#637A96", fontWeight: 500, marginBottom: "1rem" }}>
           Every breakdown saved from tip-off.
         </p>
-        <p style={{ fontSize: "12px", fontWeight: 600, color: "#9FADBF", marginBottom: "1.75rem" }}>
+        <p style={{ fontSize: "12px", fontWeight: 600, color: "#637A96", marginBottom: "1.75rem" }}>
           {rows.length} breakdown{rows.length !== 1 ? "s" : ""} saved
         </p>
 
@@ -105,7 +105,7 @@ export default async function ArchivePage() {
           const dateRows = groups.get(dateKey)!;
           return (
             <div key={dateKey} style={{ marginBottom: "2rem" }}>
-              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9FADBF", marginBottom: "10px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#637A96", marginBottom: "10px" }}>
                 {formatDate(dateKey)}
               </p>
 
