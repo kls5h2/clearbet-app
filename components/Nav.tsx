@@ -48,24 +48,31 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           </Link>
         </div>
 
-        {/* Center — sport tag, absolutely centered */}
+        {/* Center — sport tag, absolutely centered, clickable back to sport slate */}
         {sportTag && (
           <div
             style={{
               position: "absolute",
               left: "50%",
               transform: "translateX(-50%)",
-              pointerEvents: "none",
             }}
           >
-            <span
-              style={{
-                fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-                textTransform: "uppercase", color: "#8FA3BC",
-              }}
+            <Link
+              href={`/?sport=${sportTag}`}
+              style={{ textDecoration: "none" }}
+              className="group"
             >
-              {sportTag}
-            </span>
+              <span
+                style={{
+                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#8FA3BC",
+                  cursor: "pointer",
+                }}
+                className="group-hover:underline"
+              >
+                {sportTag}
+              </span>
+            </Link>
           </div>
         )}
 
@@ -74,7 +81,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           <Link
             href="/how-it-works"
             style={{
-              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
+              fontSize: "14px", fontWeight: 600, letterSpacing: "0.04em",
               color: activePage === "how-it-works" ? "#FFFFFF" : "#637A96",
               textDecoration: "none",
             }}
@@ -84,7 +91,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           <Link
             href="/glossary"
             style={{
-              fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
+              fontSize: "14px", fontWeight: 600, letterSpacing: "0.04em",
               color: activePage === "glossary" ? "#FFFFFF" : "#637A96",
               textDecoration: "none",
             }}

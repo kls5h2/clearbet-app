@@ -244,34 +244,38 @@ export default function BreakdownView({ breakdown, game }: Props) {
         {/* Odds row */}
         {odds && (
           <div style={{ display: "flex", background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
-            {!isMLB && "spread" in odds && odds.spread !== null && (
+            {!isMLB && "spread" in odds && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Spread</p>
                 <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
-                  {homeTeam.teamAbv} {odds.spread > 0 ? `+${odds.spread}` : odds.spread}
+                  {odds.spread !== null ? `${homeTeam.teamAbv} ${odds.spread > 0 ? `+${odds.spread}` : odds.spread}` : "—"}
                 </p>
               </div>
             )}
-            {isMLB && "runLine" in odds && odds.runLine !== null && (
+            {isMLB && "runLine" in odds && (
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Run Line</p>
                 <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
-                  {homeTeam.teamAbv} {odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}
+                  {odds.runLine !== null ? `${homeTeam.teamAbv} ${odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}` : "—"}
                 </p>
               </div>
             )}
-            {odds.total !== null && (
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Total</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>O/U {odds.total}</p>
-              </div>
-            )}
-            {odds.impliedHomeProbability !== null && (
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{homeTeam.teamAbv} Win%</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>{odds.impliedHomeProbability}%</p>
-              </div>
-            )}
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Total</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>{odds.total !== null ? `O/U ${odds.total}` : "—"}</p>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{awayTeam.teamAbv} ML</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                {odds.awayMoneyline !== null ? (odds.awayMoneyline > 0 ? `+${odds.awayMoneyline}` : `${odds.awayMoneyline}`) : "—"}
+              </p>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{homeTeam.teamAbv} ML</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                {odds.homeMoneyline !== null ? (odds.homeMoneyline > 0 ? `+${odds.homeMoneyline}` : `${odds.homeMoneyline}`) : "—"}
+              </p>
+            </div>
           </div>
         )}
 

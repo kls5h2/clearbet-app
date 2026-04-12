@@ -6,43 +6,36 @@ const STEPS = [
     num: "01",
     name: "Game Shape",
     what: "Sets the context before anything else. What kind of game is this — fast, slow, competitive, lopsided? Are there playoff implications, rest advantages, or motivation gaps?",
-    source: "team records, pace, rest days, playoff standing",
   },
   {
     num: "02",
     name: "Key Drivers",
     what: "The 2–4 factors that will actually decide this game tonight. Not everything — just what materially matters. Color coded so you know instantly if each factor helps or hurts the expected outcome.",
-    source: "player stats, injury reports, matchup history, usage rates",
   },
   {
     num: "03",
     name: "Base Script",
     what: "If nothing unexpected happens, this is how the game plays out. Not a prediction — a description of the most probable game shape based on the data.",
-    source: "recent form, head-to-head history, team tendencies",
   },
   {
     num: "04",
     name: "Fragility Check",
     what: "The 2–3 things that could break the base script. Injury uncertainty, late lineup changes, variance risks. These are the wildcards — read them before you decide anything.",
-    source: "injury reports, rotation instability, bullpen usage, weather",
   },
   {
     num: "05",
     name: "Market Read",
     what: "What the betting line is actually saying — in plain English. Every number gets translated into a real probability. Does the market line fit the data, or does something feel off?",
-    source: "spread, total, moneyline, line movement from open",
   },
   {
     num: "06",
     name: "The Edge",
     what: "Where the data environment creates opportunity. Not a pick — a translation. What does all of the above mean for how different types of bettors should think about this game?",
-    source: "synthesized from all previous steps",
   },
   {
     num: "07",
     name: "What This Means",
     what: "The lean — and the one thing that changes it. A direct summary of everything above in plain language. Always ends the same way: this is not a pick. Your decision is always yours.",
-    source: "synthesized from all previous steps",
   },
 ];
 
