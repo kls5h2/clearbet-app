@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
+import DisclaimerFooter from "@/components/DisclaimerFooter";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,7 +26,10 @@ export default function RootLayout({
       className={`${manrope.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <DisclaimerFooter />
+      </body>
     </html>
   );
 }

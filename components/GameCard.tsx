@@ -28,7 +28,6 @@ const MLB_COLORS: Record<string, string> = {
   TOR: "#134A8E", WSH: "#AB0003",
 };
 
-// Teams whose colors need lightening for the border (too dark against white)
 const NBA_LIGHTEN = new Set(["BKN", "IND", "MIN", "NO", "NOP", "UTA", "WAS"]);
 const MLB_LIGHTEN = new Set(["CHC", "CLE", "COL", "DET", "HOU", "KC", "MIN", "NYM", "NYY", "OAK", "ATH", "SAC", "LV", "LAS", "SD", "SEA", "TB", "TEX", "WSH", "CWS"]);
 
@@ -54,11 +53,10 @@ function getBorderColor(teamAbv: string, sport: "NBA" | "MLB"): string {
   return raw;
 }
 
-function getMutedTextColor(teamAbv: string, sport: "NBA" | "MLB"): string {
+function getTeamTextColor(teamAbv: string, sport: "NBA" | "MLB", isDead = false): string {
+  if (isDead) return "#9FADBF";
   const raw = getRawColor(teamAbv, sport);
   const lightenSet = sport === "MLB" ? MLB_LIGHTEN : NBA_LIGHTEN;
-  // Very dark teams produce near-black when blended with navy — use the lightened
-  // color directly so the accent is still visible on the card.
   if (lightenSet.has(teamAbv) || raw === "#000000") return lighten(raw, 0.35);
   const navy = { r: 0x0D, g: 0x1B, b: 0x2E };
   const h = raw.replace("#", "");
@@ -73,13 +71,9 @@ function getMutedTextColor(teamAbv: string, sport: "NBA" | "MLB"): string {
 interface Props {
   game: AnyGame;
   onClick: (gameId: string) => void;
-  preview?: boolean; // tomorrow's slate — no signal, no CTA, not clickable
+  preview?: boolean;
 }
 
-/**
- * Generate a one-line game signal from spread/total and optional context flags.
- * Rule-based only — no API call. Returns null when game is not scheduled.
- */
 function getGameSignal(
   spread: number | null,
   total: number | null,
@@ -87,7 +81,6 @@ function getGameSignal(
   pitchersUnconfirmed = false
 ): string | null {
   if (isMLB) {
-    // MLB: run line is always ±1.5 so spread isn't meaningful — key on total and pitcher status
     if (pitchersUnconfirmed) return "Starters unconfirmed — pitching matchup TBD";
     if (total === null) return "Pitching matchup is the key variable tonight";
     if (total >= 9.5) return "High run environment — offense likely active";
@@ -95,10 +88,7 @@ function getGameSignal(
     if (total <= 7.5) return "Pitcher's game — starters will decide this";
     return "Pitching matchup is the key variable tonight";
   }
-
-  // NBA
   const absSpread = spread !== null ? Math.abs(spread) : null;
-
   let spreadSignal: string | null = null;
   if (absSpread !== null) {
     if (absSpread >= 10) spreadSignal = "Large favorite — outcome likely decided early";
@@ -106,13 +96,11 @@ function getGameSignal(
     else if (absSpread >= 2) spreadSignal = "Competitive game — either side has a real path";
     else spreadSignal = "Too close to call on paper — environment matters more than matchup";
   }
-
   let totalSignal: string | null = null;
   if (total !== null) {
     if (total >= 230) totalSignal = "high-scoring environment";
     else if (total <= 209) totalSignal = "defensive game — scoring at a premium";
   }
-
   if (spreadSignal && totalSignal) {
     if (totalSignal === "high-scoring environment") {
       return spreadSignal.replace(" — ", " in a high-scoring environment — ");
@@ -140,25 +128,16 @@ function formatTotal(total: number | null, label = "O/U"): string {
   return `${label} ${total}`;
 }
 
-/**
- * Derive effective game status using Tank01 data, falling back to
- * client-side clock comparison when the API still says "scheduled."
- * "Get breakdown" only shows for games where current time is before start time —
- * this is correct and intentional; breakdowns are pre-game only.
- */
 function getEffectiveStatus(apiStatus: GameStatus, gameTime: string): GameStatus {
   if (apiStatus !== "scheduled") return apiStatus;
   if (!gameTime) return apiStatus;
-
   const match = gameTime.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
   if (!match) return apiStatus;
-
   let gameHour = parseInt(match[1], 10);
   const gameMins = parseInt(match[2], 10);
   const ampm = match[3].toUpperCase();
   if (ampm === "PM" && gameHour !== 12) gameHour += 12;
   if (ampm === "AM" && gameHour === 12) gameHour = 0;
-
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
@@ -168,7 +147,6 @@ function getEffectiveStatus(apiStatus: GameStatus, gameTime: string): GameStatus
   }).formatToParts(now);
   const currentHour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
   const currentMin = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-
   const minutesPast = currentHour * 60 + currentMin - (gameHour * 60 + gameMins);
   if (minutesPast <= 0) return "scheduled";
   if (minutesPast > 180) return "final";
@@ -179,10 +157,9 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
 
-  // Preview (tomorrow) cards are always "scheduled" — getEffectiveStatus compares
-  // against today's clock, which would incorrectly mark afternoon games as "final".
   const effectiveStatus = preview ? "scheduled" : getEffectiveStatus(gameStatus, gameTime);
   const isClickable = effectiveStatus === "scheduled" && !preview;
+  const isDead = effectiveStatus === "final" || effectiveStatus === "live";
 
   const spread = game.odds && "spread" in game.odds ? game.odds.spread : null;
   const runLine = game.odds && "runLine" in game.odds ? game.odds.runLine : null;
@@ -201,56 +178,73 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     ? getGameSignal(signalSpread, total, sport === "MLB", pitchersUnconfirmed)
     : null;
 
-  const borderGradient = `linear-gradient(to right, ${getBorderColor(awayTeam.teamAbv, sport)} 50%, ${getBorderColor(homeTeam.teamAbv, sport)} 50%)`;
-  const awayTextColor = getMutedTextColor(awayTeam.teamAbv, sport);
-  const homeTextColor = getMutedTextColor(homeTeam.teamAbv, sport);
+  // Card surface and border based on state
+  const cardBg = preview
+    ? "bg-[#EDF1F6]"
+    : effectiveStatus === "final"
+    ? "bg-[#F2F5F8]"
+    : "bg-white";
 
-  // Odds row content differs by sport
+  const cardBorder = preview || effectiveStatus === "final"
+    ? "border-[#E2E8F0]"
+    : effectiveStatus === "live"
+    ? "border-[#D4EDE9]"
+    : "border-[#E8ECF2]";
+
+  const borderGradient = isDead || preview
+    ? `linear-gradient(to right, ${lighten(getBorderColor(awayTeam.teamAbv, sport), 0.3)} 50%, ${lighten(getBorderColor(homeTeam.teamAbv, sport), 0.3)} 50%)`
+    : `linear-gradient(to right, ${getBorderColor(awayTeam.teamAbv, sport)} 50%, ${getBorderColor(homeTeam.teamAbv, sport)} 50%)`;
+
+  const awayTextColor = getTeamTextColor(awayTeam.teamAbv, sport, isDead || preview);
+  const homeTextColor = getTeamTextColor(homeTeam.teamAbv, sport, isDead || preview);
+
   const oddsRow = (() => {
     if (!game.odds) return null;
     if (effectiveStatus !== "scheduled") return null;
+    if (preview) return null;
+    const oddsLabelCls = "font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1";
+    const oddsValueCls = "font-mono text-[14px] font-semibold text-[#0D1B2E]";
     if (sport === "MLB") {
       const o = game.odds;
       return (
-        <div className="px-5 py-3 bg-[#F4F6F9] border-t border-[#E0E5EE] flex items-center justify-between">
+        <div className="px-4 py-3 bg-[#F7F9FC] border-t border-[#EEF1F5] flex items-center justify-between">
           <div className="text-center">
-            <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">Run Line</p>
-            <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatSpread(o.runLine, homeTeam.teamAbv)}</p>
+            <p className={oddsLabelCls}>Run Line</p>
+            <p className={oddsValueCls}>{formatSpread(o.runLine, homeTeam.teamAbv)}</p>
           </div>
           <div className="text-center">
-            <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">Total</p>
-            <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatTotal(o.total, "O/U")}</p>
+            <p className={oddsLabelCls}>Total</p>
+            <p className={oddsValueCls}>{formatTotal(o.total, "O/U")}</p>
           </div>
           <div className="text-center">
-            <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">{awayTeam.teamAbv} ML</p>
-            <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatML(o.awayMoneyline)}</p>
+            <p className={oddsLabelCls}>{awayTeam.teamAbv} ML</p>
+            <p className={oddsValueCls}>{formatML(o.awayMoneyline)}</p>
           </div>
           <div className="text-center">
-            <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">{homeTeam.teamAbv} ML</p>
-            <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatML(o.homeMoneyline)}</p>
+            <p className={oddsLabelCls}>{homeTeam.teamAbv} ML</p>
+            <p className={oddsValueCls}>{formatML(o.homeMoneyline)}</p>
           </div>
         </div>
       );
     }
-    // NBA
     const o = game.odds;
     return (
-      <div className="px-5 py-3 bg-[#F4F6F9] border-t border-[#E0E5EE] flex items-center justify-between">
+      <div className="px-4 py-3 bg-[#F7F9FC] border-t border-[#EEF1F5] flex items-center justify-between">
         <div className="text-center">
-          <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">Spread</p>
-          <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatSpread(o.spread, homeTeam.teamAbv)}</p>
+          <p className={oddsLabelCls}>Spread</p>
+          <p className={oddsValueCls}>{formatSpread(o.spread, homeTeam.teamAbv)}</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">Total</p>
-          <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatTotal(o.total)}</p>
+          <p className={oddsLabelCls}>Total</p>
+          <p className={oddsValueCls}>{formatTotal(o.total)}</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">{awayTeam.teamAbv} ML</p>
-          <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatML(o.awayMoneyline)}</p>
+          <p className={oddsLabelCls}>{awayTeam.teamAbv} ML</p>
+          <p className={oddsValueCls}>{formatML(o.awayMoneyline)}</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-[10px] font-medium text-[#6B7A90] uppercase tracking-widest mb-0.5">{homeTeam.teamAbv} ML</p>
-          <p className="font-mono text-[15px] font-semibold text-[#0D1B2E]">{formatML(o.homeMoneyline)}</p>
+          <p className={oddsLabelCls}>{homeTeam.teamAbv} ML</p>
+          <p className={oddsValueCls}>{formatML(o.homeMoneyline)}</p>
         </div>
       </div>
     );
@@ -260,59 +254,74 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
     <button
       onClick={() => isClickable && onClick(game.gameId)}
       disabled={!isClickable}
-      className={`group w-full text-left bg-white border rounded-xl overflow-hidden transition-all duration-200 focus:outline-none ${
+      className={`group w-full text-left ${cardBg} border ${cardBorder} rounded-xl overflow-hidden transition-all duration-200 focus:outline-none ${
         isClickable
-          ? "border-[#D4DAE6] hover:border-[#0A7A6C] hover:bg-[#FAFCFC] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0A7A6C] cursor-pointer"
-          : preview
-          ? "border-[#E8ECF2] cursor-default opacity-80"
-          : "border-[#E0E5EE] cursor-default"
+          ? "hover:border-[#0A7A6C] hover:shadow-[0_2px_10px_rgba(13,27,46,0.07),0_1px_3px_rgba(13,27,46,0.04)] focus-visible:ring-2 focus-visible:ring-[#0A7A6C] cursor-pointer"
+          : "cursor-default"
       }`}
     >
-      {/* Two-tone gradient top border: away color left, home color right */}
+      {/* Two-tone top border strip */}
       <div className="h-[3px]" style={{ background: borderGradient }} />
 
       <div className="flex">
-        {/* Left accent bar on hover */}
-        <div className="w-[3px] bg-transparent group-hover:bg-[#0A7A6C] transition-colors duration-200 shrink-0" />
+        {/* Teal hover accent bar (scheduled only) */}
+        {isClickable && (
+          <div className="w-[3px] bg-transparent group-hover:bg-[#0A7A6C] transition-colors duration-200 shrink-0" />
+        )}
+        {!isClickable && <div className="w-[3px] shrink-0" />}
 
-        <div className="flex-1">
-          {/* Time strip */}
-          <div className="px-5 py-2 bg-[#F0FAF8] border-b border-[#E0E5EE] flex items-center justify-between">
-            <p className="font-mono text-[13px] font-medium text-[#0A7A6C] tracking-wide">
-              {gameTime || "Time TBD"}
+        <div className="flex-1 min-w-0">
+          {/* Time / status strip */}
+          <div className={`px-4 py-2 border-b ${
+            preview
+              ? "bg-[#EDF1F6] border-[#E2E8F0]"
+              : effectiveStatus === "final"
+              ? "bg-[#F2F5F8] border-[#E2E8F0]"
+              : effectiveStatus === "live"
+              ? "bg-[#F0FAF8] border-[#D4EDE9]"
+              : "bg-[#F0FAF8] border-[#E8ECF2]"
+          } flex items-center justify-between`}>
+            <p className={`font-mono text-[12px] font-semibold tracking-wide ${
+              preview || effectiveStatus === "final"
+                ? "text-[#B0BAC9]"
+                : "text-[#0A7A6C]"
+            }`}>
+              {preview ? `Tomorrow · ${gameTime || "TBD"}` : gameTime || "Time TBD"}
             </p>
             {effectiveStatus === "live" && (
               <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0A7A6C] animate-pulse" />
-                <span className="font-mono text-[10px] font-semibold text-[#0A7A6C] tracking-widest uppercase">Live</span>
+                <span className="w-[6px] h-[6px] rounded-full bg-[#0A7A6C] animate-pulse" />
+                <span className="font-mono text-[9px] font-bold text-[#0A7A6C] tracking-[0.12em] uppercase">Live</span>
               </span>
             )}
-            {effectiveStatus === "final" && (
-              <span className="font-mono text-[10px] font-medium text-[#6B7A90] tracking-widest uppercase">Final</span>
+            {effectiveStatus === "final" && !preview && (
+              <span className="font-mono text-[9px] font-bold text-[#B0BAC9] tracking-[0.12em] uppercase">Final</span>
+            )}
+            {preview && (
+              <span className="font-mono text-[9px] font-bold text-[#B0BAC9] tracking-[0.12em] uppercase">Preview</span>
             )}
           </div>
 
           {/* Matchup */}
-          <div className="px-5 pt-4 pb-4 flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-[11px] font-mono font-medium text-[#6B7A90] uppercase tracking-widest mb-1">Away</p>
+          <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1">Away</p>
               {awayTeam.teamCity ? (
                 <>
-                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: awayTextColor }}>
                     {awayTeam.teamCity}
                   </p>
-                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: awayTextColor }}>
                     {awayTeam.teamName.replace(awayTeam.teamCity, "").trim()}
                   </p>
                 </>
               ) : (
-                <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: awayTextColor }}>
+                <p className="font-heading text-[17px] font-extrabold leading-[1.2]" style={{ color: awayTextColor }}>
                   {awayTeam.teamName}
                 </p>
               )}
-              {/* MLB: show away pitcher */}
-              {sport === "MLB" && game.awayPitcher && (
-                <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
+              {sport === "MLB" && game.awayPitcher && !preview && (
+                <p className="font-mono text-[10px] text-[#9FADBF] mt-1.5 leading-none">
                   {game.awayPitcher.hand ? `${game.awayPitcher.hand}HP · ` : ""}{game.awayPitcher.name}
                   {game.awayPitcher.seasonERA > 0 && (
                     <span className="text-[#B0BAC9]"> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>
@@ -321,30 +330,29 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
               )}
             </div>
 
-            <div className="flex flex-col items-center px-3">
-              <span className="text-base font-medium text-[#0A7A6C]">@</span>
+            <div className="flex items-center px-1 pt-5">
+              <span className={`text-[13px] font-medium ${preview || isDead ? "text-[#B0BAC9]" : "text-[#0A7A6C]"}`}>@</span>
             </div>
 
-            <div className="flex-1 text-right">
-              <p className="text-[11px] font-mono font-medium text-[#6B7A90] uppercase tracking-widest mb-1">Home</p>
+            <div className="flex-1 min-w-0 text-right">
+              <p className="font-mono text-[9px] font-bold text-[#9FADBF] uppercase tracking-[0.1em] mb-1">Home</p>
               {homeTeam.teamCity ? (
                 <>
-                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: homeTextColor }}>
                     {homeTeam.teamCity}
                   </p>
-                  <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                  <p className="font-heading text-[17px] font-extrabold leading-[1.2] truncate" style={{ color: homeTextColor }}>
                     {homeTeam.teamName.replace(homeTeam.teamCity, "").trim()}
                   </p>
                 </>
               ) : (
-                <p className="font-heading text-[18px] font-extrabold leading-tight" style={{ color: homeTextColor }}>
+                <p className="font-heading text-[17px] font-extrabold leading-[1.2]" style={{ color: homeTextColor }}>
                   {homeTeam.teamName}
                 </p>
               )}
-              {/* MLB: show home pitcher */}
-              {sport === "MLB" && game.homePitcher && (
-                <p className="font-mono text-[11px] text-[#6B7A90] mt-1">
-                  {game.homePitcher.hand ? `${game.homePitcher.hand}HP · ` : ""}{game.homePitcher.name}
+              {sport === "MLB" && game.homePitcher && !preview && (
+                <p className="font-mono text-[10px] text-[#9FADBF] mt-1.5 leading-none">
+                  {game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand}HP` : ""}
                   {game.homePitcher.seasonERA > 0 && (
                     <span className="text-[#B0BAC9]"> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>
                   )}
@@ -353,36 +361,43 @@ export default function GameCard({ game, onClick, preview = false }: Props) {
             </div>
           </div>
 
-          {/* One-line game signal — scheduled games only, rule-based from spread/total */}
+          {/* THE READ zone — signal for scheduled games */}
           {signal && (
-            <div className="px-5 pb-3">
-              <p className="text-[12px] italic text-[#6B7A90]">{signal}</p>
+            <div className="mx-4 mb-3">
+              <div className="bg-[#F7F9FC] rounded-lg px-4 py-3 border border-[#EEF1F5]">
+                <p className="font-mono text-[9px] font-bold text-[#9FADBF] tracking-[0.1em] uppercase mb-1">The Read</p>
+                <p className="text-[12px] text-[#3A5470] leading-[1.5]">{signal}</p>
+              </div>
             </div>
           )}
 
-          {/* Odds strip */}
+          {/* Odds zone */}
           {oddsRow}
 
-          {/* CTA — hidden for preview (tomorrow) cards */}
+          {/* CTA / state row */}
           {!preview && (
-            <div className="px-5 py-3 flex items-center justify-between">
+            <div className="px-4 py-3 flex items-center justify-between">
               {effectiveStatus === "live" && (
-                <div className="w-full text-center">
-                  <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game in progress</p>
-                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.</p>
+                <div className="w-full">
+                  <p className="font-mono text-[12px] font-medium text-[#637A96]">Game in progress</p>
+                  <p className="font-mono text-[11px] text-[#9FADBF] mt-0.5">
+                    Breakdowns are generated before {sport === "MLB" ? "first pitch" : "tip-off"}.
+                  </p>
                 </div>
               )}
               {effectiveStatus === "final" && (
-                <div className="w-full text-center">
-                  <p className="font-mono text-[14px] font-medium text-[#6B7A90]">Game ended</p>
-                  <p className="font-mono text-[13px] text-[#B0BAC9] mt-0.5">Game ended. Check back tomorrow for new breakdowns.</p>
+                <div className="w-full">
+                  <p className="font-mono text-[12px] font-medium text-[#9FADBF]">Game ended.</p>
+                  <p className="font-mono text-[11px] text-[#B0BAC9] mt-0.5">Check back tomorrow for new breakdowns.</p>
                 </div>
               )}
-              {effectiveStatus === "scheduled" && <span />}
               {effectiveStatus === "scheduled" && (
-                <span className="text-xs font-mono font-medium text-[#0A7A6C] tracking-wide group-hover:underline">
-                  Get breakdown →
-                </span>
+                <>
+                  <span />
+                  <span className="font-mono text-[11px] font-semibold text-[#0A7A6C] tracking-wide group-hover:underline">
+                    Get breakdown →
+                  </span>
+                </>
               )}
             </div>
           )}

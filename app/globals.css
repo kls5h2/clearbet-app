@@ -1,33 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #F4F6F9;
-  --color-text: #0D1B2E;
-  --color-accent: #0A7A6C;
-  --color-surface: #FFFFFF;
-  --color-border: #E0E5EE;
-  --color-text-muted: #6B7A90;
-  --color-red: #D0342C;
-  --color-green: #1A7A4A;
-  --color-amber: #B45309;
-  --color-blue: #1D4ED8;
+  --bg: #F0F3F7;
+  --surface: #FFFFFF;
+  --surface-dead: #F2F5F8;
+  --surface-tomorrow: #EDF1F6;
+  --navy: #0D1B2E;
+  --navy-mid: #3A5470;
+  --navy-light: #637A96;
+  --teal: #0A7A6C;
+  --teal-dark: #096059;
+  --teal-light: #F0FAF8;
+  --muted: #9FADBF;
+  --muted-light: #B0BAC9;
+  --border: #E8ECF2;
+  --border-light: #EEF1F5;
+  --border-dead: #E2E8F0;
+  --shadow-sm: 0 1px 4px rgba(13,27,46,0.05);
+  --shadow-md: 0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04);
+  --shadow-lg: 0 4px 16px rgba(13,27,46,0.10), 0 2px 4px rgba(13,27,46,0.05);
 }
 
 @theme inline {
-  --color-bg: var(--color-bg);
-  --color-text: var(--color-text);
-  --color-accent: var(--color-accent);
-  --color-surface: var(--color-surface);
-  --color-border: var(--color-border);
-  --color-text-muted: var(--color-text-muted);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-manrope);
   --font-heading: var(--font-manrope);
 }
 
 body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--bg);
+  color: var(--navy);
   font-family: var(--font-manrope), system-ui, sans-serif;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
