@@ -99,11 +99,8 @@ export default function HomePage() {
       <Nav />
 
       {/* Dark hero section */}
-      <div style={{ background: "#0D1B2E", padding: "2.5rem 1.5rem 2rem" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "8px" }}>
-            Today&#8217;s Slate
-          </p>
+      <div style={{ background: "#0D1B2E", padding: "1.5rem 1.5rem 2rem" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "34px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "6px" }}>
             Today&#8217;s Slate
           </h1>
@@ -121,7 +118,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
         {/* Sport tabs — active tab = dark navy per mockup */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "1.75rem" }}>
           {(["NBA", "MLB"] as Sport[]).map((sport) => (
