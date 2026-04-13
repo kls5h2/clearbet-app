@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import GameCard from "@/components/GameCard";
-import Logo from "@/components/Logo";
+import Nav from "@/components/Nav";
 import { supabase } from "@/lib/supabase";
 import type { AnyGame, Sport, BreakdownResult } from "@/lib/types";
 
@@ -97,21 +97,12 @@ export default function HomePage() {
 
   return (
     <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
+      <Nav />
+
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 1.5rem" }}>
 
-        {/* Page header — centered logo, desktop nav links top-right */}
-        <div style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center", padding: "1.75rem 0 1.25rem" }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo fontSize={28} barHeight={20} color="#0D1B2E" />
-          </Link>
-          <div className="hidden sm:flex" style={{ position: "absolute", right: 0, gap: "1.25rem", alignItems: "center" }}>
-            <Link href="/how-it-works" style={{ fontSize: "14px", fontWeight: 600, color: "#637A96", letterSpacing: "0.04em", textDecoration: "none" }}>How It Works</Link>
-            <Link href="/glossary" style={{ fontSize: "14px", fontWeight: 600, color: "#637A96", letterSpacing: "0.04em", textDecoration: "none" }}>Glossary</Link>
-          </div>
-        </div>
-
-        {/* Tagline */}
-        <div style={{ maxWidth: "600px" }}>
+        {/* Intro block */}
+        <div style={{ padding: "2rem 0 1.5rem" }}>
           <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
             ClearBet turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
@@ -122,11 +113,11 @@ export default function HomePage() {
         </div>
 
         {/* Divider */}
-        <div style={{ borderTop: "1px solid #E8ECF2", margin: "1.5rem 0" }} />
+        <div style={{ borderTop: "1px solid #E8ECF2" }} />
 
         {/* Slate label + date */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "1.25rem" }}>
-          <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.02em", margin: 0 }}>Today&#8217;s Slate</h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", paddingTop: "1.5rem", marginBottom: "1.25rem" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.02em", margin: 0 }}>Today&#8217;s Slate</h1>
           <span style={{ fontSize: "13px", fontWeight: 500, color: "#9FADBF" }}>{todayLabel}</span>
         </div>
 
