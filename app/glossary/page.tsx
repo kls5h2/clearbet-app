@@ -80,7 +80,7 @@ export default function GlossaryPage() {
           Glossary
         </p>
         <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "4px" }}>
-          Plain-English Terms
+          Know the Language
         </h1>
         <p style={{ fontSize: "15px", color: "#637A96", fontWeight: 500, marginBottom: "2rem" }}>
           Terms used in Clearbet breakdowns, defined simply.

@@ -243,7 +243,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
         <p className="text-[11px] text-[#637A96] italic font-semibold">
           {effectiveStatus === "live"
-            ? `Game in progress · Breakdown generated before ${sport === "MLB" ? "first pitch" : "tip-off"}`
+            ? "Game in progress · Breakdowns only generated before start of game"
             : "Game ended · Check back tomorrow"}
         </p>
       </div>
