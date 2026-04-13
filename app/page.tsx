@@ -101,8 +101,15 @@ export default function HomePage() {
 
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 1.5rem" }}>
 
-        {/* Intro block */}
-        <div style={{ padding: "2rem 0 1.5rem" }}>
+        {/* Intro card */}
+        <div style={{
+          marginTop: "2rem",
+          background: "#FFFFFF",
+          borderLeft: "3px solid #0A7A6C",
+          borderRadius: "12px",
+          padding: "1.25rem 1.5rem",
+          boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
+        }}>
           <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
             ClearBet turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
@@ -112,13 +119,10 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Divider */}
-        <div style={{ borderTop: "1px solid #E8ECF2" }} />
-
         {/* Slate label + date */}
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px", paddingTop: "1.5rem", marginBottom: "1.25rem" }}>
           <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.02em", margin: 0 }}>Today&#8217;s Slate</h1>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#9FADBF" }}>{todayLabel}</span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470" }}>{todayLabel}</span>
         </div>
 
         {/* Sport tabs — active tab = dark navy per mockup */}
@@ -228,7 +232,7 @@ export default function HomePage() {
                 margin: "0 0 1rem", paddingBottom: "10px",
                 borderBottom: "1px solid #DDE2EB",
               }}>
-                Tomorrow · Preview only, no breakdowns yet
+                Preview · Tomorrow&#8217;s Slate · Breakdowns available on the day of the game
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {sorted.map((game) => (
@@ -242,7 +246,7 @@ export default function HomePage() {
         {/* Tagline */}
         {!loading && (
           <p style={{ marginTop: "2.5rem", textAlign: "center", fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
-            What the data says. Your decision to make.
+            This is what the data says. What will you decide?
           </p>
         )}
       </div>

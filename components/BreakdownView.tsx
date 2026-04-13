@@ -178,7 +178,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#DC2626", display: "block" }} className="animate-pulse" />
             <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#DC2626" }}>Live</span>
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>Game in progress. Breakdown was generated pre-game.</span>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>Game in progress. Breakdowns only generated before start of game.</span>
         </div>
       )}
 
