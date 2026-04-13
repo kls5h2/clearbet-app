@@ -1,9 +1,15 @@
-export default function Logo() {
+interface LogoProps {
+  fontSize?: number;
+  barHeight?: number;
+  color?: string;
+}
+
+export default function Logo({ fontSize = 22, barHeight = 17, color = "#FFFFFF" }: LogoProps) {
   return (
     <div className="flex items-center">
-      <span className="text-[22px] font-[800] tracking-[-0.02em] text-[#FFFFFF]">Clear</span>
-      <div className="w-[2px] h-[17px] bg-[#0A7A6C] mx-[4px] rounded-[2px]" />
-      <span className="text-[22px] font-[800] tracking-[-0.02em] text-[#FFFFFF]">Bet</span>
+      <span style={{ fontSize: `${fontSize}px`, fontWeight: 800, letterSpacing: "-0.02em", color }}>Clear</span>
+      <div style={{ width: "2px", height: `${barHeight}px`, background: "#0A7A6C", margin: "0 4px", borderRadius: "2px" }} />
+      <span style={{ fontSize: `${fontSize}px`, fontWeight: 800, letterSpacing: "-0.02em", color }}>Bet</span>
     </div>
   );
 }

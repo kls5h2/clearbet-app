@@ -76,8 +76,8 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: {
       <div style={rowStyle}>
         <div className="flex-1"><p className={labelCls}>Run Line</p><p className={valCls}>{formatSpread(o.runLine, homeTeamAbv)}</p></div>
         <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total, "O/U")}</p></div>
-        <div className="flex-1"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
-        <div className="flex-1"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
+        <div className="flex-1 hidden sm:block"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
+        <div className="flex-1 hidden sm:block"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
       </div>
     );
   }
@@ -88,8 +88,8 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: {
     <div style={rowStyle}>
       <div className="flex-1"><p className={labelCls}>Spread</p><p className={valCls}>{formatSpread(o.spread, homeTeamAbv)}</p></div>
       <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total)}</p></div>
-      <div className="flex-1"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
-      <div className="flex-1"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
+      <div className="flex-1 hidden sm:block"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
+      <div className="flex-1 hidden sm:block"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
     </div>
   );
 }
