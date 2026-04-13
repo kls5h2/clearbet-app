@@ -74,18 +74,22 @@ export default function GlossaryPage() {
     <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav activePage="glossary" />
 
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.75rem 1.5rem 0" }}>
-        {/* Header */}
-        <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "6px" }}>
-          Glossary
-        </p>
-        <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.03em", marginBottom: "4px" }}>
-          Know the Language
-        </h1>
-        <p style={{ fontSize: "15px", color: "#637A96", fontWeight: 500, marginBottom: "2rem" }}>
-          Terms used in Clearbet breakdowns, defined simply.
-        </p>
+      {/* Dark navy page header */}
+      <div style={{ background: "#0D1B2E", padding: "2.5rem 1.5rem 2rem", marginBottom: "0" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "8px" }}>
+            Glossary
+          </p>
+          <h1 style={{ fontSize: "30px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "10px" }}>
+            Know the Language
+          </h1>
+          <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, lineHeight: 1.6, maxWidth: "440px" }}>
+            Terms used in ClearBet breakdowns, defined simply.
+          </p>
+        </div>
+      </div>
 
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
         {/* Search */}
         <input
           type="text"
