@@ -136,6 +136,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
           breakdown_content: breakdown,
           confidence_level: breakdown.confidenceLevel,
           confidence_label: breakdown.confidenceLabel,
+          user_id: null, // TODO: pass real user ID when Auth is live
         },
         { onConflict: "game_id" }
       )
@@ -272,6 +273,7 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
           breakdown_content: breakdown,
           confidence_level: breakdown.confidenceLevel,
           confidence_label: breakdown.confidenceLabel,
+          user_id: null, // TODO: pass real user ID when Auth is live
         },
         { onConflict: "game_id" }
       )
