@@ -32,11 +32,13 @@ import type {
 export async function POST(req: NextRequest) {
   let gameId: string;
   let sport: Sport;
+  let regenerate: boolean;
 
   try {
     const body = await req.json();
     gameId = body?.gameId;
     sport = (body?.sport ?? "NBA") as Sport;
+    regenerate = body?.regenerate === true;
     if (!gameId || typeof gameId !== "string") {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
     }
@@ -44,10 +46,77 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  // Cache check — serve from Supabase if a breakdown exists and regenerate not requested
+  if (!regenerate) {
+    const cached = await getCachedBreakdown(gameId);
+    if (cached) {
+      console.log(`[breakdown] serving from cache: gameId=${gameId}`);
+      return NextResponse.json(cached);
+    }
+  }
+
   if (sport === "MLB") {
     return handleMLBBreakdown(gameId);
   }
   return handleNBABreakdown(gameId);
+}
+
+/**
+ * Check Supabase for an existing breakdown for this game.
+ * Returns the full BreakdownApiResponse if found, null otherwise.
+ */
+async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse | null> {
+  try {
+    const { data, error } = await supabase
+      .from("breakdowns")
+      .select("breakdown_content, sport, home_team, away_team, game_date, created_at")
+      .eq("game_id", gameId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !data) return null;
+
+    const content = data.breakdown_content as import("@/lib/types").BreakdownResult;
+    if (!content) return null;
+
+    // Reconstruct a minimal game object from what we have stored
+    const sport = (data.sport ?? "NBA") as Sport;
+    const today = getTodayDateString();
+    const game: import("@/lib/types").AnyGame = sport === "MLB"
+      ? {
+          sport: "MLB",
+          gameId,
+          gameDate: data.game_date ?? today,
+          gameTime: "",
+          gameStatus: "scheduled",
+          homeTeam: { teamId: data.home_team, teamAbv: data.home_team, teamName: data.home_team, teamCity: "" },
+          awayTeam: { teamId: data.away_team, teamAbv: data.away_team, teamName: data.away_team, teamCity: "" },
+          odds: null,
+          homePitcher: null,
+          awayPitcher: null,
+        }
+      : {
+          sport: "NBA",
+          gameId,
+          gameDate: data.game_date ?? today,
+          gameTime: "",
+          gameStatus: "scheduled",
+          homeTeam: { teamId: data.home_team, teamAbv: data.home_team, teamName: data.home_team, teamCity: "" },
+          awayTeam: { teamId: data.away_team, teamAbv: data.away_team, teamName: data.away_team, teamCity: "" },
+          odds: null,
+        };
+
+    return {
+      breakdown: content,
+      game,
+      sport,
+      fromCache: true,
+      generatedAt: data.created_at ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
@@ -145,7 +214,8 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
         else console.log("[breakdown:NBA] archived to supabase");
       });
 
-    const response: BreakdownApiResponse = { breakdown, game, sport: "NBA" };
+    const generatedAt = new Date().toISOString();
+    const response: BreakdownApiResponse = { breakdown, game, sport: "NBA", fromCache: false, generatedAt };
     return NextResponse.json(response);
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
@@ -282,7 +352,8 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
         else console.log("[breakdown:MLB] archived to supabase");
       });
 
-    const response: BreakdownApiResponse = { breakdown, game, sport: "MLB" };
+    const generatedAt = new Date().toISOString();
+    const response: BreakdownApiResponse = { breakdown, game, sport: "MLB", fromCache: false, generatedAt };
     return NextResponse.json(response);
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));

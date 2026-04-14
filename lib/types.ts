@@ -295,10 +295,13 @@ export interface MLBGamesApiResponse {
 export interface BreakdownApiRequest {
   gameId: string;
   sport: Sport;
+  regenerate?: boolean; // if true, bypass cache and generate fresh
 }
 
 export interface BreakdownApiResponse {
   breakdown: BreakdownResult;
   game: AnyGame;
   sport: Sport;
+  fromCache: boolean;
+  generatedAt: string | null; // ISO timestamp of when the breakdown was created
 }

@@ -61,17 +61,20 @@ export default function BreakdownPage() {
   const [breakdown, setBreakdown] = useState<BreakdownResult | null>(null);
   const [game, setGame] = useState<AnyGame | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
   const { message, visible } = useRotatingMessage(status === "loading");
 
-  useEffect(() => {
-    if (!gameId) return;
+  function fetchBreakdown(regenerate = false) {
     setStatus("loading");
+    setBreakdown(null);
+    setGame(null);
 
     fetch("/api/breakdown", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameId, sport }),
+      body: JSON.stringify({ gameId, sport, regenerate }),
     })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to generate breakdown");
@@ -80,12 +83,19 @@ export default function BreakdownPage() {
       .then((data) => {
         setBreakdown(data.breakdown);
         setGame(data.game);
+        setFromCache(data.fromCache ?? false);
+        setGeneratedAt(data.generatedAt ?? null);
         setStatus("done");
       })
       .catch((e) => {
         setError(e.message);
         setStatus("error");
       });
+  }
+
+  useEffect(() => {
+    if (!gameId) return;
+    fetchBreakdown();
   }, [gameId]);
 
   return (
@@ -165,10 +175,25 @@ export default function BreakdownPage() {
         {/* Done state */}
         {status === "done" && breakdown && game && (
           <>
-            {/* Pre-game data banner */}
-            <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
-              Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
-            </div>
+            {fromCache && generatedAt ? (
+              /* Cached breakdown banner */
+              <div style={{ background: "#F0FAF8", border: "1px solid rgba(10,122,108,0.2)", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#096059", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                <span>
+                  Breakdown generated at {new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })}
+                </span>
+                <button
+                  onClick={() => fetchBreakdown(true)}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#0A7A6C", whiteSpace: "nowrap", padding: 0 }}
+                >
+                  Regenerate for latest data →
+                </button>
+              </div>
+            ) : (
+              /* Fresh generation banner */
+              <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
+                Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
+              </div>
+            )}
             <BreakdownView breakdown={breakdown} game={game} />
           </>
         )}
