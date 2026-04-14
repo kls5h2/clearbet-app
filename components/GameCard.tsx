@@ -12,6 +12,7 @@ interface Props {
   onClick: (gameId: string) => void;
   preview?: boolean;
   whatThisMeans?: string | null;
+  hasBreakdown?: boolean;
 }
 
 
@@ -94,7 +95,7 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: {
   );
 }
 
-export default function GameCard({ game, onClick, preview = false, whatThisMeans = null }: Props) {
+export default function GameCard({ game, onClick, preview = false, whatThisMeans = null, hasBreakdown = false }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
 
@@ -206,7 +207,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
         {/* Footer */}
         <div className="flex justify-between items-center">
           <span />
-          <span className="text-[12px] font-bold text-[#0A7A6C]">Get breakdown →</span>
+          <span className="text-[12px] font-bold text-[#0A7A6C]">{hasBreakdown ? "View breakdown →" : "Get breakdown →"}</span>
         </div>
       </button>
     );
