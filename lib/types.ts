@@ -178,6 +178,11 @@ export interface MLBPitcher {
   seasonERA: number;
   recentERA: number | null; // last 3 starts ERA
   hand: "L" | "R" | null;
+  seasonSO: number | null;
+  seasonBB: number | null;
+  seasonWHIP: number | null;
+  seasonHR: number | null;
+  seasonIP: number | null; // innings pitched, for K/9 calculation
 }
 
 export interface MLBGame {
@@ -219,6 +224,8 @@ export interface MLBHitterStat {
   homeRuns: number;
   rbi: number;
   ops: number;
+  stolenBases: number;
+  walks: number;
 }
 
 export interface MLBPlayoffContext {

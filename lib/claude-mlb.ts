@@ -44,13 +44,30 @@ Supporting context only. Note it if one team owns the series. Skip if no prior m
 ## PLAYOFF CONTEXT RULE
 Division standing and wild card position affect urgency and roster decisions. Name it if relevant. Early season — acknowledge position but don't over-weight small samples.
 
+## PROP ENVIRONMENT RULE
+For every MLB breakdown, The Edge section must translate the data into prop environments for both pitchers and batters. Do not name specific lines or tell users what to bet. Instead identify what the data environment creates.
+
+For starting pitchers, use SO, K/9 (calculated from SO/IP), WHIP, HR allowed, and BB allowed to address:
+- Strikeout props: is this a high-strikeout pitcher facing a swing-heavy lineup?
+- Hits/walks allowed: does WHIP suggest a baserunner-heavy or clean environment?
+- HR props: does the pitcher allow HRs at an elevated rate?
+
+For batters, use HR, RBI, AVG, SB, BB to address:
+- HR props: which batters have power against this pitcher type?
+- Hits props: which batters make consistent contact?
+- RBI props: who is driving in runs in this lineup construction?
+- Stolen base props: are there speed threats against a pitcher/catcher combination that allows running?
+- Total bases: what does the combination of power and contact suggest about total base environments?
+
+Always frame prop environments as: "The data creates an environment where X is worth examining" — never "bet X" or "take X over/under".
+
 ## THE SIX STEPS
 
 ### 01 — GAME SHAPE
 2–3 sentences. What kind of game is this. If starters are unconfirmed, say so once and move to the run environment.
 
 ### 02 — KEY DRIVERS
-2–4 bullets. One sentence each. Lead with the pitching matchup if confirmed. If unconfirmed, lead with the run environment — which team scores more, which bullpen is more reliable. Include role players and bench depth when it materially affects the outcome. Order by importance.
+2–4 bullets. One sentence each. Lead with the pitching matchup if confirmed. If unconfirmed, lead with the run environment — which team scores more, which bullpen is more reliable. Include role players and bench depth when it materially affects the outcome. Order by importance. When pitcher K/9 is above 10.0 or WHIP is below 1.00 or above 1.50, name it here as a key driver — not just a prop note. When a batter with 5+ HR or elevated SB pace faces a pitcher with a tendency that creates a specific environment, name it here.
 
 ### 03 — BASE SCRIPT
 3 sentences. What happens if nothing disrupts the expected game flow. Plain English.
@@ -126,11 +143,23 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   const formatERA = (era: number) => (era > 0 ? era.toFixed(2) : "N/A");
   const formatOdds = (n: number | null) => (n !== null ? (n > 0 ? `+${n}` : `${n}`) : "N/A");
 
+  const formatK9 = (so: number | null, ip: number | null): string => {
+    if (so === null || ip === null || ip === 0) return "N/A";
+    return ((so / ip) * 9).toFixed(1);
+  };
+
   const formatPitcher = (p: typeof homePitcher) => {
     if (!p) return "Unknown (probable starter not confirmed)";
     const hand = p.hand ? ` (${p.hand}HP)` : "";
     const recent = p.recentERA !== null ? `, last 3 starts ERA: ${formatERA(p.recentERA)}` : "";
-    return `${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}`;
+    const propStats = [
+      p.seasonSO !== null ? `SO: ${p.seasonSO}` : null,
+      `K/9: ${formatK9(p.seasonSO, p.seasonIP)}`,
+      p.seasonWHIP !== null ? `WHIP: ${p.seasonWHIP.toFixed(2)}` : null,
+      p.seasonHR !== null ? `HR allowed: ${p.seasonHR}` : null,
+      p.seasonBB !== null ? `BB: ${p.seasonBB}` : null,
+    ].filter(Boolean).join(" / ");
+    return `${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
   };
 
   const formatRecentForm = (games: typeof homeRecentForm) =>
@@ -138,7 +167,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
 
   const formatHitters = (hitters: typeof homeTeamStats.topHitters) =>
     hitters
-      .map((h) => `${h.playerName} (${h.position}): .${String(Math.round(h.battingAverage * 1000)).padStart(3, "0")} AVG / ${h.homeRuns} HR / ${h.rbi} RBI / ${h.ops.toFixed(3)} OPS`)
+      .map((h) => `${h.playerName} (${h.position}): .${String(Math.round(h.battingAverage * 1000)).padStart(3, "0")} AVG / ${h.homeRuns} HR / ${h.rbi} RBI / ${h.ops.toFixed(3)} OPS / ${h.stolenBases} SB / ${h.walks} BB`)
       .join("; ");
 
   const formatInjuries = (inj: { playerName: string; status: string; description: string }[]) => {

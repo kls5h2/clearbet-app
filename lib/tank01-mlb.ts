@@ -85,6 +85,41 @@ interface RawMLBTeamsResponse {
   body: RawMLBTeamInfo[] | Record<string, RawMLBTeamInfo>;
 }
 
+interface RawMLBPlayerStats {
+  Hitting?: {
+    avg?: string;
+    HR?: string;
+    RBI?: string;
+    OPS?: string;
+    BB?: string;
+    SO?: string;
+    H?: string;
+    AB?: string;
+    R?: string;
+    TB?: string;
+  };
+  BaseRunning?: {
+    SB?: string;
+    CS?: string;
+  };
+  Pitching?: {
+    ERA?: string;
+    InningsPitched?: string;
+    SO?: string;
+    BB?: string;
+    WHIP?: string;
+    HR?: string;
+    H?: string;
+    ER?: string;
+    Win?: string;
+    Loss?: string;
+  };
+  gamesPlayed?: string;
+  gamesStarted?: string;
+  longName?: string;
+  teamAbv?: string;
+}
+
 interface RawMLBRosterPlayer {
   longName: string;
   pos: string;
@@ -94,19 +129,7 @@ interface RawMLBRosterPlayer {
     designation?: string;
     description?: string;
   };
-  stats?: {
-    // Hitter stats
-    avg?: string;
-    HR?: string;
-    RBI?: string;
-    OPS?: string;
-    // Pitcher stats
-    ERA?: string;
-    IP?: string;
-    SO?: string;
-    BB?: string;
-    WHIP?: string;
-  };
+  stats?: RawMLBPlayerStats;
 }
 
 interface RawMLBRosterResponse {
@@ -140,10 +163,7 @@ interface RawMLBPlayerInfo {
   longName?: string;
   pos?: string;
   throws?: string;
-  stats?: {
-    ERA?: string;
-    IP?: string;
-  };
+  stats?: RawMLBPlayerStats;
 }
 
 interface RawMLBPlayerResponse {
@@ -266,20 +286,27 @@ export async function getMLBStartingPitcher(
   try {
     const raw = await fetchMLB<RawMLBPlayerResponse>("/getMLBPlayerInfo", {
       playerID: playerId,
-      statsToGet: "averages",
+      getStats: "true",
     });
 
     const player = raw.body;
     if (!player?.longName) return getMLBPitcherFromRoster(teamAbv);
 
-    const seasonERA = parseFloat(player.stats?.ERA ?? "0");
+    const pitching = player.stats?.Pitching;
+    const seasonERA = parseFloat(pitching?.ERA ?? "0");
+    const seasonIP = parseFloat(pitching?.InningsPitched ?? "0");
     const hand = (player.throws === "L" || player.throws === "R") ? player.throws : null;
 
     return {
       name: player.longName,
       seasonERA,
-      recentERA: null, // would need game log endpoint
+      recentERA: null,
       hand,
+      seasonSO: pitching?.SO != null ? parseInt(pitching.SO, 10) : null,
+      seasonBB: pitching?.BB != null ? parseInt(pitching.BB, 10) : null,
+      seasonWHIP: pitching?.WHIP != null ? parseFloat(pitching.WHIP) : null,
+      seasonHR: pitching?.HR != null ? parseInt(pitching.HR, 10) : null,
+      seasonIP: seasonIP > 0 ? seasonIP : null,
     };
   } catch {
     return getMLBPitcherFromRoster(teamAbv);
@@ -295,17 +322,25 @@ async function getMLBPitcherFromRoster(teamAbv: string): Promise<MLBPitcher | nu
     const pitchers = roster
       .filter((p) => p.pos === "SP" || p.pos === "P")
       .filter((p) => p.injury?.designation?.toLowerCase() !== "out")
-      .filter((p) => p.stats?.ERA !== undefined)
-      .sort((a, b) => parseFloat(b.stats?.IP ?? "0") - parseFloat(a.stats?.IP ?? "0"));
+      .filter((p) => p.stats?.Pitching?.ERA !== undefined)
+      .sort((a, b) => parseFloat(b.stats?.Pitching?.InningsPitched ?? "0") - parseFloat(a.stats?.Pitching?.InningsPitched ?? "0"));
 
     const p = pitchers[0];
     if (!p) return null;
 
+    const pitching = p.stats?.Pitching;
+    const seasonIP = parseFloat(pitching?.InningsPitched ?? "0");
+
     return {
       name: p.longName,
-      seasonERA: parseFloat(p.stats?.ERA ?? "0"),
+      seasonERA: parseFloat(pitching?.ERA ?? "0"),
       recentERA: null,
       hand: (p.throws === "L" || p.throws === "R") ? p.throws : null,
+      seasonSO: pitching?.SO != null ? parseInt(pitching.SO, 10) : null,
+      seasonBB: pitching?.BB != null ? parseInt(pitching.BB, 10) : null,
+      seasonWHIP: pitching?.WHIP != null ? parseFloat(pitching.WHIP) : null,
+      seasonHR: pitching?.HR != null ? parseInt(pitching.HR, 10) : null,
+      seasonIP: seasonIP > 0 ? seasonIP : null,
     };
   } catch {
     return null;
@@ -459,7 +494,7 @@ async function getMLBTeamMap(): Promise<Record<string, RawMLBTeamInfo>> {
 async function getMLBRoster(teamAbv: string): Promise<RawMLBRosterPlayer[]> {
   const raw = await fetchMLB<RawMLBRosterResponse>("/getMLBTeamRoster", {
     teamAbv,
-    statsToGet: "averages",
+    getStats: "true",
   });
   return raw.body?.roster ?? [];
 }
@@ -470,17 +505,19 @@ async function getMLBTopHitters(teamAbv: string): Promise<MLBHitterStat[]> {
     return roster
       .filter((p) => {
         const isHitter = !["SP", "RP", "P"].includes(p.pos ?? "");
-        const hasStats = p.stats?.avg !== undefined;
+        const hasStats = p.stats?.Hitting?.avg !== undefined;
         const isOut = p.injury?.designation?.toLowerCase() === "out";
         return isHitter && hasStats && !isOut;
       })
       .map((p) => ({
         playerName: p.longName,
         position: p.pos ?? "?",
-        battingAverage: parseFloat(p.stats?.avg ?? "0"),
-        homeRuns: parseInt(p.stats?.HR ?? "0", 10),
-        rbi: parseInt(p.stats?.RBI ?? "0", 10),
-        ops: parseFloat(p.stats?.OPS ?? "0"),
+        battingAverage: parseFloat(p.stats?.Hitting?.avg ?? "0"),
+        homeRuns: parseInt(p.stats?.Hitting?.HR ?? "0", 10),
+        rbi: parseInt(p.stats?.Hitting?.RBI ?? "0", 10),
+        ops: parseFloat(p.stats?.Hitting?.OPS ?? "0"),
+        stolenBases: parseInt(p.stats?.BaseRunning?.SB ?? "0", 10),
+        walks: parseInt(p.stats?.Hitting?.BB ?? "0", 10),
       }))
       .sort((a, b) => b.ops - a.ops)
       .slice(0, 4);

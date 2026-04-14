@@ -257,6 +257,11 @@ function buildPitcher(
     seasonERA: details?.seasonERA ?? 0,
     recentERA: null,
     hand: details?.hand ?? null,
+    seasonSO: null,
+    seasonBB: null,
+    seasonWHIP: null,
+    seasonHR: null,
+    seasonIP: null,
   };
 }
 
