@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport, getPlayoffContext, getH2HRecord } from "@/lib/tank01";
-import { fetchNBAOdds, buildMatchupKey, fetchMLBOdds } from "@/lib/odds-api";
+import { fetchNBAOdds, buildMatchupKey, fetchMLBOdds, type OddsMatchup } from "@/lib/odds-api";
 import { generateBreakdown } from "@/lib/claude";
 import {
   getMLBGamesForDate,
@@ -119,6 +119,28 @@ async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse 
   }
 }
 
+/**
+ * Detect whether Tank01's home/away disagrees with The Odds API.
+ * The Odds API is authoritative for Play-In and Playoff home court.
+ * Returns true when the Odds API's home team matches Tank01's *away* team.
+ */
+function isHomeAwayFlipped(tank01HomeName: string, tank01AwayName: string, oddsMatchup: OddsMatchup): boolean {
+  const oddsHome = oddsMatchup.homeTeam.toLowerCase();
+  const t01Home = tank01HomeName.toLowerCase();
+  const t01Away = tank01AwayName.toLowerCase();
+
+  // Direct full-name match
+  if (oddsHome === t01Home) return false;
+  if (oddsHome === t01Away) return true;
+
+  // Nickname fallback (handles "LA Clippers" vs "Los Angeles Clippers")
+  const nick = (name: string) => name.split(" ").pop()?.toLowerCase() ?? "";
+  if (nick(oddsMatchup.homeTeam) === nick(tank01HomeName)) return false;
+  if (nick(oddsMatchup.homeTeam) === nick(tank01AwayName)) return true;
+
+  return false; // indeterminate — trust Tank01
+}
+
 async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
   try {
     const today = getTodayDateString();
@@ -131,20 +153,48 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
-    const { homeTeam, awayTeam } = rawGame;
-    const [homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap, playoffCtx, h2h] = await Promise.all([
-      getTeamStats(homeTeam.teamAbv),
-      getTeamStats(awayTeam.teamAbv),
-      getRecentForm(homeTeam.teamAbv),
-      getRecentForm(awayTeam.teamAbv),
-      getInjuryReport(homeTeam.teamAbv, awayTeam.teamAbv),
+    // Tank01's home/away — may be wrong for Play-In / Playoff games
+    const t01Home = rawGame.homeTeam;
+    const t01Away = rawGame.awayTeam;
+
+    // Fetch all data in parallel using Tank01's designations
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H] = await Promise.all([
+      getTeamStats(t01Home.teamAbv),
+      getTeamStats(t01Away.teamAbv),
+      getRecentForm(t01Home.teamAbv),
+      getRecentForm(t01Away.teamAbv),
+      getInjuryReport(t01Home.teamAbv, t01Away.teamAbv),
       fetchNBAOdds().catch(() => new Map()),
-      getPlayoffContext(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => ({ home: null, away: null })),
-      getH2HRecord(homeTeam.teamAbv, awayTeam.teamAbv).catch(() => null),
+      getPlayoffContext(t01Home.teamAbv, t01Away.teamAbv).catch(() => ({ home: null, away: null })),
+      getH2HRecord(t01Home.teamAbv, t01Away.teamAbv).catch(() => null),
     ]);
 
-    const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
-    const odds = oddsMap.get(oddsKey)?.odds ?? null;
+    // Cross-validate home/away with The Odds API (authoritative for Play-In / Playoff)
+    const oddsKey = buildMatchupKey(t01Home.teamName, t01Away.teamName);
+    const oddsMatchup = oddsMap.get(oddsKey) ?? null;
+    const odds = oddsMatchup?.odds ?? null;
+
+    const flipped = oddsMatchup ? isHomeAwayFlipped(t01Home.teamName, t01Away.teamName, oddsMatchup) : false;
+    if (flipped) {
+      console.log(`[breakdown:NBA] HOME/AWAY FLIP: Odds API says "${oddsMatchup!.homeTeam}" is home, Tank01 had "${t01Home.teamName}"`);
+    }
+
+    // Assign to correct home/away slots — swap everything when Odds API disagrees
+    const homeTeam      = flipped ? t01Away : t01Home;
+    const awayTeam      = flipped ? t01Home : t01Away;
+    const homeStats     = flipped ? t01AwayStats : t01HomeStats;
+    const awayStats     = flipped ? t01HomeStats : t01AwayStats;
+    const homeForm      = flipped ? t01AwayForm : t01HomeForm;
+    const awayForm      = flipped ? t01HomeForm : t01AwayForm;
+    const injuries      = flipped
+      ? { homeInjuries: t01Injuries.awayInjuries, awayInjuries: t01Injuries.homeInjuries }
+      : t01Injuries;
+    const playoffCtx    = flipped
+      ? { home: t01Playoff.away, away: t01Playoff.home }
+      : t01Playoff;
+    const h2h           = flipped && t01H2H
+      ? { wins: t01H2H.losses, losses: t01H2H.wins, games: t01H2H.games, avgMarginFor: t01H2H.avgMarginAgainst, avgMarginAgainst: t01H2H.avgMarginFor }
+      : t01H2H;
 
     // Record opening line (insert-only, non-blocking) then fetch it for movement calc
     recordOpeningLine(
@@ -181,7 +231,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       awayTeamStats: awayStats,
       homeRecentForm: homeForm,
       awayRecentForm: awayForm,
-      injuries: injuryReport,
+      injuries,
       homePlayoffContext: playoffCtx.home,
       awayPlayoffContext: playoffCtx.away,
       h2h,
