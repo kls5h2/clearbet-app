@@ -48,28 +48,39 @@ export default function HomePage() {
     Promise.resolve(
       supabase
         .from("breakdowns")
-        .select("game_id, breakdown_content")
+        .select("game_id, breakdown_content, sport")
         .eq("game_date", todayStr)
         .limit(500)
-    ).then(({ data }) => {
-      const rows = (data ?? []) as { game_id: string; breakdown_content: unknown }[];
-      const map = new Map<string, string>();
-      const ids = new Set<string>();
-      for (const row of rows) {
-        ids.add(row.game_id);
-        const content = row.breakdown_content as BreakdownResult;
-        // Prefer decisionLens (Step 07), fall back to gameShape (Step 01)
-        const source = content?.decisionLens || content?.gameShape;
-        if (source) {
+    ).then(({ data, error: sbError }) => {
+        if (sbError) {
+          console.error("[slate] Supabase breakdown fetch failed:", sbError.message);
+          return;
+        }
+        const rows = (data ?? []) as { game_id: string; breakdown_content: unknown; sport: string | null }[];
+        console.log(`[slate] fetched ${rows.length} breakdowns for ${todayStr} — sports: ${[...new Set(rows.map((r) => r.sport))].join(", ") || "none"}`);
+        const map = new Map<string, string>();
+        const ids = new Set<string>();
+        for (const row of rows) {
+          ids.add(row.game_id);
+          // Handle breakdown_content as object (JSONB) or string (text column)
+          let content: BreakdownResult | null = null;
+          if (row.breakdown_content && typeof row.breakdown_content === "object") {
+            content = row.breakdown_content as BreakdownResult;
+          } else if (typeof row.breakdown_content === "string") {
+            try { content = JSON.parse(row.breakdown_content) as BreakdownResult; } catch { /* skip malformed */ }
+          }
+          if (!content) continue;
+          // Prefer decisionLens (Step 07), fall back to gameShape (Step 01)
+          const source = content.decisionLens || content.gameShape;
+          if (!source) continue;
           const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
           // Strip trailing data artifacts (e.g. " — -1" from confidence level bleeding into text)
           const cleaned = firstSentence.replace(/\s*[—–-]\s*-?\d+\.?$/, "").trim();
-          map.set(row.game_id, cleaned);
+          if (cleaned) map.set(row.game_id, cleaned);
         }
-      }
-      setBreakdownMap(map);
-      setBreakdownIds(ids);
-    }).catch(() => {});
+        setBreakdownMap(map);
+        setBreakdownIds(ids);
+      }).catch(() => {});
   }, []);
 
   useEffect(() => {
