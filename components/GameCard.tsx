@@ -174,7 +174,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
             {sport === "MLB" && (
               <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.awayPitcher
-                  ? <>{game.awayPitcher.hand ? `${game.awayPitcher.hand === "L" ? "LHP" : "RHP"} · ` : ""}{game.awayPitcher.name}{game.awayPitcher.seasonERA != null && game.awayPitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  ? <>{game.awayPitcher.hand ? `${game.awayPitcher.hand === "L" ? "LHP" : "RHP"} · ` : ""}{game.awayPitcher.name}{game.awayPitcher.seasonERA != null && <span style={{ color: "#637A96" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}</>
                   : "Starter TBD"}
               </p>
             )}
@@ -186,7 +186,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
             {sport === "MLB" && (
               <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.homePitcher
-                  ? <>{game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand === "L" ? "LHP" : "RHP"}` : ""}{game.homePitcher.seasonERA != null && game.homePitcher.seasonERA > 0 && <span style={{ color: "#637A96" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  ? <>{game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand === "L" ? "LHP" : "RHP"}` : ""}{game.homePitcher.seasonERA != null && <span style={{ color: "#637A96" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}</>
                   : "Starter TBD"}
               </p>
             )}

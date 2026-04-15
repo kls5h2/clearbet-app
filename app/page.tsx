@@ -58,8 +58,10 @@ export default function HomePage() {
       for (const row of rows) {
         ids.add(row.game_id);
         const content = row.breakdown_content as BreakdownResult;
-        if (content?.decisionLens) {
-          const firstSentence = content.decisionLens.match(/^[^.]+\./)?.[0] ?? content.decisionLens;
+        // Prefer decisionLens (Step 07), fall back to gameShape (Step 01)
+        const source = content?.decisionLens || content?.gameShape;
+        if (source) {
+          const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
           map.set(row.game_id, firstSentence);
         }
       }
