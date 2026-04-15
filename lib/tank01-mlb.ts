@@ -125,6 +125,7 @@ interface RawMLBRosterPlayer {
   pos: string;
   bats?: string;   // "R" | "L" | "S"
   throws?: string; // "R" | "L"
+  lastGamePlayed?: string; // e.g. "20260410_LAD@SF"
   injury?: {
     designation?: string;
     description?: string;
@@ -384,28 +385,72 @@ export async function getMLBRecentForm(teamAbv: string): Promise<RecentGame[]> {
 /**
  * Fetch injury report for both teams via their roster endpoints.
  */
+/**
+ * Fetch injury report for both MLB teams.
+ * Two-layer enrichment:
+ *   1. Tank01 roster designation (IL, Out, Day-To-Day)
+ *   2. Absent-player detection (lastGamePlayed 7+ days, gamesPlayed < 50%)
+ */
 export async function getMLBInjuryReport(
   homeAbv: string,
   awayAbv: string
 ): Promise<InjuryReport> {
-  const mapRoster = (roster: RawMLBRosterPlayer[]): PlayerInjury[] =>
-    roster
-      .filter((p) => p.injury?.designation && p.injury.designation.trim() !== "")
-      .map((p) => ({
+  function enrichRoster(
+    roster: RawMLBRosterPlayer[],
+    teamWins: number,
+    teamLosses: number
+  ): PlayerInjury[] {
+    const result: PlayerInjury[] = [];
+    const teamGames = teamWins + teamLosses;
+
+    for (const p of roster) {
+      const designation = (p.injury?.designation ?? "").trim();
+      let status: PlayerInjury["status"] | null = null;
+      let description = p.injury?.description ?? "";
+
+      // Layer 1: Tank01 designation
+      if (designation) {
+        status = normalizeInjuryStatus(designation);
+      }
+
+      // Layer 2: Absent 7+ days with no active designation
+      const daysAway = mlbDaysSinceLastGame(p.lastGamePlayed);
+      if (!status && daysAway !== null && daysAway >= 7) {
+        status = "Out";
+        description = `Availability unconfirmed — last played ${mlbFormatLastPlayed(p.lastGamePlayed)}`;
+      }
+
+      if (!status) continue;
+
+      // Append games-missed note if < 50% of team games
+      const gp = parseInt(p.stats?.gamesPlayed ?? "0", 10);
+      if (teamGames > 10 && gp > 0 && gp < teamGames * 0.5) {
+        const note = `Has missed significant time this season (${gp} of ${teamGames} games)`;
+        description = description ? `${description}. ${note}` : note;
+      }
+
+      result.push({
         playerName: p.longName,
         position: p.pos ?? "?",
-        status: normalizeInjuryStatus(p.injury?.designation ?? ""),
-        description: p.injury?.description ?? "",
-      }));
+        status,
+        description,
+      });
+    }
+    return result;
+  }
 
   try {
-    const [homeRoster, awayRoster] = await Promise.all([
+    const [homeRoster, awayRoster, teamMap] = await Promise.all([
       getMLBRoster(homeAbv),
       getMLBRoster(awayAbv),
+      getMLBTeamMap(),
     ]);
+
+    const homeInfo = teamMap[homeAbv];
+    const awayInfo = teamMap[awayAbv];
     return {
-      homeInjuries: mapRoster(homeRoster),
-      awayInjuries: mapRoster(awayRoster),
+      homeInjuries: enrichRoster(homeRoster, parseInt(homeInfo?.wins ?? "0", 10), parseInt(homeInfo?.loss ?? "0", 10)),
+      awayInjuries: enrichRoster(awayRoster, parseInt(awayInfo?.wins ?? "0", 10), parseInt(awayInfo?.loss ?? "0", 10)),
     };
   } catch {
     return { homeInjuries: [], awayInjuries: [] };
@@ -506,8 +551,11 @@ async function getMLBTopHitters(teamAbv: string): Promise<MLBHitterStat[]> {
       .filter((p) => {
         const isHitter = !["SP", "RP", "P"].includes(p.pos ?? "");
         const hasStats = p.stats?.Hitting?.avg !== undefined;
-        const isOut = p.injury?.designation?.toLowerCase() === "out";
-        return isHitter && hasStats && !isOut;
+        const designation = (p.injury?.designation ?? "").toLowerCase();
+        if (designation.includes("out") || designation.includes("il")) return false;
+        // Exclude players absent 7+ days
+        if (!designation && mlbDaysSinceLastGame(p.lastGamePlayed) !== null && mlbDaysSinceLastGame(p.lastGamePlayed)! >= 7) return false;
+        return isHitter && hasStats;
       })
       .map((p) => ({
         playerName: p.longName,
@@ -547,6 +595,29 @@ function formatGameTime(raw: string): string {
 
 function currentMLBSeason(): string {
   return String(new Date().getFullYear());
+}
+
+/** Parse YYYYMMDD from lastGamePlayed ("20260410_LAD@SF") and return days since. */
+function mlbDaysSinceLastGame(lastGamePlayed: string | undefined): number | null {
+  if (!lastGamePlayed) return null;
+  const dateStr = lastGamePlayed.split("_")[0];
+  if (dateStr.length !== 8) return null;
+  const y = parseInt(dateStr.slice(0, 4), 10);
+  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const d = parseInt(dateStr.slice(6, 8), 10);
+  const diff = Date.now() - new Date(y, m, d).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+/** Format YYYYMMDD portion of lastGamePlayed as "Apr 10". */
+function mlbFormatLastPlayed(lastGamePlayed: string | undefined): string {
+  if (!lastGamePlayed) return "unknown";
+  const dateStr = lastGamePlayed.split("_")[0];
+  if (dateStr.length !== 8) return "unknown";
+  const m = parseInt(dateStr.slice(4, 6), 10);
+  const d = parseInt(dateStr.slice(6, 8), 10);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[m - 1]} ${d}`;
 }
 
 function normalizeInjuryStatus(raw: string): PlayerInjury["status"] {

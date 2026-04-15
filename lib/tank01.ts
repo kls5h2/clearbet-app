@@ -87,6 +87,7 @@ interface RawTeamsResponse {
 interface RawRosterPlayer {
   longName: string;
   pos: string;
+  lastGamePlayed?: string; // e.g. "20260406_PHI@SA"
   injury?: {
     injReturnDate?: string;
     description?: string;
@@ -96,6 +97,7 @@ interface RawRosterPlayer {
     pts?: string;
     ast?: string;
     reb?: string;
+    gamesPlayed?: string;
   };
 }
 
@@ -235,16 +237,27 @@ async function getRoster(teamAbv: string): Promise<RawRosterPlayer[]> {
 }
 
 /**
- * Fetch top 3 available (non-Out) players by PPG from roster
+ * Fetch top 3 available players by PPG from roster.
+ * Excludes players who are Out, absent 7+ days, or on the official injury report.
  */
 async function getTopPlayers(teamAbv: string): Promise<PlayerStat[]> {
   try {
     const roster = await getRoster(teamAbv);
+    const officialReport = await fetchOfficialNBAInjuries([teamAbv]);
     return roster
       .filter((p) => {
         if (p.stats?.pts === undefined) return false;
-        const designation = p.injury?.designation ?? "";
-        return designation.toLowerCase() !== "out";
+        const designation = (p.injury?.designation ?? "").toLowerCase();
+        if (designation === "out") return false;
+        // Exclude players absent 7+ days with no active designation
+        if (!designation && daysSinceLastGame(p.lastGamePlayed) !== null && daysSinceLastGame(p.lastGamePlayed)! >= 7) return false;
+        // Exclude players listed Out/Doubtful on official NBA report
+        const official = officialReport.get(p.longName.toLowerCase());
+        if (official) {
+          const s = official.status.toLowerCase();
+          if (s.includes("out") || s.includes("doubtful")) return false;
+        }
+        return true;
       })
       .map((p) => ({
         playerName: p.longName,
@@ -298,30 +311,90 @@ export async function getRecentForm(teamAbv: string): Promise<RecentGame[]> {
 }
 
 /**
- * Fetch injury report for both teams via their roster endpoints.
- * Only includes players with a non-empty injury designation.
+ * Fetch injury report for both teams.
+ * Three-layer enrichment:
+ *   1. Official NBA injury report (most current, overrides Tank01)
+ *   2. Tank01 roster designation (standard source)
+ *   3. Absent-player detection (lastGamePlayed 7+ days, gamesPlayed < 50%)
  */
 export async function getInjuryReport(
   homeAbv: string,
   awayAbv: string
 ): Promise<InjuryReport> {
-  const mapRoster = (roster: RawRosterPlayer[]): PlayerInjury[] =>
-    roster
-      .filter((p) => p.injury?.designation && p.injury.designation.trim() !== "")
-      .map((p) => ({
+  function enrichRoster(
+    roster: RawRosterPlayer[],
+    officialReport: Map<string, { status: string; comment: string }>,
+    teamWins: number,
+    teamLosses: number
+  ): PlayerInjury[] {
+    const result: PlayerInjury[] = [];
+    const teamGames = teamWins + teamLosses;
+
+    for (const p of roster) {
+      const designation = (p.injury?.designation ?? "").trim();
+      const official = officialReport.get(p.longName.toLowerCase());
+      let status: PlayerInjury["status"] | null = null;
+      let description = p.injury?.description ?? "";
+
+      // Layer 1: Official NBA injury report (highest priority)
+      if (official) {
+        const s = official.status.toLowerCase();
+        if (s.includes("out")) status = "Out";
+        else if (s.includes("doubtful")) status = "Doubtful";
+        else if (s.includes("questionable")) status = "Questionable";
+        else status = "Day-To-Day";
+        if (official.comment) description = official.comment;
+      }
+      // Layer 2: Tank01 designation
+      else if (designation) {
+        status = normalizeInjuryStatus(designation);
+      }
+
+      // Layer 3: Absent 7+ days with no active designation
+      const daysAway = daysSinceLastGame(p.lastGamePlayed);
+      if (!status && daysAway !== null && daysAway >= 7) {
+        status = "Out";
+        description = `Availability unconfirmed — last played ${formatLastPlayedDate(p.lastGamePlayed)}`;
+      }
+
+      if (!status) continue;
+
+      // Append games-missed note if < 50% of team games
+      const gp = parseInt(p.stats?.gamesPlayed ?? "0", 10);
+      if (teamGames > 20 && gp > 0 && gp < teamGames * 0.5) {
+        const note = `Has missed significant time this season (${gp} of ${teamGames} games)`;
+        description = description ? `${description}. ${note}` : note;
+      }
+
+      result.push({
         playerName: p.longName,
         position: p.pos ?? "?",
-        status: normalizeInjuryStatus(p.injury?.designation ?? ""),
-        description: p.injury?.description ?? "",
-      }));
+        status,
+        description,
+      });
+    }
+    return result;
+  }
 
   try {
-    const [homeRoster, awayRoster] = await Promise.all([
+    const [homeRoster, awayRoster, officialReport, teamMap] = await Promise.all([
       getRoster(homeAbv),
       getRoster(awayAbv),
+      fetchOfficialNBAInjuries([homeAbv, awayAbv]),
+      getTeamMap(),
     ]);
-    const homeInjuries = mapRoster(homeRoster);
-    const awayInjuries = mapRoster(awayRoster);
+
+    const homeInfo = teamMap[homeAbv];
+    const awayInfo = teamMap[awayAbv];
+    const homeInjuries = enrichRoster(
+      homeRoster, officialReport,
+      parseInt(homeInfo?.wins ?? "0", 10), parseInt(homeInfo?.loss ?? "0", 10)
+    );
+    const awayInjuries = enrichRoster(
+      awayRoster, officialReport,
+      parseInt(awayInfo?.wins ?? "0", 10), parseInt(awayInfo?.loss ?? "0", 10)
+    );
+
     console.log(`[injuries] ${homeAbv}: ${homeInjuries.map((p) => `${p.playerName} (${p.status})`).join(", ") || "none"}`);
     console.log(`[injuries] ${awayAbv}: ${awayInjuries.map((p) => `${p.playerName} (${p.status})`).join(", ") || "none"}`);
     return { homeInjuries, awayInjuries };
@@ -560,4 +633,75 @@ function normalizeInjuryStatus(raw: string): PlayerInjury["status"] {
   if (s.includes("doubtful")) return "Doubtful";
   if (s.includes("questionable")) return "Questionable";
   return "Day-To-Day";
+}
+
+/** Parse YYYYMMDD from lastGamePlayed ("20260406_PHI@SA") and return days since. */
+function daysSinceLastGame(lastGamePlayed: string | undefined): number | null {
+  if (!lastGamePlayed) return null;
+  const dateStr = lastGamePlayed.split("_")[0];
+  if (dateStr.length !== 8) return null;
+  const y = parseInt(dateStr.slice(0, 4), 10);
+  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const d = parseInt(dateStr.slice(6, 8), 10);
+  const diff = Date.now() - new Date(y, m, d).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+/** Format YYYYMMDD portion of lastGamePlayed as "Apr 6". */
+function formatLastPlayedDate(lastGamePlayed: string | undefined): string {
+  if (!lastGamePlayed) return "unknown";
+  const dateStr = lastGamePlayed.split("_")[0];
+  if (dateStr.length !== 8) return "unknown";
+  const m = parseInt(dateStr.slice(4, 6), 10);
+  const d = parseInt(dateStr.slice(6, 8), 10);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[m - 1]} ${d}`;
+}
+
+/**
+ * Fetch the official NBA injury report and return a map of
+ * lowercased player name → { status, comment } for the given teams.
+ * Gracefully returns empty map on any failure (endpoint may be access-restricted).
+ */
+async function fetchOfficialNBAInjuries(
+  teamAbvs: string[]
+): Promise<Map<string, { status: string; comment: string }>> {
+  const result = new Map<string, { status: string; comment: string }>();
+  try {
+    const res = await fetch(
+      "https://cdn.nba.com/static/json/liveData/injuryreport/injuryreport.json",
+      {
+        next: { revalidate: 900 },
+        headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://www.nba.com/" },
+      }
+    );
+    if (!res.ok) return result;
+    const data = await res.json();
+
+    // Defensive parsing: try common NBA API response shapes
+    const players: Record<string, unknown>[] =
+      data?.payload?.injuredPlayers ??
+      data?.resultSets?.[0]?.rowSet ??
+      (Array.isArray(data) ? data : []);
+
+    const abvSet = new Set(teamAbvs.map((a) => a.toUpperCase()));
+
+    for (const p of players) {
+      const tricode = String(p.TeamTricode ?? p.teamTricode ?? p.Team ?? "").toUpperCase();
+      if (!abvSet.has(tricode)) continue;
+
+      const name = String(
+        p.PlayerName ?? p.playerName ??
+        `${p.FirstName ?? p.firstName ?? ""} ${p.LastName ?? p.lastName ?? ""}`.trim()
+      );
+      if (!name) continue;
+
+      const status = String(p.GameStatus ?? p.Status ?? p.status ?? "");
+      const comment = String(p.Comment ?? p.comment ?? p.Reason ?? p.reason ?? "");
+      result.set(name.toLowerCase(), { status, comment });
+    }
+  } catch {
+    // Non-critical — options 1 & 2 still protect against stale data
+  }
+  return result;
 }
