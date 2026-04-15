@@ -289,7 +289,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
           <div style={{ marginTop: "12px", background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", lineHeight: 1.5 }}>
             {showMLBPitcherBanner
               ? "This breakdown updates closer to first pitch — check back for the latest starter information."
-              : "Generated early — check injury report closer to tip-off for the latest."}
+              : "Early read — injury and lineup updates may change this picture. Refresh closer to game time."}
           </div>
         )}
       </div>
