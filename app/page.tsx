@@ -62,7 +62,9 @@ export default function HomePage() {
         const source = content?.decisionLens || content?.gameShape;
         if (source) {
           const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
-          map.set(row.game_id, firstSentence);
+          // Strip trailing data artifacts (e.g. " — -1" from confidence level bleeding into text)
+          const cleaned = firstSentence.replace(/\s*[—–-]\s*-?\d+\.?$/, "").trim();
+          map.set(row.game_id, cleaned);
         }
       }
       setBreakdownMap(map);
