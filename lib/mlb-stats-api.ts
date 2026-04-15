@@ -44,7 +44,14 @@ interface RawPerson {
   pitchHand?: { code: "L" | "R" };
   stats?: Array<{
     group: { displayName: string };
-    splits: Array<{ stat: { era?: string } }>;
+    splits: Array<{ stat: {
+      era?: string;
+      inningsPitched?: string;
+      strikeOuts?: number;
+      baseOnBalls?: number;
+      whip?: string;
+      homeRuns?: number;
+    } }>;
   }>;
 }
 
@@ -223,10 +230,20 @@ export async function fetchMLBProbableStarters(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+interface PersonDetails {
+  hand: "L" | "R" | null;
+  seasonERA: number | null;
+  seasonIP: number | null;
+  seasonSO: number | null;
+  seasonBB: number | null;
+  seasonWHIP: number | null;
+  seasonHR: number | null;
+}
+
 async function fetchPersonDetails(
   ids: number[]
-): Promise<Map<number, { hand: "L" | "R" | null; seasonERA: number | null }>> {
-  const map = new Map<number, { hand: "L" | "R" | null; seasonERA: number | null }>();
+): Promise<Map<number, PersonDetails>> {
+  const map = new Map<number, PersonDetails>();
   if (ids.length === 0) return map;
 
   const res = await fetch(
@@ -239,17 +256,28 @@ async function fetchPersonDetails(
   for (const p of data.people ?? []) {
     const hand = p.pitchHand?.code ?? null;
     const pitching = p.stats?.find((s) => s.group.displayName === "pitching");
-    const eraStr = pitching?.splits?.[0]?.stat?.era;
+    const stat = pitching?.splits?.[0]?.stat;
+    const eraStr = stat?.era;
+    const ipStr = stat?.inningsPitched;
+    const seasonIP = ipStr ? parseFloat(ipStr) : null;
     const seasonERA =
       eraStr && eraStr !== "-" && eraStr !== "-.--" ? parseFloat(eraStr) : null;
-    map.set(p.id, { hand, seasonERA });
+    map.set(p.id, {
+      hand,
+      seasonERA: seasonIP !== null && seasonIP > 0 ? seasonERA : null,
+      seasonIP: seasonIP !== null && seasonIP > 0 ? seasonIP : null,
+      seasonSO: stat?.strikeOuts ?? null,
+      seasonBB: stat?.baseOnBalls ?? null,
+      seasonWHIP: stat?.whip ? parseFloat(stat.whip) : null,
+      seasonHR: stat?.homeRuns ?? null,
+    });
   }
   return map;
 }
 
 function buildPitcher(
   stub: PitcherStub,
-  personMap: Map<number, { hand: "L" | "R" | null; seasonERA: number | null }>
+  personMap: Map<number, PersonDetails>
 ): MLBPitcher {
   const details = personMap.get(stub.id);
   return {
@@ -257,11 +285,11 @@ function buildPitcher(
     seasonERA: details?.seasonERA ?? null,
     recentERA: null,
     hand: details?.hand ?? null,
-    seasonSO: null,
-    seasonBB: null,
-    seasonWHIP: null,
-    seasonHR: null,
-    seasonIP: null,
+    seasonSO: details?.seasonSO ?? null,
+    seasonBB: details?.seasonBB ?? null,
+    seasonWHIP: details?.seasonWHIP ?? null,
+    seasonHR: details?.seasonHR ?? null,
+    seasonIP: details?.seasonIP ?? null,
   };
 }
 
