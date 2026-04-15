@@ -213,10 +213,10 @@ export default function BreakdownView({ breakdown, game }: Props) {
           const fmtHand = (hand: "L" | "R" | null) => hand ? (hand === "L" ? "LHP" : "RHP") : null;
           const awayName = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? g.awayPitcher.name : "Starter TBD";
           const awayHand = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? fmtHand(g.awayPitcher.hand) : null;
-          const awayERA = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) && g.awayPitcher.seasonERA > 0 ? g.awayPitcher.seasonERA.toFixed(2) : null;
+          const awayERA = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) && g.awayPitcher.seasonERA != null && g.awayPitcher.seasonERA > 0 ? g.awayPitcher.seasonERA.toFixed(2) : null;
           const homeName = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? g.homePitcher.name : "Starter TBD";
           const homeHand = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? fmtHand(g.homePitcher.hand) : null;
-          const homeERA = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) && g.homePitcher.seasonERA > 0 ? g.homePitcher.seasonERA.toFixed(2) : null;
+          const homeERA = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) && g.homePitcher.seasonERA != null && g.homePitcher.seasonERA > 0 ? g.homePitcher.seasonERA.toFixed(2) : null;
           return (
             <div style={{ display: "flex", marginBottom: "16px", gap: "8px" }}>
               <div style={{ flex: 1 }}>

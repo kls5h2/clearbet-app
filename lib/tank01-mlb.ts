@@ -293,8 +293,8 @@ export async function getMLBStartingPitcher(
     if (!player?.longName) return getMLBPitcherFromRoster(teamAbv);
 
     const pitching = player.stats?.Pitching;
-    const seasonERA = parseFloat(pitching?.ERA ?? "0");
     const seasonIP = parseFloat(pitching?.InningsPitched ?? "0");
+    const seasonERA = seasonIP > 0 ? parseFloat(pitching?.ERA ?? "0") : null;
     const hand = (player.throws === "L" || player.throws === "R") ? player.throws : null;
 
     return {
@@ -333,7 +333,7 @@ async function getMLBPitcherFromRoster(teamAbv: string): Promise<MLBPitcher | nu
 
     return {
       name: p.longName,
-      seasonERA: parseFloat(pitching?.ERA ?? "0"),
+      seasonERA: seasonIP > 0 ? parseFloat(pitching?.ERA ?? "0") : null,
       recentERA: null,
       hand: (p.throws === "L" || p.throws === "R") ? p.throws : null,
       seasonSO: pitching?.SO != null ? parseInt(pitching.SO, 10) : null,

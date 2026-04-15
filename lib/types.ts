@@ -175,7 +175,7 @@ export interface GameDetailData {
 
 export interface MLBPitcher {
   name: string;
-  seasonERA: number;
+  seasonERA: number | null; // null when no pitching data (e.g. two-way player in DH-only role)
   recentERA: number | null; // last 3 starts ERA
   hand: "L" | "R" | null;
   seasonSO: number | null;

@@ -254,7 +254,7 @@ function buildPitcher(
   const details = personMap.get(stub.id);
   return {
     name: stub.name,
-    seasonERA: details?.seasonERA ?? 0,
+    seasonERA: details?.seasonERA ?? null,
     recentERA: null,
     hand: details?.hand ?? null,
     seasonSO: null,

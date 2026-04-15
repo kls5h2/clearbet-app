@@ -140,7 +140,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   const { homeTeam, awayTeam, odds, homePitcher, awayPitcher } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
-  const formatERA = (era: number) => (era > 0 ? era.toFixed(2) : "N/A");
+  const formatERA = (era: number | null) => (era !== null ? era.toFixed(2) : "N/A");
   const formatOdds = (n: number | null) => (n !== null ? (n > 0 ? `+${n}` : `${n}`) : "N/A");
 
   const formatK9 = (so: number | null, ip: number | null): string => {
