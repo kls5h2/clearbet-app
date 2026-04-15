@@ -108,7 +108,7 @@ Return valid JSON only. No markdown, no preamble.
   "marketRead": "string",
   "edge": ["string", "string"],
   "edgeClosingLine": "These are the environments the data creates. Your decision is always yours.",
-  "decisionLens": "string",
+  "decisionLens": "string (Step 07 — WHAT THIS MEANS)",
   "confidenceLevel": 1 | 2 | 3 | 4,
   "confidenceLabel": "CLEAR SPOT" | "LEAN" | "FRAGILE" | "PASS",
   "glossaryTerm": "string",
@@ -228,7 +228,7 @@ Top players: ${formatTopPlayers(awayTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
 Injuries: ${formatInjuries(injuries.awayInjuries)}
 
-Now produce the six-step Clearbet breakdown. Return valid JSON only.`;
+Now produce the seven-step Clearbet breakdown. Return valid JSON only.`;
 }
 
 export async function generateBreakdown(data: GameDetailData): Promise<BreakdownResult> {
@@ -265,7 +265,9 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
 
   // Validate the closing line is present in decisionLens
   const CLOSING_LINE = "This is not a pick. This is what the data says. Your decision is always yours.";
-  if (!parsed.decisionLens.includes(CLOSING_LINE)) {
+  if (!parsed.decisionLens) {
+    parsed.decisionLens = CLOSING_LINE;
+  } else if (!parsed.decisionLens.includes(CLOSING_LINE)) {
     parsed.decisionLens = parsed.decisionLens.trimEnd() + " " + CLOSING_LINE;
   }
 
