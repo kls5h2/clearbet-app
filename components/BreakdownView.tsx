@@ -294,14 +294,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
           <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} />
         </div>
 
-        {/* Early / pitcher banners */}
-        {(showMLBPitcherBanner || showNBAEarlyBanner) && (
-          <div style={{ marginTop: "12px", background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: `3px solid ${SIGNAL}`, borderRadius: "6px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: INK, lineHeight: 1.5, fontFamily: SANS }}>
-            {showMLBPitcherBanner
-              ? "This breakdown updates closer to first pitch — check back for the latest starter information."
-              : "Early read — check back closer to game time for the sharpest picture."}
-          </div>
-        )}
+        {/* Banners handled by the breakdown page wrapper — not duplicated here */}
       </div>
 
       {/* 01 — Game Shape (prose) */}

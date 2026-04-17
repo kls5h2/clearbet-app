@@ -56,7 +56,10 @@ export default function HomePage() {
           return;
         }
         const rows = (data ?? []) as { game_id: string; breakdown_content: unknown; sport: string | null }[];
-        console.log(`[slate] fetched ${rows.length} breakdowns for ${todayStr} — sports: ${[...new Set(rows.map((r) => r.sport))].join(", ") || "none"}`);
+        console.log(`[slate] raw query result — ${rows.length} rows for date=${todayStr}`);
+        for (const row of rows) {
+          console.log(`[slate]   game_id=${row.game_id} sport=${row.sport} bc_type=${typeof row.breakdown_content} bc_null=${row.breakdown_content === null}`);
+        }
         const map = new Map<string, string>();
         const ids = new Set<string>();
         for (const row of rows) {
@@ -67,13 +70,17 @@ export default function HomePage() {
           } else if (typeof row.breakdown_content === "string") {
             try { content = JSON.parse(row.breakdown_content) as BreakdownResult; } catch { /* skip malformed */ }
           }
-          if (!content) continue;
+          if (!content) { console.log(`[slate]   ${row.game_id}: content parse failed`); continue; }
           const source = content.decisionLens || content.gameShape;
-          if (!source) continue;
+          if (!source) { console.log(`[slate]   ${row.game_id}: no decisionLens or gameShape`); continue; }
           const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
           const cleaned = firstSentence.replace(/\s*[—–-]\s*-?\d+\.?$/, "").trim();
-          if (cleaned) map.set(row.game_id, cleaned);
+          if (cleaned) {
+            map.set(row.game_id, cleaned);
+            console.log(`[slate]   ${row.game_id}: THE READ = "${cleaned.substring(0, 80)}..."`);
+          }
         }
+        console.log(`[slate] breakdownMap has ${map.size} entries, breakdownIds has ${ids.size} entries`);
         setBreakdownMap(map);
         setBreakdownIds(ids);
       }).catch(() => {});

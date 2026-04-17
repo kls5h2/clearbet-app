@@ -3,6 +3,7 @@ import type { ConfidenceLevel, ConfidenceLabel } from "@/lib/types";
 interface Props {
   level: ConfidenceLevel;
   label: ConfidenceLabel;
+  compact?: boolean; // true = Intel grade only (for cards), false = full label + description (for breakdown header)
 }
 
 const grades: Record<ConfidenceLevel, string> = {
@@ -19,7 +20,16 @@ const descriptions: Record<ConfidenceLevel, string> = {
   4: "This is a harder game to trust",
 };
 
-export default function ConfidenceBadge({ level, label }: Props) {
+export default function ConfidenceBadge({ level, label, compact = false }: Props) {
+  if (compact) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <span style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)" }}>Intel</span>
+        <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "13px", color: "var(--signal)" }}>{grades[level]}</span>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
