@@ -1,11 +1,6 @@
 "use client";
 
 import type { AnyGame, GameStatus, GameOdds, MLBGameOdds } from "@/lib/types";
-import {
-  getActiveTeamColor,
-  getDeadTeamColor,
-  getTomorrowTeamColor,
-} from "@/lib/team-colors";
 
 interface Props {
   game: AnyGame;
@@ -14,7 +9,6 @@ interface Props {
   whatThisMeans?: string | null;
   hasBreakdown?: boolean;
 }
-
 
 function formatML(ml: number | null): string {
   if (ml === null) return "—";
@@ -44,10 +38,7 @@ function getEffectiveStatus(apiStatus: GameStatus, gameTime: string): GameStatus
   if (ampm === "AM" && gameHour === 12) gameHour = 0;
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+    timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false,
   }).formatToParts(now);
   const currentHour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
   const currentMin = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
@@ -57,40 +48,31 @@ function getEffectiveStatus(apiStatus: GameStatus, gameTime: string): GameStatus
   return "live";
 }
 
-// Render the odds row — uses game.sport (not alias) for proper discriminated union narrowing
-function OddsRow({ game, homeTeamAbv, awayTeamAbv }: {
-  game: AnyGame;
-  homeTeamAbv: string;
-  awayTeamAbv: string;
-}) {
+function OddsRow({ game, homeTeamAbv, awayTeamAbv }: { game: AnyGame; homeTeamAbv: string; awayTeamAbv: string }) {
   if (!game.odds) return null;
-  const labelCls = "text-[9px] font-bold uppercase tracking-[0.1em] text-[#637A96] mb-1";
-  const valCls = "text-[14px] font-extrabold text-[#0D1B2E] tracking-[-0.01em]";
-  const rowStyle: React.CSSProperties = {
-    background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px",
-    display: "flex", marginBottom: "14px",
-  };
+  const labelStyle: React.CSSProperties = { fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "2px" };
+  const valStyle: React.CSSProperties = { fontSize: "13px", fontWeight: 500, color: "var(--ink)" };
+  const rowStyle: React.CSSProperties = { background: "#EDEAE3", borderRadius: "4px", padding: "10px 12px", display: "flex", marginBottom: "14px" };
 
   if (game.sport === "MLB") {
     const o: MLBGameOdds = game.odds;
     return (
       <div style={rowStyle}>
-        <div className="flex-1"><p className={labelCls}>Run Line</p><p className={valCls}>{formatSpread(o.runLine, homeTeamAbv)}</p></div>
-        <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total, "O/U")}</p></div>
-        <div className="flex-1 hidden sm:block"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
-        <div className="flex-1 hidden sm:block"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
+        <div className="flex-1"><p style={labelStyle}>Run Line</p><p style={valStyle}>{formatSpread(o.runLine, homeTeamAbv)}</p></div>
+        <div className="flex-1"><p style={labelStyle}>Total</p><p style={valStyle}>{formatTotal(o.total, "O/U")}</p></div>
+        <div className="flex-1 hidden sm:block"><p style={labelStyle}>{awayTeamAbv} ML</p><p style={valStyle}>{formatML(o.awayMoneyline)}</p></div>
+        <div className="flex-1 hidden sm:block"><p style={labelStyle}>{homeTeamAbv} ML</p><p style={valStyle}>{formatML(o.homeMoneyline)}</p></div>
       </div>
     );
   }
 
-  // NBA — game.sport === "NBA" narrowed here
   const o: GameOdds = game.odds;
   return (
     <div style={rowStyle}>
-      <div className="flex-1"><p className={labelCls}>Spread</p><p className={valCls}>{formatSpread(o.spread, homeTeamAbv)}</p></div>
-      <div className="flex-1"><p className={labelCls}>Total</p><p className={valCls}>{formatTotal(o.total)}</p></div>
-      <div className="flex-1 hidden sm:block"><p className={labelCls}>{awayTeamAbv} ML</p><p className={valCls}>{formatML(o.awayMoneyline)}</p></div>
-      <div className="flex-1 hidden sm:block"><p className={labelCls}>{homeTeamAbv} ML</p><p className={valCls}>{formatML(o.homeMoneyline)}</p></div>
+      <div className="flex-1"><p style={labelStyle}>Spread</p><p style={valStyle}>{formatSpread(o.spread, homeTeamAbv)}</p></div>
+      <div className="flex-1"><p style={labelStyle}>Total</p><p style={valStyle}>{formatTotal(o.total)}</p></div>
+      <div className="flex-1 hidden sm:block"><p style={labelStyle}>{awayTeamAbv} ML</p><p style={valStyle}>{formatML(o.awayMoneyline)}</p></div>
+      <div className="flex-1 hidden sm:block"><p style={labelStyle}>{homeTeamAbv} ML</p><p style={valStyle}>{formatML(o.homeMoneyline)}</p></div>
     </div>
   );
 }
@@ -103,37 +85,16 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   const isClickable = effectiveStatus === "scheduled" && !preview;
   const isDead = effectiveStatus === "final" || effectiveStatus === "live";
 
-  // THE READ only shows when a breakdown already exists (whatThisMeans set by slate page)
   const signal: string | null = isClickable && whatThisMeans ? whatThisMeans : null;
 
-  const awayColor = preview
-    ? getTomorrowTeamColor(awayTeam.teamAbv, sport)
-    : isDead
-    ? getDeadTeamColor(awayTeam.teamAbv, sport)
-    : getActiveTeamColor(awayTeam.teamAbv, sport);
-
-  const homeColor = preview
-    ? getTomorrowTeamColor(homeTeam.teamAbv, sport)
-    : isDead
-    ? getDeadTeamColor(homeTeam.teamAbv, sport)
-    : getActiveTeamColor(homeTeam.teamAbv, sport);
-
   const awayCity = awayTeam.teamCity || awayTeam.teamName.split(" ").slice(0, -1).join(" ");
-  const awayNickname = awayTeam.teamCity
-    ? awayTeam.teamName.replace(awayTeam.teamCity, "").trim()
-    : awayTeam.teamName;
+  const awayNickname = awayTeam.teamCity ? awayTeam.teamName.replace(awayTeam.teamCity, "").trim() : awayTeam.teamName;
   const homeCity = homeTeam.teamCity || homeTeam.teamName.split(" ").slice(0, -1).join(" ");
-  const homeNickname = homeTeam.teamCity
-    ? homeTeam.teamName.replace(homeTeam.teamCity, "").trim()
-    : homeTeam.teamName;
+  const homeNickname = homeTeam.teamCity ? homeTeam.teamName.replace(homeTeam.teamCity, "").trim() : homeTeam.teamName;
 
   const atConnector = (
-    <div style={{
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "flex-end",
-      flexShrink: 0, padding: "0 6px", paddingBottom: "2px",
-    }}>
-      <span style={{ fontSize: "11px", fontWeight: 600, color: "#637A96" }}>at</span>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", flexShrink: 0, padding: "0 6px", paddingBottom: "2px" }}>
+      <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "16px", color: "var(--muted)" }}>at</span>
     </div>
   );
 
@@ -142,51 +103,40 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
     return (
       <button
         onClick={() => onClick(game.gameId)}
-        className="w-full text-left rounded-[14px] cursor-pointer transition-all duration-150 focus:outline-none"
+        className="w-full text-left cursor-pointer transition-all duration-150 focus:outline-none"
         style={{
-          background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px 18px",
-          boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
-          borderLeft: "3px solid transparent",
+          background: "var(--paper)", borderRadius: "6px", padding: "20px 24px 18px",
+          border: "0.5px solid transparent",
         }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.boxShadow = "0 6px 24px rgba(13,27,46,0.12)";
-          el.style.transform = "translateY(-2px)";
-          el.style.borderLeft = "3px solid #0A7A6C";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.boxShadow = "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)";
-          el.style.transform = "translateY(0)";
-          el.style.borderLeft = "3px solid transparent";
-        }}
+        onMouseEnter={(e) => { const el = e.currentTarget; el.style.background = "#EFEDE7"; el.style.border = "0.5px solid rgba(14,14,14,0.08)"; }}
+        onMouseLeave={(e) => { const el = e.currentTarget; el.style.background = "var(--paper)"; el.style.border = "0.5px solid transparent"; }}
       >
-        {/* Time row */}
-        <div className="flex justify-between items-center mb-[14px]">
-          <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+        {/* Time */}
+        <div style={{ marginBottom: "12px" }}>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
         </div>
 
         {/* Matchup */}
-        <div className="flex items-center gap-3 mb-[14px]">
+        <div className="flex items-center gap-3" style={{ marginBottom: "14px" }}>
           <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{awayCity}</p>
-            <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
             {sport === "MLB" && (
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
+              <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.awayPitcher
-                  ? <>{game.awayPitcher.hand ? `${game.awayPitcher.hand === "L" ? "LHP" : "RHP"} · ` : ""}{game.awayPitcher.name}{game.awayPitcher.seasonERA != null && <span style={{ color: "#637A96" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  ? <>{game.awayPitcher.hand ? `${game.awayPitcher.hand === "L" ? "LHP" : "RHP"} · ` : ""}{game.awayPitcher.name}{game.awayPitcher.seasonERA != null && <span style={{ color: "var(--muted)" }}> · {game.awayPitcher.seasonERA.toFixed(2)} ERA</span>}</>
                   : "Starter TBD"}
               </p>
             )}
           </div>
           {atConnector}
           <div className="flex-1 text-right">
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{homeCity}</p>
-            <p className="text-[22px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
             {sport === "MLB" && (
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", marginTop: "4px", lineHeight: 1.3 }}>
+              <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.homePitcher
-                  ? <>{game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand === "L" ? "LHP" : "RHP"}` : ""}{game.homePitcher.seasonERA != null && <span style={{ color: "#637A96" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}</>
+                  ? <>{game.homePitcher.name}{game.homePitcher.hand ? ` · ${game.homePitcher.hand === "L" ? "LHP" : "RHP"}` : ""}{game.homePitcher.seasonERA != null && <span style={{ color: "var(--muted)" }}> · {game.homePitcher.seasonERA.toFixed(2)} ERA</span>}</>
                   : "Starter TBD"}
               </p>
             )}
@@ -195,9 +145,9 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
         {/* THE READ */}
         {signal && (
-          <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "10px 13px", marginBottom: "14px" }}>
-            <p style={{ fontSize: "9px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.14em", color: "#3A5470", marginBottom: "5px" }}>The Read</p>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470", lineHeight: 1.5 }}>{signal}</p>
+          <div style={{ background: "#EDEAE3", borderRadius: "4px", padding: "10px 13px", marginBottom: "14px" }}>
+            <p style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--muted)", marginBottom: "5px" }}>The Read</p>
+            <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.5 }}>{signal}</p>
           </div>
         )}
 
@@ -207,7 +157,9 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
         {/* Footer */}
         <div className="flex justify-between items-center">
           <span />
-          <span className="text-[12px] font-bold text-[#0A7A6C]">{hasBreakdown ? "View breakdown →" : "Get breakdown →"}</span>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: hasBreakdown ? "var(--signal)" : "var(--ink)", opacity: hasBreakdown ? 1 : 0.6 }}>
+            {hasBreakdown ? "Read →" : "Read →"}
+          </span>
         </div>
       </button>
     );
@@ -216,36 +168,29 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   // Dead (final / live) card
   if (isDead) {
     return (
-      <div
-        className="w-full text-left rounded-[14px]"
-        style={{ background: "#F2F5F8", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 22px" }}
-      >
-        <div className="flex justify-between items-center mb-[10px]">
-          <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+      <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: "6px", border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.5 }}>
+        <div className="flex justify-between items-center" style={{ marginBottom: "10px" }}>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
           {effectiveStatus === "live" && (
             <div className="flex items-center gap-[5px]">
-              <span className="w-[5px] h-[5px] rounded-full bg-[#DC2626] animate-pulse block" />
-              <span className="text-[10px] font-bold tracking-[0.08em] text-[#DC2626]">Live</span>
+              <span className="w-[5px] h-[5px] rounded-full animate-pulse block" style={{ background: "var(--signal)" }} />
+              <span style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.08em", color: "var(--signal)" }}>Live</span>
             </div>
           )}
         </div>
-
-        <div className="flex items-center gap-3 mb-[10px]">
+        <div className="flex items-center gap-3" style={{ marginBottom: "10px" }}>
           <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{awayCity}</p>
-            <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
           </div>
           {atConnector}
           <div className="flex-1 text-right">
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{homeCity}</p>
-            <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
           </div>
         </div>
-
-        <p className="text-[11px] text-[#637A96] italic font-semibold">
-          {effectiveStatus === "live"
-            ? "Game in progress · Breakdowns only generated before start of game"
-            : "Game ended · Check back tomorrow"}
+        <p style={{ fontSize: "11px", color: "var(--muted)", fontStyle: "italic" }}>
+          {effectiveStatus === "live" ? "Game in progress · Breakdowns only generated before start of game" : "Game ended · Check back tomorrow"}
         </p>
       </div>
     );
@@ -253,27 +198,22 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
   // Tomorrow preview card
   return (
-    <div
-      className="w-full text-left rounded-[14px]"
-      style={{ background: "#EDF1F6", border: "1px solid #DDE2EB", borderRadius: "14px", padding: "18px 22px" }}
-    >
-      <div className="flex justify-between items-center mb-[10px]">
-        <span className="text-[12px] font-bold text-[#637A96] tracking-[0.06em]">{gameTime || "Time TBD"}</span>
+    <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: "6px", border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.65 }}>
+      <div style={{ marginBottom: "10px" }}>
+        <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
       </div>
-
-      <div className="flex items-center gap-3 mb-[10px]">
+      <div className="flex items-center gap-3" style={{ marginBottom: "10px" }}>
         <div className="flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{awayCity}</p>
-          <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: awayColor }}>{awayNickname}</p>
+          <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
         </div>
         {atConnector}
         <div className="flex-1 text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#637A96] mb-[3px]">{homeCity}</p>
-          <p className="text-[20px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: homeColor }}>{homeNickname}</p>
+          <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
         </div>
       </div>
-
-      <p className="text-[11px] text-[#637A96] italic font-semibold">Breakdown available day of game</p>
+      <p style={{ fontSize: "11px", color: "var(--muted)", fontStyle: "italic" }}>Breakdown available day of game</p>
     </div>
   );
 }

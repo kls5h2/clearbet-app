@@ -115,22 +115,22 @@ export default async function ArchiveDetailPage({
   });
 
   return (
-    <div style={{ background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
+    <div style={{ background: "var(--canvas, #FAFAFA)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav backHref="/archive" backLabel="Archive" sportTag={row.sport} />
 
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Snapshot banner */}
-        <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", marginBottom: "16px", lineHeight: 1.5 }}>
+        <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "4px", padding: "10px 14px", fontSize: "12px", color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5 }}>
           Saved {savedDate} before {row.sport === "MLB" ? "first pitch" : "tip-off"}. Lines and injury data reflect conditions at time of generation.
         </div>
 
         <BreakdownView breakdown={breakdown} game={game} />
 
         <div style={{ textAlign: "center", paddingTop: "1.5rem" }}>
-          <p style={{ fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
+          <p style={{ fontSize: "12px", fontFamily: "Georgia, serif", fontStyle: "italic", color: "var(--muted, #8A8A86)" }}>
             What the data says. Your decision to make.
           </p>
-          <p style={{ fontSize: "11px", color: "#B0BAC9", fontWeight: 500, marginTop: "4px" }}>
+          <p style={{ fontSize: "11px", color: "var(--muted, #8A8A86)", marginTop: "4px" }}>
             Saved {savedAt} ET
           </p>
         </div>

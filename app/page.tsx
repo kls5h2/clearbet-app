@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import GameCard from "@/components/GameCard";
 import Nav from "@/components/Nav";
+import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import type { AnyGame, Sport, BreakdownResult } from "@/lib/types";
 
@@ -37,12 +38,10 @@ export default function HomePage() {
   const [games, setGames] = useState<AnyGame[]>([]);
   const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
   const [breakdownMap, setBreakdownMap] = useState<Map<string, string>>(new Map());
-  // Set of all game IDs that have a breakdown (used for View vs Get CTA)
   const [breakdownIds, setBreakdownIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all breakdowns for today once on mount — independent of active sport tab
   useEffect(() => {
     const todayStr = getTodayDateString();
     Promise.resolve(
@@ -62,7 +61,6 @@ export default function HomePage() {
         const ids = new Set<string>();
         for (const row of rows) {
           ids.add(row.game_id);
-          // Handle breakdown_content as object (JSONB) or string (text column)
           let content: BreakdownResult | null = null;
           if (row.breakdown_content && typeof row.breakdown_content === "object") {
             content = row.breakdown_content as BreakdownResult;
@@ -70,11 +68,9 @@ export default function HomePage() {
             try { content = JSON.parse(row.breakdown_content) as BreakdownResult; } catch { /* skip malformed */ }
           }
           if (!content) continue;
-          // Prefer decisionLens (Step 07), fall back to gameShape (Step 01)
           const source = content.decisionLens || content.gameShape;
           if (!source) continue;
           const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
-          // Strip trailing data artifacts (e.g. " — -1" from confidence level bleeding into text)
           const cleaned = firstSentence.replace(/\s*[—–-]\s*-?\d+\.?$/, "").trim();
           if (cleaned) map.set(row.game_id, cleaned);
         }
@@ -122,81 +118,94 @@ export default function HomePage() {
   });
 
   return (
-    <div style={{ fontFamily: "var(--font-manrope, Manrope, sans-serif)", background: "#F0F3F7", minHeight: "100vh", paddingBottom: "5rem" }}>
+    <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 1.5rem" }}>
-
-        {/* Intro card */}
-        <div style={{
-          marginTop: "2rem",
-          background: "#FFFFFF",
-          borderLeft: "3px solid #0A7A6C",
-          borderRadius: "12px",
-          padding: "1.25rem 1.5rem",
-          boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
-        }}>
-          <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
+      {/* Hero */}
+      <div style={{ background: "var(--ink)", padding: "64px 40px 56px", position: "relative", overflow: "hidden" }}>
+        <span style={{
+          position: "absolute", right: "-60px", top: "-80px",
+          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+        }}>R.</span>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto" }}>
+          <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--muted)", marginBottom: "16px" }}>
+            Sports data, plain English.
+          </p>
+          <h1 style={{
+            fontFamily: "Georgia, serif", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 500,
+            color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "20px",
+          }}>
+            Raw data. Plain English. <em>Your call.</em>
+          </h1>
+          <p style={{ fontSize: "16px", color: "#9A9A96", maxWidth: "500px", lineHeight: 1.6, marginBottom: "28px" }}>
             RawIntel turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
-          <p style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.6, marginBottom: 0 }}>
-            Pick a game. Read the breakdown. Make your call.{" "}
-            <Link href="/how-it-works" style={{ color: "#0A7A6C", fontWeight: 700, textDecoration: "none" }}>How it works →</Link>
-          </p>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <a href="#slate" style={{
+              background: "var(--signal)", color: "#FAFAFA", fontSize: "13px", fontWeight: 500,
+              letterSpacing: "0.04em", padding: "14px 24px", borderRadius: "4px", textDecoration: "none",
+            }}>
+              View today&#8217;s slate →
+            </a>
+            <Link href="/how-it-works" style={{
+              border: "0.5px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)",
+              fontSize: "13px", fontWeight: 500, padding: "14px 24px", borderRadius: "4px",
+              textDecoration: "none", background: "transparent",
+            }}>
+              How it works
+            </Link>
+          </div>
         </div>
+      </div>
 
-        {/* Slate label + date */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", paddingTop: "1.5rem", marginBottom: "1.25rem" }}>
-          <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.02em", margin: 0 }}>Today&#8217;s Slate</h1>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#3A5470" }}>{todayLabel}</span>
-        </div>
-
-        {/* Sport tabs — active tab = dark navy per mockup */}
-        <div style={{ display: "flex", gap: "4px", marginBottom: "1.75rem" }}>
-          {(["NBA", "MLB"] as Sport[]).map((sport) => (
-            <button
-              key={sport}
-              onClick={() => setActiveSport(sport)}
-              style={{
-                padding: "5px 16px",
-                fontSize: "12px",
-                fontWeight: 700,
-                borderRadius: "999px",
-                letterSpacing: "0.04em",
-                cursor: "pointer",
-                border: activeSport === sport ? "none" : "1px solid #DDE2EB",
-                background: activeSport === sport ? "#0D1B2E" : "transparent",
-                color: activeSport === sport ? "#FFFFFF" : "#637A96",
-              }}
-            >
-              {sport}
-            </button>
-          ))}
+      {/* Slate section */}
+      <div id="slate" style={{ maxWidth: "860px", margin: "0 auto", padding: "48px 40px" }}>
+        {/* Section header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+            <span style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)" }}>Today&#8217;s Slate</span>
+            <span style={{ fontSize: "13px", color: "var(--muted)" }}>{todayLabel}</span>
+          </div>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {(["NBA", "MLB"] as Sport[]).map((sport) => (
+              <button
+                key={sport}
+                onClick={() => setActiveSport(sport)}
+                style={{
+                  padding: "5px 14px", fontSize: "11px", fontWeight: 500,
+                  textTransform: "uppercase", letterSpacing: "0.06em",
+                  borderRadius: "4px", cursor: "pointer",
+                  border: activeSport === sport ? "none" : "0.5px solid var(--border)",
+                  background: activeSport === sport ? "var(--ink)" : "transparent",
+                  color: activeSport === sport ? "#FAFAFA" : "var(--muted)",
+                }}
+              >
+                {sport}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading skeleton */}
         {loading && (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} style={{ background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)" }} className="animate-pulse">
-                <div style={{ height: "12px", background: "#E8ECF2", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
+              <div key={i} style={{ background: "var(--paper)", borderRadius: "6px", padding: "20px 24px", border: "0.5px solid var(--border)" }} className="animate-pulse">
+                <div style={{ height: "12px", background: "#EDEAE3", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px" }}>
                   <div>
-                    <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
-                    <div style={{ height: "22px", background: "#E8ECF2", borderRadius: "4px", width: "100px" }} />
+                    <div style={{ height: "8px", background: "#EDEAE3", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
+                    <div style={{ height: "22px", background: "#EDEAE3", borderRadius: "4px", width: "100px" }} />
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ height: "8px", background: "#E8ECF2", borderRadius: "4px", width: "60px", marginBottom: "6px", marginLeft: "auto" }} />
-                    <div style={{ height: "22px", background: "#E8ECF2", borderRadius: "4px", width: "100px" }} />
+                    <div style={{ height: "8px", background: "#EDEAE3", borderRadius: "4px", width: "60px", marginBottom: "6px", marginLeft: "auto" }} />
+                    <div style={{ height: "22px", background: "#EDEAE3", borderRadius: "4px", width: "100px" }} />
                   </div>
-                </div>
-                <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "10px 13px", marginBottom: "14px" }}>
-                  <div style={{ height: "8px", background: "#D4EDE9", borderRadius: "4px", width: "50px", marginBottom: "8px" }} />
-                  <div style={{ height: "12px", background: "#D4EDE9", borderRadius: "4px", width: "85%" }} />
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} style={{ flex: 1, height: "32px", background: "#F7F9FB", borderRadius: "6px" }} />
+                    <div key={j} style={{ flex: 1, height: "32px", background: "#EDEAE3", borderRadius: "4px" }} />
                   ))}
                 </div>
               </div>
@@ -206,11 +215,11 @@ export default function HomePage() {
 
         {/* Error */}
         {error && (
-          <div style={{ background: "#FFFFFF", border: "1px solid #FECACA", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
-            <p style={{ fontSize: "14px", color: "#D0342C" }}>{error}</p>
+          <div style={{ background: "var(--paper)", border: "0.5px solid rgba(217,59,58,0.3)", borderRadius: "6px", padding: "24px", textAlign: "center" }}>
+            <p style={{ fontSize: "14px", color: "var(--signal)" }}>{error}</p>
             <button
               onClick={() => window.location.reload()}
-              style={{ marginTop: "12px", fontSize: "12px", fontWeight: 700, color: "#0A7A6C", background: "none", border: "none", cursor: "pointer" }}
+              style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}
             >
               Try again
             </button>
@@ -219,9 +228,9 @@ export default function HomePage() {
 
         {/* Empty state */}
         {!loading && !error && games.length === 0 && (
-          <div style={{ background: "#FFFFFF", border: "1px solid #E8ECF2", borderRadius: "14px", padding: "32px 24px", textAlign: "center" }}>
-            <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", marginBottom: "4px" }}>No {activeSport} games today</p>
-            <p style={{ fontSize: "13px", color: "#637A96" }}>Check back on a game day.</p>
+          <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderRadius: "6px", padding: "32px 24px", textAlign: "center" }}>
+            <p style={{ fontSize: "17px", fontWeight: 500, color: "var(--ink)", marginBottom: "4px" }}>No {activeSport} games today</p>
+            <p style={{ fontSize: "13px", color: "var(--muted)" }}>Check back on a game day.</p>
           </div>
         )}
 
@@ -232,8 +241,8 @@ export default function HomePage() {
           return (
             <>
               {allDone && (
-                <div style={{ background: "#FFFFFF", border: "1px solid #E8ECF2", borderRadius: "14px", padding: "16px 20px", marginBottom: "12px" }}>
-                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>
+                <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderRadius: "6px", padding: "16px 20px", marginBottom: "12px" }}>
+                  <p style={{ fontSize: "13px", color: "var(--muted)" }}>
                     All of tonight&#8217;s games are underway or have ended. Check back tomorrow for the full slate and fresh breakdowns.
                   </p>
                 </div>
@@ -253,10 +262,10 @@ export default function HomePage() {
           return (
             <div style={{ marginTop: "2.5rem" }}>
               <div style={{
-                fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-                textTransform: "uppercase", color: "#7A8FA6",
+                fontSize: "10px", fontWeight: 500, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "var(--muted)",
                 margin: "0 0 1rem", paddingBottom: "10px",
-                borderBottom: "1px solid #DDE2EB",
+                borderBottom: "0.5px solid var(--border)",
               }}>
                 Preview · Tomorrow&#8217;s Slate · Breakdowns available on the day of the game
               </div>
@@ -268,13 +277,23 @@ export default function HomePage() {
             </div>
           );
         })()}
+      </div>
 
-        {/* Tagline */}
-        {!loading && (
-          <p style={{ marginTop: "2.5rem", textAlign: "center", fontSize: "12px", fontWeight: 600, color: "#637A96" }}>
-            This is what the data says. What will you decide?
-          </p>
-        )}
+      {/* Voice strip */}
+      <div style={{ background: "var(--ink)", padding: "48px 40px", textAlign: "center" }}>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "clamp(18px, 3vw, 24px)", color: "#FAFAFA", maxWidth: "600px", margin: "0 auto 16px", lineHeight: 1.4 }}>
+          The numbers don&#8217;t lie. They just need translating. Here&#8217;s the read — <em>you make the call.</em>
+        </p>
+        <p style={{ fontSize: "12px", color: "var(--muted)" }}>
+          <Logo dark /> · rawintel.ai
+        </p>
+      </div>
+
+      {/* Tagline */}
+      <div style={{ padding: "2rem 0", textAlign: "center" }}>
+        <p style={{ fontSize: "12px", color: "var(--muted)" }}>
+          What the data says. The call is yours.
+        </p>
       </div>
     </div>
   );

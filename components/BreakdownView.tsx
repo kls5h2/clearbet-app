@@ -3,14 +3,24 @@
 import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
 import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
-import { getActiveTeamColor } from "@/lib/team-colors";
 
 interface Props {
   breakdown: BreakdownResult;
   game: AnyGame;
 }
 
-// dot colors per mockup
+// Design tokens
+const INK = "#0E0E0E";
+const SIGNAL = "#D93B3A";
+const PAPER = "#F7F5F0";
+const CANVAS = "#FAFAFA";
+const MUTED = "#8A8A86";
+const BORDER = "rgba(14,14,14,0.10)";
+const BORDER_STRONG = "rgba(14,14,14,0.12)";
+const SERIF = "Georgia, serif";
+const SANS = "Helvetica Neue, Helvetica, Arial, sans-serif";
+
+// dot colors per mockup — functional, kept as-is
 const DOT_GREEN = "#16A34A";
 const DOT_RED   = "#DC2626";
 const DOT_BLUE  = "#3A5470";
@@ -84,36 +94,36 @@ function getArchetype(
   return "Open game";
 }
 
-// Section header: number + title + extending line — per mockup
+// Section header: number + title + extending line
 function SectionHeader({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-[14px]">
-      <span style={{ fontSize: "10px", fontWeight: 800, color: "#0A7A6C", letterSpacing: "0.1em" }}>{number}</span>
-      <span style={{ fontSize: "11px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>{title}</span>
-      <div style={{ flex: 1, height: "1px", background: "#EEF1F5" }} />
+      <span style={{ fontSize: "10px", fontWeight: 800, color: SIGNAL, letterSpacing: "0.1em", fontFamily: SANS }}>{number}</span>
+      <span style={{ fontSize: "11px", fontWeight: 800, color: INK, letterSpacing: "0.1em", textTransform: "uppercase" as const, fontFamily: SANS }}>{title}</span>
+      <div style={{ flex: 1, height: "1px", background: BORDER }} />
     </div>
   );
 }
 
-// Prose card — lighter shadow
+// Prose card — paper bg, thin border, no shadow
 function ProseCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px",
-      marginBottom: "10px", boxShadow: "0 1px 4px rgba(13,27,46,0.05)",
+      background: PAPER, borderRadius: "6px", padding: "20px 22px",
+      marginBottom: "10px", border: `0.5px solid ${BORDER}`,
     }}>
       {children}
     </div>
   );
 }
 
-// Bullet card — heavier shadow
+// Bullet card — paper bg, slightly stronger border, no shadow
 function BulletCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: "#FFFFFF", borderRadius: "14px", padding: "20px 22px",
+      background: PAPER, borderRadius: "6px", padding: "20px 22px",
       marginBottom: "10px",
-      boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
+      border: `0.5px solid ${BORDER_STRONG}`,
     }}>
       {children}
     </div>
@@ -121,19 +131,19 @@ function BulletCard({ children }: { children: React.ReactNode }) {
 }
 
 const proseBodyStyle: React.CSSProperties = {
-  fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.75,
+  fontSize: "15px", fontWeight: 400, color: INK, lineHeight: 1.75, fontFamily: SANS,
 };
 const bulletStyle: React.CSSProperties = {
   display: "flex", alignItems: "flex-start", gap: "10px",
-  fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.65,
+  fontSize: "15px", fontWeight: 400, color: INK, lineHeight: 1.65, fontFamily: SANS,
 };
 const legendStyle: React.CSSProperties = {
   display: "flex", flexWrap: "wrap" as const, gap: "12px",
-  marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #F0F3F7",
+  marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${BORDER}`,
 };
 const legendItemStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: "5px",
-  fontSize: "10px", fontWeight: 600, color: "#637A96",
+  fontSize: "10px", fontWeight: 600, color: MUTED, fontFamily: SANS,
 };
 
 export default function BreakdownView({ breakdown, game }: Props) {
@@ -165,45 +175,45 @@ export default function BreakdownView({ breakdown, game }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* Status banners */}
       {gameStatus === "final" && (
-        <div style={{ background: "#F2F5F8", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#637A96" }}>Final</span>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>
+        <div style={{ background: PAPER, border: `0.5px solid ${BORDER}`, borderRadius: "6px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, fontFamily: SANS }}>Final</span>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
             This game has ended. Breakdown was generated before {isMLB ? "first pitch" : "tip-off"}.
           </span>
         </div>
       )}
       {gameStatus === "live" && (
-        <div style={{ background: "#F0FAF8", border: "1px solid rgba(10,122,108,0.2)", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ background: "#FEF3F3", border: `0.5px solid rgba(217,59,58,0.2)`, borderLeft: `3px solid ${SIGNAL}`, borderRadius: "6px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#DC2626", display: "block" }} className="animate-pulse" />
-            <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#DC2626" }}>Live</span>
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: SIGNAL, display: "block" }} className="animate-pulse" />
+            <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: SIGNAL, fontFamily: SANS }}>Live</span>
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#637A96" }}>Game in progress. Breakdowns only generated before start of game.</span>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>Game in progress. Breakdowns only generated before start of game.</span>
         </div>
       )}
 
       {/* Game header card */}
       <div style={{
-        background: "#FFFFFF", borderRadius: "14px", padding: "22px 22px 20px",
+        background: PAPER, borderRadius: "6px", padding: "22px 22px 20px",
         marginBottom: "10px",
-        boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
+        border: `0.5px solid ${BORDER}`,
       }}>
-        <p style={{ fontSize: "11px", fontWeight: 700, color: "#637A96", letterSpacing: "0.06em", marginBottom: "14px" }}>
+        <p style={{ fontSize: "11px", fontWeight: 700, color: MUTED, letterSpacing: "0.06em", marginBottom: "14px", fontFamily: SANS }}>
           {game.gameTime || "Time TBD"}
         </p>
 
         {/* Matchup with "at" word */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{awayCity}</p>
-            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: getActiveTeamColor(awayTeam.teamAbv, game.sport) }}>{awayNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: MUTED, marginBottom: "3px", fontFamily: SANS }}>{awayCity}</p>
+            <p style={{ fontSize: "28px", fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1, color: INK, fontFamily: SERIF }}>{awayNickname}</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 14px", paddingBottom: "2px", flexShrink: 0 }}>
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "#637A96", letterSpacing: "0.04em", lineHeight: 1 }}>at</span>
+            <span style={{ fontSize: "11px", fontWeight: 400, color: MUTED, letterSpacing: "0.04em", lineHeight: 1, fontFamily: SERIF, fontStyle: "italic" }}>at</span>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#637A96", marginBottom: "3px" }}>{homeCity}</p>
-            <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, color: getActiveTeamColor(homeTeam.teamAbv, game.sport) }}>{homeNickname}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: MUTED, marginBottom: "3px", fontFamily: SANS }}>{homeCity}</p>
+            <p style={{ fontSize: "28px", fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1, color: INK, fontFamily: SERIF }}>{homeNickname}</p>
           </div>
         </div>
 
@@ -220,19 +230,19 @@ export default function BreakdownView({ breakdown, game }: Props) {
           return (
             <div style={{ display: "flex", marginBottom: "16px", gap: "8px" }}>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Away Starter</p>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: "#0D1B2E", letterSpacing: "-0.01em", marginBottom: "2px" }}>{awayName}</p>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Away Starter</p>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: INK, letterSpacing: "-0.01em", marginBottom: "2px", fontFamily: SANS }}>{awayName}</p>
                 {(awayHand || awayERA) && (
-                  <p style={{ fontSize: "12px", fontWeight: 500, color: "#637A96" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
                     {[awayHand, awayERA ? `${awayERA} ERA` : null].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </div>
               <div style={{ flex: 1, textAlign: "right" }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Home Starter</p>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: "#0D1B2E", letterSpacing: "-0.01em", marginBottom: "2px" }}>{homeName}</p>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Home Starter</p>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: INK, letterSpacing: "-0.01em", marginBottom: "2px", fontFamily: SANS }}>{homeName}</p>
                 {(homeHand || homeERA) && (
-                  <p style={{ fontSize: "12px", fontWeight: 500, color: "#637A96" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
                     {[homeERA ? `${homeERA} ERA` : null, homeHand].filter(Boolean).join(" · ")}
                   </p>
                 )}
@@ -243,36 +253,36 @@ export default function BreakdownView({ breakdown, game }: Props) {
 
         {/* Odds row */}
         {odds && (
-          <div style={{ display: "flex", background: "#F7F9FB", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
+          <div style={{ display: "flex", background: "#EDEAE3", borderRadius: "6px", padding: "10px 12px", marginBottom: "16px" }}>
             {!isMLB && "spread" in odds && (
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Spread</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Spread</p>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
                   {odds.spread !== null ? `${homeTeam.teamAbv} ${odds.spread > 0 ? `+${odds.spread}` : odds.spread}` : "—"}
                 </p>
               </div>
             )}
             {isMLB && "runLine" in odds && (
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Run Line</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Run Line</p>
+                <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
                   {odds.runLine !== null ? `${homeTeam.teamAbv} ${odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}` : "—"}
                 </p>
               </div>
             )}
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>Total</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>{odds.total !== null ? `O/U ${odds.total}` : "—"}</p>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Total</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>{odds.total !== null ? `O/U ${odds.total}` : "—"}</p>
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{awayTeam.teamAbv} ML</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>{awayTeam.teamAbv} ML</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
                 {odds.awayMoneyline !== null ? (odds.awayMoneyline > 0 ? `+${odds.awayMoneyline}` : `${odds.awayMoneyline}`) : "—"}
               </p>
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B0BAC9", marginBottom: "4px" }}>{homeTeam.teamAbv} ML</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: "#0D1B2E", letterSpacing: "-0.01em" }}>
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>{homeTeam.teamAbv} ML</p>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
                 {odds.homeMoneyline !== null ? (odds.homeMoneyline > 0 ? `+${odds.homeMoneyline}` : `${odds.homeMoneyline}`) : "—"}
               </p>
             </div>
@@ -286,7 +296,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
 
         {/* Early / pitcher banners */}
         {(showMLBPitcherBanner || showNBAEarlyBanner) && (
-          <div style={{ marginTop: "12px", background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: "#92400E", lineHeight: 1.5 }}>
+          <div style={{ marginTop: "12px", background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: `3px solid ${SIGNAL}`, borderRadius: "6px", padding: "10px 14px", fontSize: "12px", fontWeight: 600, color: INK, lineHeight: 1.5, fontFamily: SANS }}>
             {showMLBPitcherBanner
               ? "This breakdown updates closer to first pitch — check back for the latest starter information."
               : "Early read — check back closer to game time for the sharpest picture."}
@@ -339,7 +349,7 @@ export default function BreakdownView({ breakdown, game }: Props) {
           {breakdown.fragilityCheck.map((item, i) => {
             const bg = fragilityBg[item.color];
             return (
-              <div key={i} style={{ ...bulletStyle, border: `1px solid ${bg.border}`, background: bg.bg, borderRadius: "8px", padding: "10px 12px" }}>
+              <div key={i} style={{ ...bulletStyle, border: `1px solid ${bg.border}`, background: bg.bg, borderRadius: "6px", padding: "10px 12px" }}>
                 <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: fragilityDot[item.color] }} />
                 <div>{item.item}</div>
               </div>
@@ -372,26 +382,28 @@ export default function BreakdownView({ breakdown, game }: Props) {
 
       {/* 06 — The Edge (bullet) — always rendered to keep 01–07 sequential */}
       <BulletCard>
-        <SectionHeader number="06" title="The Edge" />
-        {breakdown.edge && breakdown.edge.length > 0 ? (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {breakdown.edge.map((item, i) => (
-                <div key={i} style={bulletStyle}>
-                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: DOT_BLUE }} />
-                  <div>{item}</div>
-                </div>
-              ))}
-            </div>
-            {breakdown.edgeClosingLine && (
-              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #EEF1F5", fontSize: "12px", fontWeight: 600, color: "#637A96", fontStyle: "italic" }}>
-                {breakdown.edgeClosingLine}
+        <div style={{ borderLeft: `3px solid ${SIGNAL}`, paddingLeft: "18px" }}>
+          <SectionHeader number="06" title="The Edge" />
+          {breakdown.edge && breakdown.edge.length > 0 ? (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {breakdown.edge.map((item, i) => (
+                  <div key={i} style={bulletStyle}>
+                    <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: DOT_BLUE }} />
+                    <div>{item}</div>
+                  </div>
+                ))}
               </div>
-            )}
-          </>
-        ) : (
-          <p style={proseBodyStyle}>No specific market edge identified — the line appears to price this game fairly based on available data.</p>
-        )}
+              {breakdown.edgeClosingLine && (
+                <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${BORDER}`, fontSize: "13px", fontWeight: 400, color: MUTED, fontStyle: "italic", fontFamily: SANS }}>
+                  {breakdown.edgeClosingLine}
+                </div>
+              )}
+            </>
+          ) : (
+            <p style={proseBodyStyle}>No specific market edge identified — the line appears to price this game fairly based on available data.</p>
+          )}
+        </div>
       </BulletCard>
 
       {/* 07 — What This Means (prose) */}

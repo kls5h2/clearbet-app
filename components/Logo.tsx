@@ -1,15 +1,12 @@
 interface LogoProps {
-  fontSize?: number;
-  barHeight?: number;
-  color?: string;
+  dark?: boolean; // true = light text for dark backgrounds
 }
 
-export default function Logo({ fontSize = 22, barHeight = 17, color = "#FFFFFF" }: LogoProps) {
+export default function Logo({ dark = false }: LogoProps) {
+  const color = dark ? "#FAFAFA" : "var(--ink)";
   return (
-    <div className="flex items-center">
-      <span style={{ fontSize: `${fontSize}px`, fontWeight: 800, letterSpacing: "-0.02em", color }}>Raw</span>
-      <div style={{ width: "2px", height: `${barHeight}px`, background: "#0A7A6C", margin: "0 4px", borderRadius: "2px" }} />
-      <span style={{ fontSize: `${fontSize}px`, fontWeight: 800, letterSpacing: "-0.02em", color }}>Intel</span>
-    </div>
+    <span style={{ fontFamily: "Georgia, serif", fontSize: "20px", fontWeight: 500, letterSpacing: "-0.02em", color }}>
+      <em style={{ fontStyle: "italic", fontWeight: 400 }}>Raw</em>Intel<span style={{ color: "var(--signal)" }}>.</span>
+    </span>
   );
 }

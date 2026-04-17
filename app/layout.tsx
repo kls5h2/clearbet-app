@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 import "./globals.css";
 import DisclaimerFooter from "@/components/DisclaimerFooter";
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "RawIntel — What the data says. Your decision to make.",
@@ -21,11 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} h-full`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         {children}
         <DisclaimerFooter />

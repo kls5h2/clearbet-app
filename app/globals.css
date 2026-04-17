@@ -1,41 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #F0F3F7;
-  --surface: #FFFFFF;
-  --surface-dead: #F2F5F8;
-  --surface-tomorrow: #EDF1F6;
-  --navy: #0D1B2E;
-  --navy-mid: #3A5470;
-  --navy-light: #637A96;
-  --teal: #0A7A6C;
-  --teal-dark: #096059;
-  --teal-light: #F0FAF8;
-  --muted: #9FADBF;
-  --muted-light: #B0BAC9;
-  --border: #E8ECF2;
-  --border-light: #EEF1F5;
-  --border-dead: #E2E8F0;
-  --shadow-sm: 0 1px 4px rgba(13,27,46,0.05);
-  --shadow-md: 0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04);
-  --shadow-lg: 0 4px 16px rgba(13,27,46,0.10), 0 2px 4px rgba(13,27,46,0.05);
+  --ink: #0E0E0E;
+  --signal: #D93B3A;
+  --paper: #F7F5F0;
+  --canvas: #FAFAFA;
+  --muted: #8A8A86;
+  --border: rgba(14,14,14,0.10);
+  --serif: Georgia, 'Times New Roman', serif;
+  --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope);
-  --font-mono: var(--font-manrope);
-  --font-heading: var(--font-manrope);
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--navy);
-  font-family: var(--font-manrope), system-ui, sans-serif;
-  font-weight: 400;
+  font-family: var(--sans);
+  background: var(--canvas);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
 }

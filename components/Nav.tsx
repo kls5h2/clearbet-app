@@ -20,7 +20,9 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         position: "sticky",
         top: 0,
         zIndex: 10,
-        background: "#0D1B2E",
+        background: "var(--canvas)",
+        borderBottom: "0.5px solid var(--border)",
+        height: "60px",
       }}
     >
       <div
@@ -29,7 +31,10 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "1.25rem 1.5rem",
+          height: "60px",
+          padding: "0 1.5rem",
+          maxWidth: "1100px",
+          margin: "0 auto",
         }}
       >
         {/* Left side */}
@@ -40,12 +45,12 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
                 href={backHref}
                 style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}
               >
-                <span style={{ fontSize: "14px", color: "#637A96" }}>←</span>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "#637A96", letterSpacing: "0.04em" }}>
+                <span style={{ fontSize: "13px", color: "var(--muted)" }}>←</span>
+                <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>
                   {backLabel}
                 </span>
               </Link>
-              <div style={{ width: "1px", height: "14px", background: "#2A3F5A" }} />
+              <div style={{ width: "0.5px", height: "14px", background: "var(--border)" }} />
             </>
           )}
           <Link href="/" style={{ textDecoration: "none" }}>
@@ -53,43 +58,16 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           </Link>
         </div>
 
-        {/* Center — sport tag, absolutely centered, clickable back to sport slate */}
-        {sportTag && (
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-            }}
-          >
-            <Link
-              href={`/?sport=${sportTag}`}
-              style={{ textDecoration: "none" }}
-              className="group"
-            >
-              <span
-                style={{
-                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "#8FA3BC",
-                  cursor: "pointer",
-                }}
-                className="group-hover:underline"
-              >
-                {sportTag}
-              </span>
-            </Link>
-          </div>
-        )}
-
-        {/* Right side — nav links (desktop) + hamburger (mobile) */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
+        {/* Right side — nav links + sport tag (desktop) + hamburger (mobile) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
           {/* Desktop nav links */}
-          <div className="hidden sm:flex" style={{ gap: "1.25rem" }}>
+          <div className="hidden sm:flex" style={{ gap: "1.5rem", alignItems: "center" }}>
             <Link
               href="/how-it-works"
               style={{
-                fontSize: "14px", fontWeight: 600, letterSpacing: "0.04em",
-                color: activePage === "how-it-works" ? "#FFFFFF" : "#637A96",
+                fontSize: "13px", fontWeight: 400,
+                color: "var(--ink)",
+                opacity: activePage === "how-it-works" ? 1 : 0.7,
                 textDecoration: "none",
               }}
             >
@@ -98,13 +76,24 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             <Link
               href="/glossary"
               style={{
-                fontSize: "14px", fontWeight: 600, letterSpacing: "0.04em",
-                color: activePage === "glossary" ? "#FFFFFF" : "#637A96",
+                fontSize: "13px", fontWeight: 400,
+                color: "var(--ink)",
+                opacity: activePage === "glossary" ? 1 : 0.7,
                 textDecoration: "none",
               }}
             >
               Glossary
             </Link>
+            {sportTag && (
+              <Link href={`/?sport=${sportTag}`} style={{ textDecoration: "none" }}>
+                <span style={{
+                  fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--muted)",
+                }}>
+                  {sportTag}
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* Hamburger button (mobile only) */}
@@ -118,9 +107,9 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               gap: "5px", alignItems: "center", justifyContent: "center",
             }}
           >
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "#FFFFFF" : "#637A96", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "#FFFFFF" : "#637A96", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "#FFFFFF" : "#637A96", borderRadius: "2px" }} />
+            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
+            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
+            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
           </button>
         </div>
       </div>
@@ -130,36 +119,28 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         <div
           className="sm:hidden"
           style={{
-            background: "#0D1B2E",
-            borderTop: "1px solid #2A3F5A",
+            background: "var(--canvas)",
+            borderTop: "0.5px solid var(--border)",
             padding: "0.75rem 1.5rem 1rem",
             display: "flex",
             flexDirection: "column",
             gap: "0.75rem",
           }}
         >
-          <Link
-            href="/how-it-works"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              fontSize: "15px", fontWeight: 600,
-              color: activePage === "how-it-works" ? "#FFFFFF" : "#8FA3BC",
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/how-it-works" onClick={() => setMenuOpen(false)}
+            style={{ fontSize: "15px", fontWeight: 400, color: activePage === "how-it-works" ? "var(--ink)" : "var(--muted)", textDecoration: "none" }}>
             How It Works
           </Link>
-          <Link
-            href="/glossary"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              fontSize: "15px", fontWeight: 600,
-              color: activePage === "glossary" ? "#FFFFFF" : "#8FA3BC",
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/glossary" onClick={() => setMenuOpen(false)}
+            style={{ fontSize: "15px", fontWeight: 400, color: activePage === "glossary" ? "var(--ink)" : "var(--muted)", textDecoration: "none" }}>
             Glossary
           </Link>
+          {sportTag && (
+            <Link href={`/?sport=${sportTag}`} onClick={() => setMenuOpen(false)}
+              style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted)", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              {sportTag}
+            </Link>
+          )}
         </div>
       )}
     </header>
