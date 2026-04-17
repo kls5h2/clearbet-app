@@ -137,7 +137,7 @@ export default function HomePage() {
           boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)",
         }}>
           <p style={{ fontSize: "15px", fontWeight: 500, color: "#3A5470", lineHeight: 1.6, marginBottom: 0 }}>
-            ClearBet turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
+            RawIntel turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
           <p style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.6, marginBottom: 0 }}>
             Pick a game. Read the breakdown. Make your call.{" "}

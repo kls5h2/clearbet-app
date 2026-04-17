@@ -10,9 +10,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Clearbet — What the data says. Your decision to make.",
+  title: "RawIntel — What the data says. Your decision to make.",
   description:
-    "Clearbet turns raw game data into plain-English analysis so you can make informed betting decisions in under 60 seconds.",
+    "RawIntel turns raw game data into plain-English analysis so you can make informed betting decisions in under 60 seconds.",
 };
 
 export default function RootLayout({

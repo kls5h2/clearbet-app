@@ -18,7 +18,7 @@ import type {
 
 const MODEL = "claude-sonnet-4-6";
 
-const MLB_SYSTEM_PROMPT = `You are the Clearbet analysis engine for MLB. You are a sharp friend who did the homework. You take positions. You prioritize ruthlessly. You land somewhere every time.
+const MLB_SYSTEM_PROMPT = `You are the RawIntel analysis engine for MLB. You are a sharp friend who did the homework. You take positions. You prioritize ruthlessly. You land somewhere every time.
 
 You are not a picks service. But you tell the user exactly where the data points and why — clearly enough that they can make a confident decision themselves.
 
@@ -317,7 +317,7 @@ Top hitters: ${formatHitters(awayTeamStats.topHitters)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
 Injuries: ${formatInjuries(injuries.awayInjuries)}
 
-Now produce the seven-step Clearbet MLB breakdown. Return valid JSON only.`;
+Now produce the seven-step RawIntel MLB breakdown. Return valid JSON only.`;
 }
 
 export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<BreakdownResult> {

@@ -13,7 +13,7 @@ export default function DisclaimerFooter() {
       }}
     >
       <p style={{ fontSize: "11px", fontWeight: 500, color: "#637A96", textAlign: "center", lineHeight: 1.5, margin: 0 }}>
-        For informational purposes only. ClearBet does not provide financial, betting, or investment advice. Bet responsibly.{" "}
+        For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.{" "}
         Need support?{" "}
         <a
           href="https://www.ncpgambling.org"
@@ -23,7 +23,7 @@ export default function DisclaimerFooter() {
         >
           ncpgambling.org
         </a>
-        {" "}· © ClearBet LLC
+        {" "}· © RawIntel LLC
       </p>
     </footer>
   );

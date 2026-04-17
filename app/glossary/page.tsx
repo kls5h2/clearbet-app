@@ -84,7 +84,7 @@ export default function GlossaryPage() {
             Know the Language
           </h1>
           <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, lineHeight: 1.6, maxWidth: "440px" }}>
-            Terms used in ClearBet breakdowns, defined simply.
+            Terms used in RawIntel breakdowns, defined simply.
           </p>
         </div>
       </div>

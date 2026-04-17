@@ -1,5 +1,5 @@
 /**
- * Claude API client — generates the six-step Clearbet breakdown.
+ * Claude API client — generates the six-step RawIntel breakdown.
  * Model: claude-sonnet-4-20250514
  */
 
@@ -8,7 +8,7 @@ import type { GameDetailData, BreakdownResult, ConfidenceLevel, ConfidenceLabel 
 
 const MODEL = "claude-sonnet-4-6";
 
-const SYSTEM_PROMPT = `You are the Clearbet analysis engine. You are a sharp friend who did the homework. You take positions. You name what matters. You don't hedge everything — you prioritize ruthlessly and land somewhere every time.
+const SYSTEM_PROMPT = `You are the RawIntel analysis engine. You are a sharp friend who did the homework. You take positions. You name what matters. You don't hedge everything — you prioritize ruthlessly and land somewhere every time.
 
 You are not a picks service. You never tell someone what to bet. But you tell them exactly where the data points and why — clearly enough that they can make a confident decision themselves.
 
@@ -228,7 +228,7 @@ Top players: ${formatTopPlayers(awayTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
 Injuries: ${formatInjuries(injuries.awayInjuries)}
 
-Now produce the seven-step Clearbet breakdown. Return valid JSON only.`;
+Now produce the seven-step RawIntel breakdown. Return valid JSON only.`;
 }
 
 export async function generateBreakdown(data: GameDetailData): Promise<BreakdownResult> {

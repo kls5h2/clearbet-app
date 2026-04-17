@@ -97,19 +97,19 @@ export default function HowItWorksPage() {
             Understand the game.<br />Make your own call.
           </h1>
           <p style={{ fontSize: "14px", color: "#637A96", fontWeight: 500, lineHeight: 1.6, maxWidth: "440px" }}>
-            ClearBet turns raw sports data into plain-English analysis. No picks. No pressure. Just a clear picture of what the data says.
+            RawIntel turns raw sports data into plain-English analysis. No picks. No pressure. Just a clear picture of what the data says.
           </p>
         </div>
       </div>
 
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
 
-        {/* What ClearBet is */}
+        {/* What RawIntel is */}
         <div style={{ marginBottom: "2.5rem" }}>
-          <SectionLabel>What ClearBet is</SectionLabel>
+          <SectionLabel>What RawIntel is</SectionLabel>
           <div style={{ background: "#FFFFFF", borderRadius: "14px", padding: "22px", boxShadow: "0 2px 10px rgba(13,27,46,0.07), 0 1px 3px rgba(13,27,46,0.04)", marginBottom: "10px" }}>
             <p style={{ fontSize: "17px", fontWeight: 700, color: "#0D1B2E", lineHeight: 1.55, letterSpacing: "-0.01em", marginBottom: "12px" }}>
-              ClearBet is a decision-support tool — not a picks service.
+              RawIntel is a decision-support tool — not a picks service.
             </p>
             <p style={{ fontSize: "14px", fontWeight: 500, color: "#637A96", lineHeight: 1.7 }}>
               Every breakdown gives you a structured read on a game: what kind of game it is, what factors matter most, what the market is implying, and where the edge lives. What you do with that information is always your call.
@@ -217,7 +217,7 @@ export default function HowItWorksPage() {
               The Edge isn&apos;t a pick. It&apos;s a translation.
             </p>
             <p style={{ fontSize: "14px", fontWeight: 500, color: "#637A96", lineHeight: 1.7, marginBottom: "14px" }}>
-              Most betting tools either give you raw data or tell you what to bet. ClearBet does neither. The Edge takes everything in the breakdown and identifies what kind of environment this game creates — for the spread, the total, or player props. You take it from there.
+              Most betting tools either give you raw data or tell you what to bet. RawIntel does neither. The Edge takes everything in the breakdown and identifies what kind of environment this game creates — for the spread, the total, or player props. You take it from there.
             </p>
             <div style={{ background: "#F0FAF8", borderRadius: "8px", padding: "12px 14px" }}>
               <p style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0A7A6C", marginBottom: "6px" }}>
