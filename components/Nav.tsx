@@ -14,12 +14,16 @@ interface NavProps {
 export default function Nav({ backHref, backLabel = "Back", sportTag, activePage }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const linkStyle = (page?: string): React.CSSProperties => ({
+    fontSize: "13px", fontWeight: 400,
+    color: "var(--ink)", opacity: activePage === page ? 1 : 0.7,
+    textDecoration: "none",
+  });
+
   return (
     <header
       style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
+        position: "sticky", top: 0, zIndex: 10,
         background: "var(--canvas)",
         borderBottom: "0.5px solid var(--border)",
         height: "60px",
@@ -27,28 +31,18 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
     >
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          height: "60px",
-          padding: "0 1.5rem",
-          maxWidth: "1100px",
-          margin: "0 auto",
+          display: "flex", alignItems: "center",
+          height: "60px", padding: "0 1.5rem",
+          maxWidth: "1100px", margin: "0 auto",
         }}
       >
-        {/* Left side */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        {/* Left: back link + logo with hairline */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", paddingRight: "40px", borderRight: "0.5px solid var(--border)", marginRight: "32px", flexShrink: 0 }}>
           {backHref && (
             <>
-              <Link
-                href={backHref}
-                style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}
-              >
+              <Link href={backHref} style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}>
                 <span style={{ fontSize: "13px", color: "var(--muted)" }}>←</span>
-                <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>
-                  {backLabel}
-                </span>
+                <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>{backLabel}</span>
               </Link>
               <div style={{ width: "0.5px", height: "14px", background: "var(--border)" }} />
             </>
@@ -58,60 +52,50 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           </Link>
         </div>
 
-        {/* Right side — nav links + sport tag (desktop) + hamburger (mobile) */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          {/* Desktop nav links */}
-          <div className="hidden sm:flex" style={{ gap: "1.5rem", alignItems: "center" }}>
-            <Link
-              href="/how-it-works"
-              style={{
-                fontSize: "13px", fontWeight: 400,
-                color: "var(--ink)",
-                opacity: activePage === "how-it-works" ? 1 : 0.7,
-                textDecoration: "none",
-              }}
-            >
-              How It Works
+        {/* Desktop nav links */}
+        <div className="hidden sm:flex" style={{ gap: "1.5rem", alignItems: "center" }}>
+          <Link href="/how-it-works" style={linkStyle("how-it-works")}>How It Works</Link>
+          <Link href="/glossary" style={linkStyle("glossary")}>Glossary</Link>
+          {sportTag && (
+            <Link href={`/?sport=${sportTag}`} style={{ textDecoration: "none" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>
+                {sportTag}
+              </span>
             </Link>
-            <Link
-              href="/glossary"
-              style={{
-                fontSize: "13px", fontWeight: 400,
-                color: "var(--ink)",
-                opacity: activePage === "glossary" ? 1 : 0.7,
-                textDecoration: "none",
-              }}
-            >
-              Glossary
-            </Link>
-            {sportTag && (
-              <Link href={`/?sport=${sportTag}`} style={{ textDecoration: "none" }}>
-                <span style={{
-                  fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "var(--muted)",
-                }}>
-                  {sportTag}
-                </span>
-              </Link>
-            )}
-          </div>
-
-          {/* Hamburger button (mobile only) */}
-          <button
-            className="sm:hidden"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              padding: "4px", display: "flex", flexDirection: "column",
-              gap: "5px", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-          </button>
+          )}
         </div>
+
+        {/* CTA button — pushed to far right */}
+        <a
+          href="#slate"
+          className="hidden sm:inline-flex"
+          style={{
+            marginLeft: "auto", flexShrink: 0,
+            background: "#0E0E0E", color: "#FAFAFA",
+            fontSize: "12px", fontWeight: 500, textTransform: "uppercase",
+            letterSpacing: "0.06em", padding: "10px 18px", borderRadius: "4px",
+            textDecoration: "none",
+          }}
+        >
+          Get the intel →
+        </a>
+
+        {/* Hamburger button (mobile only) */}
+        <button
+          className="sm:hidden"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="Toggle menu"
+          style={{
+            marginLeft: "auto",
+            background: "none", border: "none", cursor: "pointer",
+            padding: "4px", display: "flex", flexDirection: "column",
+            gap: "5px", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
+          <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
+          <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
+        </button>
       </div>
 
       {/* Mobile dropdown menu */}
@@ -119,12 +103,9 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
         <div
           className="sm:hidden"
           style={{
-            background: "var(--canvas)",
-            borderTop: "0.5px solid var(--border)",
+            background: "var(--canvas)", borderTop: "0.5px solid var(--border)",
             padding: "0.75rem 1.5rem 1rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.75rem",
+            display: "flex", flexDirection: "column", gap: "0.75rem",
           }}
         >
           <Link href="/how-it-works" onClick={() => setMenuOpen(false)}
@@ -141,6 +122,10 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               {sportTag}
             </Link>
           )}
+          <a href="#slate" onClick={() => setMenuOpen(false)}
+            style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "4px" }}>
+            Get the intel →
+          </a>
         </div>
       )}
     </header>

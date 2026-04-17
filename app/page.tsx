@@ -136,9 +136,6 @@ export default function HomePage() {
           color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
         }}>R.</span>
         <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto" }}>
-          <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--muted)", marginBottom: "16px" }}>
-            Sports data, plain English.
-          </p>
           <h1 style={{
             fontFamily: "Georgia, serif", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 500,
             color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "20px",
@@ -148,21 +145,13 @@ export default function HomePage() {
           <p style={{ fontSize: "16px", color: "#9A9A96", maxWidth: "500px", lineHeight: 1.6, marginBottom: "28px" }}>
             RawIntel turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <a href="#slate" style={{
-              background: "var(--signal)", color: "#FAFAFA", fontSize: "13px", fontWeight: 500,
-              letterSpacing: "0.04em", padding: "14px 24px", borderRadius: "4px", textDecoration: "none",
-            }}>
-              View today&#8217;s slate →
-            </a>
-            <Link href="/how-it-works" style={{
-              border: "0.5px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)",
-              fontSize: "13px", fontWeight: 500, padding: "14px 24px", borderRadius: "4px",
-              textDecoration: "none", background: "transparent",
-            }}>
-              How it works
-            </Link>
-          </div>
+          <a href="#slate" style={{
+            background: "var(--signal)", color: "#FAFAFA", fontSize: "13px", fontWeight: 500,
+            letterSpacing: "0.04em", padding: "14px 24px", borderRadius: "4px", textDecoration: "none",
+            display: "inline-block",
+          }}>
+            Today&#8217;s intel →
+          </a>
         </div>
       </div>
 
