@@ -56,7 +56,7 @@ export default function HomePage() {
           return;
         }
         const rows = (data ?? []) as { game_id: string; breakdown_content: unknown; sport: string | null }[];
-        console.log(`[slate] raw query result — ${rows.length} rows for date=${todayStr}`);
+        console.log(`[slate] raw query: ${rows.length} rows for game_date=${todayStr}${rows.length === 0 ? " (no breakdowns generated for today yet)" : ""}`);
         for (const row of rows) {
           console.log(`[slate]   game_id=${row.game_id} sport=${row.sport} bc_type=${typeof row.breakdown_content} bc_null=${row.breakdown_content === null}`);
         }
