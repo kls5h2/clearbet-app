@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { AnyGame, GameStatus, GameOdds, MLBGameOdds } from "@/lib/types";
 
 interface Props {
@@ -77,6 +78,51 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: { game: AnyGame; homeTeamAb
   );
 }
 
+// Clickable scheduled card with coordinated hover state.
+// On hover: translateY(-1px), elevated shadow, stronger border, "Read →" goes signal red + full opacity.
+// 150ms ease transitions across the board.
+function ClickableCard({
+  onClick, hasBreakdown, children,
+}: {
+  onClick: () => void;
+  hasBreakdown: boolean;
+  children: React.ReactNode;
+}) {
+  const [hover, setHover] = useState(false);
+  const readColor = hover ? "var(--signal)" : (hasBreakdown ? "var(--signal)" : "var(--ink)");
+  const readOpacity = hover || hasBreakdown ? 1 : 0.6;
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="w-full text-left cursor-pointer focus:outline-none"
+      style={{
+        background: hover ? "#EFEDE7" : "var(--paper)",
+        borderRadius: "6px",
+        padding: "20px 24px 18px",
+        border: `0.5px solid ${hover ? "rgba(14,14,14,0.18)" : "transparent"}`,
+        transform: hover ? "translateY(-1px)" : "translateY(0)",
+        boxShadow: hover ? "0 6px 18px rgba(14,14,14,0.08), 0 1px 2px rgba(14,14,14,0.04)" : "none",
+        transition: "background 150ms ease, border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease",
+      }}
+    >
+      {children}
+      {/* Footer */}
+      <div className="flex justify-between items-center">
+        <span />
+        <span style={{
+          fontSize: "13px", fontWeight: 500,
+          color: readColor, opacity: readOpacity,
+          transition: "color 150ms ease, opacity 150ms ease",
+        }}>
+          Read →
+        </span>
+      </div>
+    </button>
+  );
+}
+
 export default function GameCard({ game, onClick, preview = false, whatThisMeans = null, hasBreakdown = false }: Props) {
   const { homeTeam, awayTeam, gameTime, gameStatus } = game;
   const sport = game.sport;
@@ -101,15 +147,9 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   // Scheduled upcoming card
   if (isClickable) {
     return (
-      <button
+      <ClickableCard
         onClick={() => onClick(game.gameId)}
-        className="w-full text-left cursor-pointer transition-all duration-150 focus:outline-none"
-        style={{
-          background: "var(--paper)", borderRadius: "6px", padding: "20px 24px 18px",
-          border: "0.5px solid transparent",
-        }}
-        onMouseEnter={(e) => { const el = e.currentTarget; el.style.background = "#EFEDE7"; el.style.border = "0.5px solid rgba(14,14,14,0.08)"; }}
-        onMouseLeave={(e) => { const el = e.currentTarget; el.style.background = "var(--paper)"; el.style.border = "0.5px solid transparent"; }}
+        hasBreakdown={hasBreakdown}
       >
         {/* Time */}
         <div style={{ marginBottom: "12px" }}>
@@ -153,15 +193,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
         {/* Odds */}
         <OddsRow game={game} homeTeamAbv={homeTeam.teamAbv} awayTeamAbv={awayTeam.teamAbv} />
-
-        {/* Footer */}
-        <div className="flex justify-between items-center">
-          <span />
-          <span style={{ fontSize: "13px", fontWeight: 500, color: hasBreakdown ? "var(--signal)" : "var(--ink)", opacity: hasBreakdown ? 1 : 0.6 }}>
-            {hasBreakdown ? "Read →" : "Read →"}
-          </span>
-        </div>
-      </button>
+      </ClickableCard>
     );
   }
 

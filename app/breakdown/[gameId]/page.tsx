@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import BreakdownView from "@/components/BreakdownView";
 import Nav from "@/components/Nav";
+import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -63,6 +64,7 @@ export default function BreakdownPage() {
   const [error, setError] = useState<string | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { message, visible } = useRotatingMessage(status === "loading");
 
@@ -195,6 +197,26 @@ export default function BreakdownPage() {
               </div>
             )}
             <BreakdownView breakdown={breakdown} game={game} />
+
+            {/* Share button */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
+              <button
+                onClick={() => setShareOpen(true)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  fontFamily: "var(--sans)",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                  color: "var(--signal, #D93B3A)",
+                }}
+              >
+                Share this read →
+              </button>
+            </div>
           </>
         )}
 
@@ -207,6 +229,17 @@ export default function BreakdownPage() {
           </div>
         )}
       </div>
+
+      {/* Share modal */}
+      {status === "done" && breakdown && game && (
+        <ShareCard
+          game={game}
+          confidenceLevel={breakdown.confidenceLevel}
+          confidenceLabel={breakdown.confidenceLabel}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   );
 }

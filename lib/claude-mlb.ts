@@ -326,10 +326,15 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
 
   const client = new Anthropic({ apiKey });
 
+  // Inject current date + season-awareness context at request time (not module load).
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const dateContext = `Today's date is ${today}. Be aware of where we are in the current sports season when generating this breakdown — regular season, playoffs, postseason, or offseason. Do not assume season context from roster data alone.`;
+  const systemPrompt = MLB_SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
+
   const message = await client.messages.create({
     model: MODEL,
     max_tokens: 2000,
-    system: MLB_SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: [{ role: "user", content: buildMLBUserMessage(data) }],
   });
 
