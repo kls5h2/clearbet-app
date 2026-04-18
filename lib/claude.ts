@@ -238,9 +238,21 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
   const userMessage = buildUserMessage(data);
   const client = new Anthropic({ apiKey });
 
-  // Inject current date + season-awareness context at request time (not module load).
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  const dateContext = `Today's date is ${today}. Be aware of where we are in the current sports season when generating this breakdown — regular season, playoffs, postseason, or offseason. Do not assume season context from roster data alone.`;
+  // Inject current date + NBA season-specific context at request time (not module load).
+  // Regular season: October – April 12. Play-In + Playoffs: April 13 – end of June. Offseason: July – September.
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const inPlayoffs = (month === 4 && day >= 13) || month === 5 || month === 6;
+  const inRegularSeason = month >= 10 || (month >= 1 && month < 4) || (month === 4 && day <= 12);
+
+  const nbaContext = inPlayoffs
+    ? "The NBA is currently in the playoffs. Games are part of a best-of-seven playoff series. Teams may rest stars, adjust rotations, or play with heightened intensity compared to regular season. Treat every game as a playoff game with playoff implications — not a regular season context."
+    : inRegularSeason
+    ? "The NBA regular season is currently underway."
+    : "The NBA is in its offseason.";
+
+  const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${nbaContext} Do not infer season context from roster data alone.`;
   const systemPrompt = SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
 
   const message = await client.messages.create({

@@ -92,7 +92,7 @@ export default function LineTranslatorClient() {
             What does that line actually mean?
           </h1>
           <p style={{ fontSize: "16px", color: "#9A9A96", maxWidth: "540px", lineHeight: 1.6 }}>
-            Paste any moneyline, spread, or over/under. Get plain English back. No account needed.
+            Paste any betting line — spread, moneyline, total, prop, or player stat. Get plain English back. No account needed.
           </p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function LineTranslatorClient() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g. -110, Celtics -7.5, Over 8.5"
+            placeholder="e.g. -110, Celtics -7.5, LaMelo 24.5 PRAs, Ohtani to hit a HR"
             maxLength={200}
             style={{
               width: "100%", boxSizing: "border-box",

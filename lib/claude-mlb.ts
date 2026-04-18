@@ -326,9 +326,21 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
 
   const client = new Anthropic({ apiKey });
 
-  // Inject current date + season-awareness context at request time (not module load).
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  const dateContext = `Today's date is ${today}. Be aware of where we are in the current sports season when generating this breakdown — regular season, playoffs, postseason, or offseason. Do not assume season context from roster data alone.`;
+  // Inject current date + MLB season-specific context at request time (not module load).
+  // Regular season: late March – end of September. Postseason: October – early November. Offseason: mid-November – mid-March.
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const inRegularSeason = (month >= 4 && month <= 9) || (month === 3 && day >= 20);
+  const inPostseason = month === 10 || (month === 11 && day <= 10);
+
+  const mlbContext = inPostseason
+    ? "MLB is currently in the postseason — Wild Card, Division Series, Championship Series, or World Series. Games are elimination-weighted and rotations are compressed. Bullpens and starter usage look nothing like regular season norms. Treat every game as a postseason game, not a regular-season context."
+    : inRegularSeason
+    ? "The MLB regular season is currently underway."
+    : "MLB is in its offseason.";
+
+  const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${mlbContext} Do not infer season context from roster data alone.`;
   const systemPrompt = MLB_SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
 
   const message = await client.messages.create({
