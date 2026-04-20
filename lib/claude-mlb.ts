@@ -37,6 +37,8 @@ Every starting pitcher will be prefixed with one of two tags:
 
 Never reference a confirmed starter as "injured" or "questionable" even if their name appears elsewhere in the data. The MLB Stats API overrides everything else for pitchers.
 
+Do not use the labels [CONFIRMED STARTER] or [UNCONFIRMED] or any bracketed labels in your written breakdown output. These are internal data flags only. Refer to pitchers naturally by name and status.
+
 ## BULLPEN RULE
 Blown save rate is the key fragility signal. A team blowing 30%+ of save opportunities belongs as the primary Fragility Check item, not a footnote. ERA last 7 days reflects real form — weight it over season average.
 
@@ -445,6 +447,27 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
     4: "PASS",
   };
   parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+
+  // Strip internal data flags that Claude occasionally leaks into the user-facing
+  // text. These are prompt-context labels, not content — they must never render.
+  const stripFlags = (s: string): string =>
+    s.replace(/\[CONFIRMED STARTER\]/g, "")
+     .replace(/\[UNCONFIRMED\]/g, "")
+     .replace(/\[INJURY STATUS UNVERIFIED\]/g, "")
+     .replace(/\s{2,}/g, " ")
+     .trim();
+  parsed.gameShape = stripFlags(parsed.gameShape);
+  parsed.baseScript = stripFlags(parsed.baseScript);
+  parsed.marketRead = stripFlags(parsed.marketRead);
+  parsed.decisionLens = stripFlags(parsed.decisionLens);
+  parsed.edgeClosingLine = stripFlags(parsed.edgeClosingLine);
+  parsed.cardSummary = stripFlags(parsed.cardSummary);
+  parsed.shareHook = stripFlags(parsed.shareHook);
+  parsed.glossaryTerm = stripFlags(parsed.glossaryTerm);
+  parsed.glossaryDefinition = stripFlags(parsed.glossaryDefinition);
+  parsed.edge = parsed.edge.map(stripFlags);
+  parsed.keyDrivers = parsed.keyDrivers.map((d) => ({ ...d, factor: stripFlags(d.factor) }));
+  parsed.fragilityCheck = parsed.fragilityCheck.map((f) => ({ ...f, item: stripFlags(f.item) }));
 
   return parsed;
 }

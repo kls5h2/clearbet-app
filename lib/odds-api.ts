@@ -48,6 +48,10 @@ export async function fetchNBAOdds(): Promise<Map<string, OddsMatchup>> {
   url.searchParams.set("regions", "us");
   url.searchParams.set("markets", "h2h,spreads,totals");
   url.searchParams.set("oddsFormat", "american");
+  // Narrow to DraftKings + FanDuel so every market on a single game comes from
+  // one of these two books — prevents split-book lines (e.g. DK moneyline paired
+  // with BetRivers total) and cuts quota cost vs. pulling all ~15 US books.
+  url.searchParams.set("bookmakers", "draftkings,fanduel");
 
   const res = await fetch(url.toString(), { next: { revalidate: 900 } });
   const remaining = res.headers.get("x-requests-remaining");
@@ -91,37 +95,27 @@ export function buildMatchupKey(team1: string, team2: string): string {
 }
 
 function extractOdds(game: OddsApiGame): GameOdds {
-  // Prefer DraftKings, then FanDuel, then first available
-  const preferredBooks = ["draftkings", "fanduel", "betmgm", "caesars"];
+  // Pick ONE bookmaker for all three markets so moneyline/spread/total never
+  // come from different books. DraftKings preferred; FanDuel fallback; any
+  // remaining book as last resort (should be rare since the request is
+  // narrowed to DK+FD).
+  const preferredBookKeys = ["draftkings", "fanduel"];
+  const chosen: OddsApiBookmaker | undefined =
+    preferredBookKeys.map((k) => game.bookmakers.find((b) => b.key === k)).find((b) => b !== undefined) ??
+    game.bookmakers[0];
 
-  const getBookmaker = (market: string): OddsApiBookmaker | undefined => {
-    for (const pref of preferredBooks) {
-      const book = game.bookmakers.find(
-        (b) => b.key === pref && b.markets.some((m) => m.key === market)
-      );
-      if (book) return book;
-    }
-    return game.bookmakers.find((b) => b.markets.some((m) => m.key === market));
-  };
+  const market = (key: "h2h" | "spreads" | "totals") => chosen?.markets.find((m) => m.key === key);
 
-  // ── Moneyline ────────────────────────────────────────────────────────────
-  const h2hBook = getBookmaker("h2h");
-  const h2hMarket = h2hBook?.markets.find((m) => m.key === "h2h");
-  const homeML = h2hMarket?.outcomes.find((o) => o.name === game.home_team)?.price ?? null;
-  const awayML = h2hMarket?.outcomes.find((o) => o.name === game.away_team)?.price ?? null;
+  const h2h = market("h2h");
+  const homeML = h2h?.outcomes.find((o) => o.name === game.home_team)?.price ?? null;
+  const awayML = h2h?.outcomes.find((o) => o.name === game.away_team)?.price ?? null;
 
-  // ── Spread ───────────────────────────────────────────────────────────────
-  const spreadBook = getBookmaker("spreads");
-  const spreadMarket = spreadBook?.markets.find((m) => m.key === "spreads");
-  const homeSpreadOutcome = spreadMarket?.outcomes.find((o) => o.name === game.home_team);
-  const spread = homeSpreadOutcome?.point ?? null;
+  const spreads = market("spreads");
+  const spread = spreads?.outcomes.find((o) => o.name === game.home_team)?.point ?? null;
 
-  // ── Total ────────────────────────────────────────────────────────────────
-  const totalsBook = getBookmaker("totals");
-  const totalsMarket = totalsBook?.markets.find((m) => m.key === "totals");
-  const total = totalsMarket?.outcomes[0]?.point ?? null;
+  const totals = market("totals");
+  const total = totals?.outcomes[0]?.point ?? null;
 
-  // ── Implied probabilities ─────────────────────────────────────────────────
   const impliedHomeProbability = homeML !== null ? americanToImplied(homeML) : null;
   const impliedAwayProbability = awayML !== null ? americanToImplied(awayML) : null;
 
@@ -132,8 +126,8 @@ function extractOdds(game: OddsApiGame): GameOdds {
     awayMoneyline: awayML,
     impliedHomeProbability,
     impliedAwayProbability,
-    spreadBookmaker: spreadBook?.title ?? "",
-    totalsBookmaker: totalsBook?.title ?? "",
+    spreadBookmaker: chosen?.title ?? "",
+    totalsBookmaker: chosen?.title ?? "",
   };
 }
 
@@ -150,6 +144,10 @@ export async function fetchMLBOdds(): Promise<Map<string, OddsMatchup & { mlbOdd
   url.searchParams.set("regions", "us");
   url.searchParams.set("markets", "h2h,spreads,totals");
   url.searchParams.set("oddsFormat", "american");
+  // Narrow to DraftKings + FanDuel so every market on a single game comes from
+  // one of these two books — prevents split-book lines (e.g. DK moneyline paired
+  // with BetRivers total) and cuts quota cost vs. pulling all ~15 US books.
+  url.searchParams.set("bookmakers", "draftkings,fanduel");
 
   const res = await fetch(url.toString(), { next: { revalidate: 900 } });
   if (!res.ok) {

@@ -60,26 +60,35 @@ function HomePageContent() {
     Promise.resolve(
       supabase
         .from("breakdowns")
-        .select("game_id, card_summary, sport")
+        .select("game_id, card_summary, sport, created_at")
         .eq("game_date", todayStr)
+        // Newest first — if duplicates exist per game_id (upsert failed to dedupe,
+        // or unique constraint missing), we'll keep only the most recent below.
+        .order("created_at", { ascending: false })
         .limit(500)
     ).then(({ data, error: sbError }) => {
         if (sbError) {
           console.error("[slate] Supabase breakdown fetch failed:", sbError.message);
           return;
         }
-        const rows = (data ?? []) as { game_id: string; card_summary: string | null; sport: string | null }[];
+        const rows = (data ?? []) as { game_id: string; card_summary: string | null; sport: string | null; created_at: string }[];
         console.log(`[slate] raw query: ${rows.length} rows for game_date=${todayStr}${rows.length === 0 ? " (no breakdowns generated for today yet)" : ""}`);
         const map = new Map<string, string>();
         const ids = new Set<string>();
+        const seen = new Set<string>();
         for (const row of rows) {
+          // Keep only the first (= newest) row per game_id. Protects against
+          // duplicate rows that accumulate when the upsert conflict target
+          // has no unique constraint to bind to.
+          if (seen.has(row.game_id)) continue;
+          seen.add(row.game_id);
           ids.add(row.game_id);
           const summary = (row.card_summary ?? "").trim();
           if (summary) {
             map.set(row.game_id, summary);
-            console.log(`[slate]   ${row.game_id}: card_summary = "${summary.substring(0, 80)}..."`);
+            console.log(`[slate]   ${row.game_id}: card_summary = "${summary.substring(0, 80)}..." (${row.created_at})`);
           } else {
-            console.log(`[slate]   ${row.game_id}: no card_summary (older breakdown — THE READ hidden)`);
+            console.log(`[slate]   ${row.game_id}: newest row has no card_summary (${row.created_at}) — THE READ hidden`);
           }
         }
         console.log(`[slate] breakdownMap has ${map.size} entries, breakdownIds has ${ids.size} entries`);
