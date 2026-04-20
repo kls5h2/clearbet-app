@@ -103,8 +103,21 @@ export default function BreakdownPage() {
   const awayName = game?.awayTeam.teamName ?? "";
   const homeName = game?.homeTeam.teamName ?? "";
   const heroMatchup = awayName && homeName ? `${awayName} @ ${homeName}` : "Breakdown";
-  const heroSub = game?.gameDate
-    ? `${sport} · ${game.gameDate.slice(4, 6)}/${game.gameDate.slice(6, 8)}/${game.gameDate.slice(0, 4)}${game.gameTime ? ` · ${game.gameTime}` : ""}`
+
+  // game.gameDate is a YYYYMMDD string (e.g., "20260420"). Parse into a local
+  // Date and let the browser format the weekday + month name — works for any date.
+  const formatGameDate = (yyyymmdd: string): string | null => {
+    if (!/^\d{8}$/.test(yyyymmdd)) return null;
+    const year = parseInt(yyyymmdd.slice(0, 4), 10);
+    const month = parseInt(yyyymmdd.slice(4, 6), 10) - 1;
+    const day = parseInt(yyyymmdd.slice(6, 8), 10);
+    const d = new Date(year, month, day);
+    return d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  };
+
+  const formattedDate = game?.gameDate ? formatGameDate(game.gameDate) : null;
+  const heroSub = formattedDate
+    ? `${sport} · ${formattedDate}${game?.gameTime ? ` · ${game.gameTime}` : ""}`
     : `${sport} breakdown`;
 
   return (

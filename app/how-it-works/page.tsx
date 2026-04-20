@@ -97,9 +97,6 @@ export default function HowItWorksPage() {
           <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
             Understand the game.<br />Make your own call.
           </h1>
-          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
-            RawIntel turns raw sports data into plain-English analysis. No picks. No pressure. Just a clear picture of what the data says.
-          </p>
         </div>
       </div>
 
