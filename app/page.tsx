@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GameCard from "@/components/GameCard";
@@ -32,7 +32,17 @@ function parseGameTime(time: string): number {
   return hours * 60 + mins;
 }
 
+// Thin wrapper so that useSearchParams() inside HomePageContent has a
+// Suspense boundary — required by Next.js App Router for static prerender.
 export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Honor ?sport=nba|mlb on initial load — case-insensitive. Falls back to NBA.
