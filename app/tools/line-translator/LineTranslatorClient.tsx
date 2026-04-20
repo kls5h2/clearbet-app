@@ -74,24 +74,24 @@ export default function LineTranslatorClient() {
     <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      {/* Hero */}
-      <div style={{ background: "var(--ink)", padding: "64px 40px 56px", position: "relative", overflow: "hidden" }}>
+      {/* Dark hero — standardized */}
+      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 40px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
           fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
           color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
         }}>R.</span>
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto" }}>
-          <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto", width: "100%" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
             Free Tool
           </p>
           <h1 style={{
-            fontFamily: "Georgia, serif", fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 500,
-            color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "18px",
+            fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500,
+            color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0,
           }}>
             What does that line actually mean?
           </h1>
-          <p style={{ fontSize: "16px", color: "#9A9A96", maxWidth: "540px", lineHeight: 1.6 }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", maxWidth: "520px", lineHeight: 1.6, marginTop: "16px", marginBottom: 0 }}>
             Paste any betting line — spread, moneyline, total, prop, or player stat. Get plain English back. No account needed.
           </p>
         </div>

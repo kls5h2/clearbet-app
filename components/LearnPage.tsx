@@ -18,22 +18,27 @@ export default function LearnPage({ article }: Props) {
     <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      {/* Hero — light canvas, no dark background */}
-      <header style={{ background: "var(--canvas)", padding: "56px 24px 24px" }}>
-        <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+      {/* Dark hero — standardized */}
+      <header style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-60px", top: "-80px",
+          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+        }}>R.</span>
+        <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
           <p style={{
-            fontSize: "11px", textTransform: "uppercase",
-            letterSpacing: "0.22em", color: "var(--signal)",
-            marginBottom: "16px",
+            fontFamily: "var(--sans)", fontSize: "11px",
+            textTransform: "uppercase", letterSpacing: "0.22em",
+            color: "var(--signal)", marginBottom: "16px",
           }}>
             Betting Basics
           </p>
           <h1 style={{
-            fontFamily: "Georgia, serif",
-            fontSize: "clamp(30px, 4.5vw, 44px)",
-            fontWeight: 500, color: "var(--ink)",
-            letterSpacing: "-0.025em", lineHeight: 1.12,
-            margin: 0,
+            fontFamily: "var(--serif)",
+            fontSize: "clamp(36px, 5vw, 56px)",
+            fontWeight: 500, color: "#FAFAFA",
+            letterSpacing: "-0.025em", lineHeight: 1.1,
+            maxWidth: "680px", margin: 0,
           }}>
             {title}
           </h1>

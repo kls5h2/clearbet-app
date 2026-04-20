@@ -117,21 +117,21 @@ export default function HomePage() {
     <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      {/* Hero */}
-      <div style={{ background: "var(--ink)", padding: "64px 40px 56px", position: "relative", overflow: "hidden" }}>
-        <span style={{
+      {/* Hero — homepage is exempt from min-height and headline size (hero statement); other standards apply */}
+      <div style={{ background: "var(--ink)", padding: "72px 40px 64px", position: "relative", overflow: "hidden" }}>
+        <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
           fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
           color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
         }}>R.</span>
         <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto" }}>
           <h1 style={{
-            fontFamily: "Georgia, serif", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 500,
-            color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "20px",
+            fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 500,
+            color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: "20px",
           }}>
             Raw data. Plain English. <em>Your call.</em>
           </h1>
-          <p style={{ fontSize: "16px", color: "#9A9A96", maxWidth: "500px", lineHeight: 1.6, marginBottom: "28px" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", maxWidth: "520px", lineHeight: 1.6, marginTop: "16px", marginBottom: "28px" }}>
             RawIntel turns raw game data into plain-English analysis — simple enough for a rookie, deep enough for a pro.
           </p>
           <a href="#slate" style={{

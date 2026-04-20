@@ -83,28 +83,21 @@ export default function HowItWorksPage() {
     <div style={{ background: "#FAFAFA", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav activePage="how-it-works" />
 
-      {/* Dark hero header */}
-      <div style={{ background: "#0E0E0E", padding: "2.5rem 1.5rem 2rem", marginBottom: "0", position: "relative", overflow: "hidden" }}>
-        {/* R. watermark */}
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute", right: "-60px", top: "-80px",
-            fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
-            color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0,
-            lineHeight: 1,
-          }}
-        >
-          R.
-        </span>
-        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#D93B3A", marginBottom: "8px" }}>
+      {/* Dark hero — standardized */}
+      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-60px", top: "-80px",
+          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+        }}>R.</span>
+        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", letterSpacing: "0.22em", textTransform: "uppercase", color: "#D93B3A", marginBottom: "16px" }}>
             How It Works
           </p>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "10px" }}>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
             Understand the game.<br />Make your own call.
           </h1>
-          <p style={{ fontSize: "14px", color: "#9A9A96", fontWeight: 500, lineHeight: 1.6, maxWidth: "440px" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
             RawIntel turns raw sports data into plain-English analysis. No picks. No pressure. Just a clear picture of what the data says.
           </p>
         </div>

@@ -162,15 +162,6 @@ export default function BreakdownView({ breakdown, game }: Props) {
 
   const showNBAEarlyBanner = !isMLB && gameStatus === "scheduled" && isGeneratedEarly(game.gameTime);
 
-  const awayCity = awayTeam.teamCity || awayTeam.teamName.split(" ").slice(0, -1).join(" ");
-  const awayNickname = awayTeam.teamCity
-    ? awayTeam.teamName.replace(awayTeam.teamCity, "").trim()
-    : awayTeam.teamName;
-  const homeCity = homeTeam.teamCity || homeTeam.teamName.split(" ").slice(0, -1).join(" ");
-  const homeNickname = homeTeam.teamCity
-    ? homeTeam.teamName.replace(homeTeam.teamCity, "").trim()
-    : homeTeam.teamName;
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* Status banners */}
@@ -198,24 +189,10 @@ export default function BreakdownView({ breakdown, game }: Props) {
         marginBottom: "10px",
         border: `0.5px solid ${BORDER}`,
       }}>
-        <p style={{ fontSize: "11px", fontWeight: 700, color: MUTED, letterSpacing: "0.06em", marginBottom: "14px", fontFamily: SANS }}>
-          {game.gameTime || "Time TBD"}
+        {/* Sport · Time eyebrow — matchup now lives in the dark hero above */}
+        <p style={{ fontSize: "11px", fontWeight: 700, color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px", fontFamily: SANS }}>
+          {isMLB ? "MLB" : "NBA"} · {game.gameTime || "Time TBD"}
         </p>
-
-        {/* Matchup with "at" word */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: MUTED, marginBottom: "3px", fontFamily: SANS }}>{awayCity}</p>
-            <p style={{ fontSize: "28px", fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1, color: INK, fontFamily: SERIF }}>{awayNickname}</p>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 14px", paddingBottom: "2px", flexShrink: 0 }}>
-            <span style={{ fontSize: "11px", fontWeight: 400, color: MUTED, letterSpacing: "0.04em", lineHeight: 1, fontFamily: SERIF, fontStyle: "italic" }}>at</span>
-          </div>
-          <div style={{ flex: 1, textAlign: "right" }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: MUTED, marginBottom: "3px", fontFamily: SANS }}>{homeCity}</p>
-            <p style={{ fontSize: "28px", fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1, color: INK, fontFamily: SERIF }}>{homeNickname}</p>
-          </div>
-        </div>
 
         {/* MLB probable starters */}
         {isMLB && (() => {

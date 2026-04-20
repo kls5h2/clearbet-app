@@ -58,24 +58,21 @@ export default function GlossaryPage() {
     <div style={{ background: "var(--canvas, #FAFAFA)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav activePage="glossary" />
 
-      {/* Hero header */}
-      <div style={{ background: "var(--ink, #0E0E0E)", padding: "2.5rem 1.5rem 2rem", marginBottom: "0", position: "relative", overflow: "hidden" }}>
-        {/* R. watermark — matches hero treatment used on /, /how-it-works, /tools/line-translator */}
+      {/* Dark hero — standardized */}
+      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
           fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
           color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
-        }}>
-          R.
-        </span>
-        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--signal, #D93B3A)", marginBottom: "8px" }}>
+        }}>R.</span>
+        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "16px" }}>
             Glossary
           </p>
-          <h1 style={{ fontSize: "30px", fontFamily: "Georgia, serif", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: "10px" }}>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
             Know the Language
           </h1>
-          <p style={{ fontSize: "14px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "440px" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
             Terms used in RawIntel breakdowns, defined simply.
           </p>
         </div>

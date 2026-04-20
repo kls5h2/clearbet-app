@@ -100,9 +100,36 @@ export default function BreakdownPage() {
     fetchBreakdown();
   }, [gameId]);
 
+  const awayName = game?.awayTeam.teamName ?? "";
+  const homeName = game?.homeTeam.teamName ?? "";
+  const heroMatchup = awayName && homeName ? `${awayName} @ ${homeName}` : "Breakdown";
+  const heroSub = game?.gameDate
+    ? `${sport} · ${game.gameDate.slice(4, 6)}/${game.gameDate.slice(6, 8)}/${game.gameDate.slice(0, 4)}${game.gameTime ? ` · ${game.gameTime}` : ""}`
+    : `${sport} breakdown`;
+
   return (
     <div style={{ background: "var(--canvas, #FAFAFA)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav backHref="/" sportTag={sport} />
+
+      {/* Dark hero — standardized */}
+      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-60px", top: "-80px",
+          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+        }}>R.</span>
+        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
+            Breakdown
+          </p>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
+            {heroMatchup}
+          </h1>
+          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
+            {heroSub}
+          </p>
+        </div>
+      </div>
 
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Loading state */}
