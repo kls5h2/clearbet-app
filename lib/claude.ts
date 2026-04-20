@@ -298,21 +298,65 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
   const userMessage = buildUserMessage(data);
   const client = new Anthropic({ apiKey });
 
-  // Inject current date + NBA season-specific context at request time (not module load).
-  // Regular season: October – April 12. Play-In + Playoffs: April 13 – end of June. Offseason: July – September.
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const day = today.getDate();
-  const inPlayoffs = (month === 4 && day >= 13) || month === 5 || month === 6;
-  const inRegularSeason = month >= 10 || (month >= 1 && month < 4) || (month === 4 && day <= 12);
+  // Inject current date + dynamic playoff-round context at request time (not module load).
+  // Round boundaries are approximate — tuned to the published NBA playoff schedule and
+  // shift ±1 day year over year. Covers First Round → Finals without manual updates.
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  const day = now.getDate();
 
-  const nbaContext = inPlayoffs
-    ? "The NBA is currently in the playoffs. Games are part of a best-of-seven playoff series. Teams may rest stars, adjust rotations, or play with heightened intensity compared to regular season. Treat every game as a playoff game with playoff implications — not a regular season context."
-    : inRegularSeason
-    ? "The NBA regular season is currently underway."
-    : "The NBA is in its offseason.";
+  const getPlayoffRound = (month: number, day: number) => {
+    // First Round: April 18 through mid-May (2026 playoffs began April 18)
+    if ((month === 4 && day >= 18) || (month === 5 && day <= 12)) return "First Round";
+    // Second Round: mid-May to early June
+    if ((month === 5 && day >= 13) || (month === 6 && day <= 8)) return "Second Round (Conference Semifinals)";
+    // Conference Finals: early June to late June
+    if (month === 6 && day >= 9 && day <= 26) return "Conference Finals";
+    // NBA Finals: late June to late July
+    if ((month === 6 && day >= 27) || (month === 7 && day <= 23)) return "NBA Finals";
+    return "Playoffs";
+  };
 
-  const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${nbaContext} Do not infer season context from roster data alone.`;
+  const playoffRound = getPlayoffRound(month, day);
+
+  // NBA season windows. Dates are year-specific — update annually when the
+  // schedule is published. 2026 dates: Play-In April 14–17, Playoffs begin April 18.
+  const PLAY_IN_START = { month: 4, day: 14 };
+  const PLAY_IN_END   = { month: 4, day: 17 };
+  const PLAYOFFS_START = { month: 4, day: 18 };
+
+  const onOrAfter = (m: number, d: number, ref: { month: number; day: number }) =>
+    m > ref.month || (m === ref.month && d >= ref.day);
+  const onOrBefore = (m: number, d: number, ref: { month: number; day: number }) =>
+    m < ref.month || (m === ref.month && d <= ref.day);
+
+  const inPlayIn = onOrAfter(month, day, PLAY_IN_START) && onOrBefore(month, day, PLAY_IN_END);
+  const inPlayoffs = onOrAfter(month, day, PLAYOFFS_START) && month <= 7;
+
+  const nbaContext = inPlayIn
+    ? `THE ${year} NBA PLAY-IN TOURNAMENT IS CURRENTLY UNDERWAY (${PLAY_IN_START.month}/${PLAY_IN_START.day}–${PLAY_IN_END.month}/${PLAY_IN_END.day}). This is NOT the playoffs yet. Seeds 7–10 in each conference play single-elimination games to claim the final two playoff spots.
+
+CRITICAL RULES:
+(1) Every Play-In game is an elimination game. The loser of the 9 vs 10 game is eliminated from the postseason entirely. The winner of the 7 vs 8 game secures the 7 seed. Name the stakes explicitly in Game Shape.
+(2) Do not refer to these as "playoff games" — they are Play-In games. The playoffs begin after the Play-In tournament concludes.
+(3) Load management, rest, and minute restrictions do not apply — every player available will play hard and play long minutes.
+(4) Star usage, pace, and intensity all run closer to playoff levels than regular season levels. Adjust analysis accordingly.`
+    : inPlayoffs
+    ? `THE ${year} NBA PLAYOFFS ARE CURRENTLY IN PROGRESS. Current round: ${playoffRound}.
+
+CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
+(1) NEVER use the words "Play-In" or "play-in" anywhere in the breakdown. The Play-In tournament ended before the playoffs began.
+(2) NEVER reference elimination games in a regular season or Play-In context. Every game is a playoff series game.
+(3) Every game is part of a best-of-seven ${playoffRound} series. Reference the series context — wins, losses, home court — when data is available.
+(4) ALL teams currently playing are legitimate playoff teams regardless of their regular season record or seeding. Do not imply any team does not belong in the playoffs.
+(5) Playoff basketball differs from regular season — officiating, pace, defensive intensity, rotation tightening, and star minutes all shift significantly. Reflect this in the analysis.
+(6) Treat load management and minute restrictions as playoff-context decisions, not regular season rest decisions.`
+    : month >= 10 || month <= 3
+    ? `The ${year}-${year + 1} NBA regular season is currently underway.`
+    : `The NBA is currently in its offseason.`;
+
+  const dateContext = `Today's date is ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${nbaContext} Do not infer season context from roster data alone.`;
   const systemPrompt = SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
 
   // ─── TEMPORARY DEBUG LOGGING — remove when done diagnosing ─────────────────
