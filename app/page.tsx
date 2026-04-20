@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GameCard from "@/components/GameCard";
 import Nav from "@/components/Nav";
@@ -34,7 +34,10 @@ function parseGameTime(time: string): number {
 
 export default function HomePage() {
   const router = useRouter();
-  const [activeSport, setActiveSport] = useState<Sport>("NBA");
+  const searchParams = useSearchParams();
+  // Honor ?sport=nba|mlb on initial load — case-insensitive. Falls back to NBA.
+  const initialSport: Sport = (searchParams.get("sport")?.toUpperCase() === "MLB" ? "MLB" : "NBA");
+  const [activeSport, setActiveSport] = useState<Sport>(initialSport);
   const [games, setGames] = useState<AnyGame[]>([]);
   const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
   const [breakdownMap, setBreakdownMap] = useState<Map<string, string>>(new Map());

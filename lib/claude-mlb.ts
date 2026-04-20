@@ -395,7 +395,7 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
 
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: systemPrompt,
     messages: [{ role: "user", content: buildMLBUserMessage(data) }],
   });

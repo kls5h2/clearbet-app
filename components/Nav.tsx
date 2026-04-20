@@ -70,8 +70,28 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             </Link>
           ))}
           {sportTag && (
-            <Link href={`/?sport=${sportTag}`} style={{ textDecoration: "none" }}>
-              <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>
+            <Link
+              href={`/?sport=${sportTag.toLowerCase()}`}
+              style={{ textDecoration: "none" }}
+              aria-label={`View today's ${sportTag} slate`}
+            >
+              <span
+                style={{
+                  fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--muted)",
+                  transition: "opacity 150ms ease, color 150ms ease",
+                  display: "inline-block",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--ink)";
+                  e.currentTarget.style.textDecoration = "underline";
+                  e.currentTarget.style.textUnderlineOffset = "3px";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--muted)";
+                  e.currentTarget.style.textDecoration = "none";
+                }}
+              >
                 {sportTag}
               </span>
             </Link>
@@ -123,9 +143,9 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             </Link>
           ))}
           {sportTag && (
-            <Link href={`/?sport=${sportTag}`} onClick={() => setMenuOpen(false)}
+            <Link href={`/?sport=${sportTag.toLowerCase()}`} onClick={() => setMenuOpen(false)}
               style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted)", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              {sportTag}
+              View today&#8217;s {sportTag} slate
             </Link>
           )}
         </div>

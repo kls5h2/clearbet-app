@@ -156,8 +156,18 @@ function parseLastPlayedFromDescription(description: string): { date: Date; labe
 // renderESPNSection(). Kept for reference only.
 const INJURY_INSTRUCTION = "";
 
+// Playoff round resolver — shared between the system prompt's date context and
+// the per-message SERIES CONTEXT block. Round boundaries are approximate.
+function getPlayoffRound(month: number, day: number): string {
+  if ((month === 4 && day >= 18) || (month === 5 && day <= 12)) return "First Round";
+  if ((month === 5 && day >= 13) || (month === 6 && day <= 8)) return "Second Round (Conference Semifinals)";
+  if (month === 6 && day >= 9 && day <= 26) return "Conference Finals";
+  if ((month === 6 && day >= 27) || (month === 7 && day <= 23)) return "NBA Finals";
+  return "Playoffs";
+}
+
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
@@ -192,6 +202,27 @@ This is the authoritative source for tonight's injury status. Treat it as primar
 ${renderTeam(homeTeam.teamName, espnInjuries.homeInjuries)}
 
 ${renderTeam(awayTeam.teamName, espnInjuries.awayInjuries)}`;
+  };
+
+  // Render a SERIES CONTEXT block when we're in the playoff window. If the
+  // ESPN series fetch failed, surface the "unavailable" guard; if we're not
+  // in the playoff window, render nothing.
+  const renderSeriesSection = (): string => {
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const inPlayoffs = (m === 4 && d >= 18) || (m >= 5 && m <= 7);
+    if (!inPlayoffs) return "";
+
+    const roundName = getPlayoffRound(m, d);
+
+    if (!espnSeries.ok) {
+      return `\n━━━ SERIES CONTEXT ━━━\nSeries score unavailable — do not make assumptions about elimination stakes or series standing.`;
+    }
+
+    const s = espnSeries.series;
+    const gameLabel = s.gameNumber ? `Game ${s.gameNumber}` : "a game";
+    return `\n━━━ SERIES CONTEXT ━━━\nSERIES CONTEXT: This is ${gameLabel} of the ${roundName} series. ${s.summary}. Do not describe this as an elimination game unless the losing team is down 3-0 or 3-1 or 3-2 in the series. Do not use the word elimination unless the series context actually makes it an elimination game.`;
   };
 
   const formatTopPlayers = (players: typeof homeTeamStats.topPlayers) =>
@@ -273,6 +304,7 @@ ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins,
 ${formatPlayoffContext(awayPlayoffContext, awayTeam.teamAbv, awayTeamStats.wins, awayTeamStats.losses)}
 
 ${renderESPNSection()}
+${renderSeriesSection()}
 
 ━━━ ${homeTeam.teamAbv} (HOME) ━━━
 Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
@@ -305,18 +337,6 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
   const day = now.getDate();
-
-  const getPlayoffRound = (month: number, day: number) => {
-    // First Round: April 18 through mid-May (2026 playoffs began April 18)
-    if ((month === 4 && day >= 18) || (month === 5 && day <= 12)) return "First Round";
-    // Second Round: mid-May to early June
-    if ((month === 5 && day >= 13) || (month === 6 && day <= 8)) return "Second Round (Conference Semifinals)";
-    // Conference Finals: early June to late June
-    if (month === 6 && day >= 9 && day <= 26) return "Conference Finals";
-    // NBA Finals: late June to late July
-    if ((month === 6 && day >= 27) || (month === 7 && day <= 23)) return "NBA Finals";
-    return "Playoffs";
-  };
 
   const playoffRound = getPlayoffRound(month, day);
 
@@ -381,7 +401,7 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
 
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: systemPrompt,
     messages: [
       {

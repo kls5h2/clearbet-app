@@ -167,6 +167,7 @@ export interface GameDetailData {
   awayRecentForm: RecentGame[];
   injuries: InjuryReport; // Tank01 — retained only as emergency fallback; NBA prompt uses ESPN
   espnInjuries: import("./espn-nba-injuries").ESPNInjuryResult;
+  espnSeries: import("./espn-nba-series").ESPNSeriesResult;
   homePlayoffContext: PlayoffContext | null;
   awayPlayoffContext: PlayoffContext | null;
   h2h: H2HRecord | null;

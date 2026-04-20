@@ -17,6 +17,7 @@ import {
   getMLBUmpire,
 } from "@/lib/mlb-stats-api";
 import { fetchESPNNBAInjuries } from "@/lib/espn-nba-injuries";
+import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
 import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
@@ -159,8 +160,8 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     const t01Away = rawGame.awayTeam;
 
     // Fetch all data in parallel using Tank01's designations.
-    // ESPN injuries are the authoritative source and override Tank01 entirely.
-    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries] = await Promise.all([
+    // ESPN injuries + series score are authoritative real-time sources.
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries, espnSeries] = await Promise.all([
       getTeamStats(t01Home.teamAbv),
       getTeamStats(t01Away.teamAbv),
       getRecentForm(t01Home.teamAbv),
@@ -170,6 +171,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       getPlayoffContext(t01Home.teamAbv, t01Away.teamAbv).catch(() => ({ home: null, away: null })),
       getH2HRecord(t01Home.teamAbv, t01Away.teamAbv).catch(() => null),
       fetchESPNNBAInjuries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
+      fetchESPNNBASeries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
     ]);
 
     // Cross-validate home/away with The Odds API (authoritative for Play-In / Playoff)
@@ -203,6 +205,28 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       );
     } else {
       console.warn("[breakdown:NBA] ESPN injuries UNAVAILABLE — prompt will flag as such");
+    }
+
+    // Swap home/away in the series data when the Odds API disagreed with Tank01.
+    // ESPN's own home/away resolution can stay — we just relabel the "home"/"away" sides.
+    const espnSeriesFinal = flipped && espnSeries.ok
+      ? {
+          ok: true as const,
+          fetchedAt: espnSeries.fetchedAt,
+          series: {
+            ...espnSeries.series,
+            homeAbv: espnSeries.series.awayAbv,
+            awayAbv: espnSeries.series.homeAbv,
+            homeWins: espnSeries.series.awayWins,
+            awayWins: espnSeries.series.homeWins,
+          },
+        }
+      : espnSeries;
+    if (espnSeriesFinal.ok) {
+      const s = espnSeriesFinal.series;
+      console.log(`[breakdown:NBA] series: Game ${s.gameNumber ?? "?"} — ${s.summary}`);
+    } else {
+      console.warn("[breakdown:NBA] ESPN series UNAVAILABLE — prompt will flag as such");
     }
     const playoffCtx    = flipped
       ? { home: t01Playoff.away, away: t01Playoff.home }
@@ -248,6 +272,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       awayRecentForm: awayForm,
       injuries,
       espnInjuries: espnInjuriesFinal,
+      espnSeries: espnSeriesFinal,
       homePlayoffContext: playoffCtx.home,
       awayPlayoffContext: playoffCtx.away,
       h2h,
