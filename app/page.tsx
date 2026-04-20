@@ -7,7 +7,7 @@ import GameCard from "@/components/GameCard";
 import Nav from "@/components/Nav";
 import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
-import type { AnyGame, Sport, BreakdownResult } from "@/lib/types";
+import type { AnyGame, Sport } from "@/lib/types";
 
 function getTodayDateString(): string {
   const now = new Date();
@@ -47,7 +47,7 @@ export default function HomePage() {
     Promise.resolve(
       supabase
         .from("breakdowns")
-        .select("game_id, breakdown_content, sport")
+        .select("game_id, card_summary, sport")
         .eq("game_date", todayStr)
         .limit(500)
     ).then(({ data, error: sbError }) => {
@@ -55,29 +55,18 @@ export default function HomePage() {
           console.error("[slate] Supabase breakdown fetch failed:", sbError.message);
           return;
         }
-        const rows = (data ?? []) as { game_id: string; breakdown_content: unknown; sport: string | null }[];
+        const rows = (data ?? []) as { game_id: string; card_summary: string | null; sport: string | null }[];
         console.log(`[slate] raw query: ${rows.length} rows for game_date=${todayStr}${rows.length === 0 ? " (no breakdowns generated for today yet)" : ""}`);
-        for (const row of rows) {
-          console.log(`[slate]   game_id=${row.game_id} sport=${row.sport} bc_type=${typeof row.breakdown_content} bc_null=${row.breakdown_content === null}`);
-        }
         const map = new Map<string, string>();
         const ids = new Set<string>();
         for (const row of rows) {
           ids.add(row.game_id);
-          let content: BreakdownResult | null = null;
-          if (row.breakdown_content && typeof row.breakdown_content === "object") {
-            content = row.breakdown_content as BreakdownResult;
-          } else if (typeof row.breakdown_content === "string") {
-            try { content = JSON.parse(row.breakdown_content) as BreakdownResult; } catch { /* skip malformed */ }
-          }
-          if (!content) { console.log(`[slate]   ${row.game_id}: content parse failed`); continue; }
-          const source = content.decisionLens || content.gameShape;
-          if (!source) { console.log(`[slate]   ${row.game_id}: no decisionLens or gameShape`); continue; }
-          const firstSentence = source.match(/^[^.]+\./)?.[0] ?? source;
-          const cleaned = firstSentence.replace(/\s*[—–-]\s*-?\d+\.?$/, "").trim();
-          if (cleaned) {
-            map.set(row.game_id, cleaned);
-            console.log(`[slate]   ${row.game_id}: THE READ = "${cleaned.substring(0, 80)}..."`);
+          const summary = (row.card_summary ?? "").trim();
+          if (summary) {
+            map.set(row.game_id, summary);
+            console.log(`[slate]   ${row.game_id}: card_summary = "${summary.substring(0, 80)}..."`);
+          } else {
+            console.log(`[slate]   ${row.game_id}: no card_summary (older breakdown — THE READ hidden)`);
           }
         }
         console.log(`[slate] breakdownMap has ${map.size} entries, breakdownIds has ${ids.size} entries`);
@@ -150,7 +139,7 @@ export default function HomePage() {
             letterSpacing: "0.04em", padding: "14px 24px", borderRadius: "4px", textDecoration: "none",
             display: "inline-block",
           }}>
-            Today&#8217;s intel →
+            Today&#8217;s Intel →
           </a>
         </div>
       </div>
@@ -159,9 +148,16 @@ export default function HomePage() {
       <div id="slate" style={{ maxWidth: "860px", margin: "0 auto", padding: "48px 40px" }}>
         {/* Section header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
-            <span style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)" }}>Today&#8217;s Slate</span>
-            <span style={{ fontSize: "13px", color: "var(--muted)" }}>{todayLabel}</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "14px" }}>
+            <span style={{
+              fontSize: "11px", fontWeight: 500,
+              textTransform: "uppercase", letterSpacing: "0.1em",
+              color: "var(--ink)", opacity: 0.5,
+            }}>Today&#8217;s Slate</span>
+            <span style={{
+              fontFamily: "var(--serif)", fontSize: "18px", fontWeight: 500,
+              color: "var(--ink)", letterSpacing: "-0.015em",
+            }}>{todayLabel}</span>
           </div>
           <div style={{ display: "flex", gap: "4px" }}>
             {(["NBA", "MLB"] as Sport[]).map((sport) => (
@@ -169,12 +165,13 @@ export default function HomePage() {
                 key={sport}
                 onClick={() => setActiveSport(sport)}
                 style={{
-                  padding: "5px 14px", fontSize: "11px", fontWeight: 500,
+                  padding: "8px 20px", fontSize: "12px", fontWeight: 500,
                   textTransform: "uppercase", letterSpacing: "0.06em",
                   borderRadius: "4px", cursor: "pointer",
                   border: activeSport === sport ? "none" : "0.5px solid var(--border)",
                   background: activeSport === sport ? "var(--ink)" : "transparent",
-                  color: activeSport === sport ? "#FAFAFA" : "var(--muted)",
+                  color: activeSport === sport ? "#FAFAFA" : "var(--ink)",
+                  opacity: activeSport === sport ? 1 : 0.7,
                 }}
               >
                 {sport}
@@ -258,8 +255,8 @@ export default function HomePage() {
           return (
             <div style={{ marginTop: "2.5rem" }}>
               <div style={{
-                fontSize: "10px", fontWeight: 500, letterSpacing: "0.1em",
-                textTransform: "uppercase", color: "var(--muted)",
+                fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "var(--ink)", opacity: 0.5,
                 margin: "0 0 1rem", paddingBottom: "10px",
                 borderBottom: "0.5px solid var(--border)",
               }}>

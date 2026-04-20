@@ -174,7 +174,7 @@ export default function RepurposePage() {
 
         {/* Breakdown list */}
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--muted)", marginBottom: "12px" }}>
+          <h2 style={{ fontSize: "11px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink)", opacity: 0.5, marginBottom: "12px" }}>
             Today&#8217;s breakdowns
           </h2>
           {breakdowns.length === 0 ? (
@@ -269,8 +269,8 @@ function OutputBlock({ title, children }: { title: string; children: React.React
       padding: "18px 20px",
     }}>
       <h3 style={{
-        fontSize: "10px", textTransform: "uppercase",
-        letterSpacing: "0.14em", color: "var(--muted)",
+        fontSize: "11px", textTransform: "uppercase",
+        letterSpacing: "0.1em", color: "var(--ink)", opacity: 0.5,
         marginBottom: "12px", fontWeight: 500,
       }}>
         {title}

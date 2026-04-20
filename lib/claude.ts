@@ -21,7 +21,12 @@ Every sentence must do one of four things: frame the game, identify what matters
 Not all factors are equal. Rank them. The most important factor gets the most weight. If a star player is injured, that's #1 and everything else is secondary. Say so explicitly. Don't bury the lead.
 
 ## INJURY RULE — NON-NEGOTIABLE
-Read injury data before writing anything. Out or Doubtful = does not play. Remove them from analysis entirely. If a key player is out, open with that fact — it changes everything and the user needs to know immediately.
+The ESPN INJURY REPORT block in the user message is the AUTHORITATIVE source for tonight's injury status. It is pulled directly from ESPN's public injuries endpoint in real time. Treat it as the only source of truth:
+
+- Any player listed there with status Out or Doubtful = does not play. Remove them from analysis entirely. If a key player is Out, open with that fact — it changes everything.
+- Any player listed there as Questionable or Day-To-Day = genuine uncertainty. Flag as a Fragility Check item, not as confirmed out.
+- Any player NOT listed in the ESPN report is presumed available. Do not introduce hypothetical injuries or reference other injury sources.
+- If the report says "INJURY DATA UNAVAILABLE," treat all roster assumptions as unverified. Lead the Fragility Check with lineup uncertainty and cap confidence at LEAN.
 
 ## PLAYOFF/PLAY-IN RULE
 Motivation gaps are real and measurable. A team fighting for survival plays differently than a team with nothing to prove. Name the gap explicitly and weight it appropriately. Load management risk for clinched teams belongs in Fragility Check as the primary risk, not a footnote.
@@ -62,9 +67,15 @@ Format: [Factor] — [what it means tonight] — [why it matters for the outcome
 ### 06 — THE EDGE
 This is where it lands. 2-3 bullets. For each bullet, identify a specific market environment and point a direction. Use "the data points toward" and "the stronger case is" — not "creates an environment worth examining."
 
-For the spread: does the data support or contradict the favorite? Say which and why.
-For the total: does the game environment point toward over or under? Say which and why.
-For props: which specific player's statistical environment creates value? Name them. Name the stat. Name why the line is likely set wrong given tonight's matchup.
+Consider these markets and include only the ones the data genuinely supports. Quality over quantity. If no market has a clear read, say so and omit the rest — never force a market in.
+
+- Spread: does the data support or contradict the favorite? Say which and why.
+- Total: does the game environment point toward over or under? Say which and why.
+- Player props: when usage rate, pace, and matchup combine to clearly support or undermine a key player's points/rebounds/assists line, name the player, the stat, and why the line is likely set wrong tonight.
+- First quarter total: when team tendencies create a predictable fast or slow start (starting-lineup pace, early-offense script, opponent first-quarter defensive rating), flag the direction.
+- Team totals: when a pace mismatch, defensive scheme, or one team's bench quality creates lopsided scoring expectations that the full-game total doesn't capture, flag the side and direction.
+- Alternate lines: if the data supports a team winning but the main spread feels mispriced, note which alternate spread number the data better supports.
+- Live betting environment: if the game script has a highly predictable flow (slow start into a run, a team prone to early deficits that it routinely erases), flag this as a game worth watching live — never name a specific live bet.
 
 Never name a specific line or tell someone what to bet. But be specific enough that they know exactly where to look.
 
@@ -82,6 +93,9 @@ Assign exactly one. Be honest — if the data is genuinely unclear, say FRAGILE 
 
 ## GLOSSARY CALLOUT
 One term. The one most central to The Edge or What This Means. Defined in one plain sentence. Never repeat a term used recently.
+
+## CARD SUMMARY
+cardSummary: Exactly 2 sentences. This appears on the game card before the user clicks in. Sentence 1: the single most important data point or environment fact about this game. Sentence 2: what the market is implying and whether the data supports it. No fluff. No cliffhangers. No incomplete thoughts. Must make sense as a standalone read.
 
 ## FORBIDDEN
 lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "sharp money says" / "anything can happen" / "both teams bring" / "it will be interesting" / "could go either way" without a specific reason
@@ -109,14 +123,41 @@ Return valid JSON only. No markdown, no preamble.
   "edge": ["string", "string"],
   "edgeClosingLine": "These are the environments the data creates. Your decision is always yours.",
   "decisionLens": "string (Step 07 — WHAT THIS MEANS)",
+  "cardSummary": "string (exactly 2 sentences per CARD SUMMARY rule — shown on the slate card preview)",
   "confidenceLevel": 1 | 2 | 3 | 4,
   "confidenceLabel": "CLEAR SPOT" | "LEAN" | "FRAGILE" | "PASS",
   "glossaryTerm": "string",
   "glossaryDefinition": "string"
 }`;
 
+/**
+ * Parse a "last played {Month} {day}" substring out of an injury description.
+ * Returns both the reconstructed Date and the original label (e.g. "Apr 6").
+ * If the parsed month/day is more than 7 days ahead of today, assume it was
+ * last year (handles month rollovers across year boundaries).
+ */
+function parseLastPlayedFromDescription(description: string): { date: Date; label: string } | null {
+  const match = description.match(/last played ([A-Za-z]+)\s+(\d{1,2})/i);
+  if (!match) return null;
+  const months = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const monthIdx = months.indexOf(match[1].slice(0, 3).toLowerCase());
+  if (monthIdx < 0) return null;
+  const day = parseInt(match[2], 10);
+  const now = new Date();
+  const candidate = new Date(now.getFullYear(), monthIdx, day);
+  if (candidate.getTime() > now.getTime() + 7 * 24 * 60 * 60 * 1000) {
+    candidate.setFullYear(now.getFullYear() - 1);
+  }
+  return { date: candidate, label: `${match[1].slice(0, 3)} ${day}` };
+}
+
+// Legacy: Tank01 injury data is no longer sent to Claude for NBA — ESPN is
+// the authoritative source and is rendered inside buildUserMessage via
+// renderESPNSection(). Kept for reference only.
+const INJURY_INSTRUCTION = "";
+
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
@@ -124,14 +165,33 @@ function buildUserMessage(data: GameDetailData): string {
   const formatRecentForm = (games: typeof homeRecentForm) =>
     games.map((g) => `${g.result} ${g.teamScore}-${g.opponentScore} vs ${g.opponent} (total: ${g.total})`).join(", ");
 
-  const formatInjuries = (injuries: { playerName: string; position: string; status: string; description: string }[]) => {
-    if (injuries.length === 0) return "None reported";
-    return injuries
-      .map((p) => {
-        const tag = (p.status === "Out" || p.status === "Doubtful") ? `[WILL NOT PLAY] ` : "";
-        return `${tag}${p.playerName} (${p.position}) — ${p.status}${p.description ? ": " + p.description : ""}`;
-      })
-      .join("\n");
+  // ESPN is the PRIMARY source for NBA injuries. Tank01 injury data is
+  // ignored entirely — if ESPN fails, we flag INJURY DATA UNAVAILABLE
+  // rather than fall back to stale Tank01 entries.
+  const formatESPNLine = (
+    p: { playerName: string; status: string; description: string; dateUpdated: string }
+  ) => {
+    const tag = p.status === "Out" || p.status === "Doubtful" ? "[WILL NOT PLAY] " : "";
+    const updated = p.dateUpdated ? ` (updated ${p.dateUpdated.slice(0, 10)})` : "";
+    return `${tag}${p.playerName} — ${p.status} — ${p.description}${updated}`;
+  };
+
+  const renderESPNSection = (): string => {
+    if (!espnInjuries.ok) {
+      return `━━━ INJURY REPORT ━━━
+INJURY DATA UNAVAILABLE — treat all roster assumptions as unverified. Lead the Fragility Check with lineup uncertainty and set confidence level no higher than LEAN.`;
+    }
+    const renderTeam = (name: string, list: typeof espnInjuries.homeInjuries) =>
+      list.length === 0
+        ? `${name} injuries: No injuries reported by ESPN`
+        : `${name} injuries:\n${list.map(formatESPNLine).map((l) => `  • ${l}`).join("\n")}`;
+
+    return `━━━ ESPN INJURY REPORT (fetched ${espnInjuries.fetchedAt}) ━━━
+This is the authoritative source for tonight's injury status. Treat it as primary — any player NOT listed here is presumed available. Do not reference any other roster or injury source.
+
+${renderTeam(homeTeam.teamName, espnInjuries.homeInjuries)}
+
+${renderTeam(awayTeam.teamName, espnInjuries.awayInjuries)}`;
   };
 
   const formatTopPlayers = (players: typeof homeTeamStats.topPlayers) =>
@@ -212,13 +272,14 @@ ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins,
 
 ${formatPlayoffContext(awayPlayoffContext, awayTeam.teamAbv, awayTeamStats.wins, awayTeamStats.losses)}
 
+${renderESPNSection()}
+
 ━━━ ${homeTeam.teamAbv} (HOME) ━━━
 Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
 Points per game: ${homeTeamStats.pointsPerGame}
 Points allowed per game: ${homeTeamStats.pointsAllowedPerGame}${optionalStat("Pace", homeTeamStats.pace)}${optionalStat("Offensive rating", homeTeamStats.offensiveRating)}${optionalStat("Defensive rating", homeTeamStats.defensiveRating)}${optionalStat("Rebounds per game", homeTeamStats.reboundsPerGame)}${optionalStat("Assists per game", homeTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", homeTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", homeTeamStats.threePointAttempts)}${optionalStat("3pt%", homeTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(homeTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(homeRecentForm)}
-Injuries: ${formatInjuries(injuries.homeInjuries)}
 
 ━━━ ${awayTeam.teamAbv} (AWAY) ━━━
 Record: ${formatRecord(awayTeamStats.wins, awayTeamStats.losses)}
@@ -226,7 +287,6 @@ Points per game: ${awayTeamStats.pointsPerGame}
 Points allowed per game: ${awayTeamStats.pointsAllowedPerGame}${optionalStat("Pace", awayTeamStats.pace)}${optionalStat("Offensive rating", awayTeamStats.offensiveRating)}${optionalStat("Defensive rating", awayTeamStats.defensiveRating)}${optionalStat("Rebounds per game", awayTeamStats.reboundsPerGame)}${optionalStat("Assists per game", awayTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", awayTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", awayTeamStats.threePointAttempts)}${optionalStat("3pt%", awayTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(awayTeamStats.topPlayers)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
-Injuries: ${formatInjuries(injuries.awayInjuries)}
 
 Now produce the seven-step RawIntel breakdown. Return valid JSON only.`;
 }
@@ -254,6 +314,26 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
 
   const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${nbaContext} Do not infer season context from roster data alone.`;
   const systemPrompt = SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
+
+  // ─── TEMPORARY DEBUG LOGGING — remove when done diagnosing ─────────────────
+  console.log("\n════════════════════════════════════════════════════════════════════");
+  console.log(`[breakdown:NBA:debug] gameId=${data.game.gameId} ${data.game.awayTeam.teamAbv} @ ${data.game.homeTeam.teamAbv}`);
+  console.log("────────────────────────────────────────────────────────────────────");
+  console.log("[breakdown:NBA:debug] HOME INJURIES:", JSON.stringify(data.injuries.homeInjuries, null, 2));
+  console.log("[breakdown:NBA:debug] AWAY INJURIES:", JSON.stringify(data.injuries.awayInjuries, null, 2));
+  console.log("────────────────────────────────────────────────────────────────────");
+  console.log("[breakdown:NBA:debug] HOME TOP PLAYERS (raw from Tank01):");
+  console.log(JSON.stringify(data.homeTeamStats.topPlayers, null, 2));
+  console.log("[breakdown:NBA:debug] AWAY TOP PLAYERS (raw from Tank01):");
+  console.log(JSON.stringify(data.awayTeamStats.topPlayers, null, 2));
+  console.log("────────────────────────────────────────────────────────────────────");
+  console.log("[breakdown:NBA:debug] FULL SYSTEM PROMPT sent to Claude:");
+  console.log(systemPrompt);
+  console.log("────────────────────────────────────────────────────────────────────");
+  console.log("[breakdown:NBA:debug] FULL USER MESSAGE sent to Claude:");
+  console.log(userMessage);
+  console.log("════════════════════════════════════════════════════════════════════\n");
+  // ─── END DEBUG LOGGING ────────────────────────────────────────────────────
 
   const message = await client.messages.create({
     model: MODEL,
@@ -294,6 +374,9 @@ export async function generateBreakdown(data: GameDetailData): Promise<Breakdown
     parsed.edgeClosingLine = EDGE_CLOSING_LINE;
   }
   if (!Array.isArray(parsed.edge)) parsed.edge = [];
+
+  // Default cardSummary to empty string if Claude omitted it — slate page renders nothing rather than fallback
+  if (typeof parsed.cardSummary !== "string") parsed.cardSummary = "";
 
   // Clamp confidence level
   parsed.confidenceLevel = Math.max(1, Math.min(4, parsed.confidenceLevel)) as ConfidenceLevel;

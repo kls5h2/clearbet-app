@@ -60,12 +60,11 @@ export default function GlossaryPage() {
 
       {/* Hero header */}
       <div style={{ background: "var(--ink, #0E0E0E)", padding: "2.5rem 1.5rem 2rem", marginBottom: "0", position: "relative", overflow: "hidden" }}>
-        {/* R. watermark */}
-        <span style={{
-          position: "absolute", right: "-0.05em", bottom: "-0.18em",
-          fontFamily: "Georgia, serif", fontSize: "clamp(120px, 28vw, 220px)",
-          fontWeight: 700, lineHeight: 1, color: "rgba(255,255,255,0.04)",
-          pointerEvents: "none", userSelect: "none",
+        {/* R. watermark — matches hero treatment used on /, /how-it-works, /tools/line-translator */}
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-60px", top: "-80px",
+          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
         }}>
           R.
         </span>

@@ -30,24 +30,34 @@ The starting pitcher is the most important variable in baseball. Period. If both
 
 ERA alone is not enough. Use K/9, WHIP, HR allowed rate, and BB rate to build a complete pitcher picture. A pitcher with a 3.50 ERA and 1.8 BB/9 is completely different from a 3.50 ERA and 4.2 BB/9 — one commands the zone, one doesn't.
 
+## PITCHER CONFIRMATION RULE — AUTHORITATIVE SOURCE
+Every starting pitcher will be prefixed with one of two tags:
+- [CONFIRMED STARTER] — listed as probablePitcher by the MLB Stats API. This is the authoritative source. Treat them as starting tonight regardless of any Tank01 injury data — the Tank01 feed lags and frequently shows stale IL entries for pitchers who have already been cleared.
+- [UNCONFIRMED] — not listed by MLB Stats API. Treat the starter as the single biggest variable in the breakdown. Never build a confident read on the pitching matchup when either starter is UNCONFIRMED. Lead the Fragility Check with "If {pitcher} is scratched, this changes."
+
+Never reference a confirmed starter as "injured" or "questionable" even if their name appears elsewhere in the data. The MLB Stats API overrides everything else for pitchers.
+
 ## BULLPEN RULE
 Blown save rate is the key fragility signal. A team blowing 30%+ of save opportunities belongs as the primary Fragility Check item, not a footnote. ERA last 7 days reflects real form — weight it over season average.
 
 ## PROP ENVIRONMENT RULE — MLB SPECIFIC
-For every breakdown, The Edge must address specific prop environments using real stats:
+For every breakdown, The Edge should address prop environments using real stats — but only when the matchup creates a genuinely clear read. Never force a prop in. One strong prop call is worth more than five weak ones.
 
-For starting pitchers: use K/9, WHIP, HR allowed, BB allowed to identify:
-- Is this pitcher's strikeout line set correctly given tonight's opposing lineup's contact rate?
-- Does the WHIP suggest a clean or baserunner-heavy environment?
-- Is the total set appropriately given both pitchers' run prevention numbers?
+### Pitching props to evaluate
+- Strikeouts: pitcher K/9 vs the opposing lineup's strikeout rate — flag when K/9 is significantly above or below season average against this lineup's contact profile.
+- Walks allowed: pitcher BB/9 trend vs lineup chase rate — flag when a wild pitcher meets a patient lineup, or a zone-commander meets a chase-heavy lineup.
+- Hits allowed: BABIP tendencies vs lineup contact rate — flag when contact quality and defensive alignment point the same direction.
+- Earned runs allowed: ERA trajectory (recent form vs season) vs opponent scoring environment — flag when the two are directionally aligned.
+- Outs recorded / innings pitched: pitch-count tendencies and how deep this starter typically goes — flag when workload history clearly supports over or under on the outs/innings prop.
 
-For batters: use HR rate, RBI production, AVG, SB tendencies, BB rate to identify:
-- Which batters have power matchup advantages against tonight's starter?
-- Which batters make enough contact to have hits prop value?
-- Are there speed threats the pitcher/catcher combination allows to run?
-- What does the lineup construction suggest about total bases environments?
+### Batting props to evaluate
+- Hits: batter average vs pitcher handedness and recent form.
+- Total bases: batter ISO and SLG vs pitcher HR/FB rate and hard-contact allowed.
+- RBIs: lineup position, runners-on-base tendencies ahead of the batter, pitcher strand rate.
+- Walks: pitcher BB/9 vs batter walk rate — flag especially when a wild pitcher faces a patient hitter.
+- Home runs: batter HR rate vs pitcher HR/9, park factor, wind direction for outdoor stadiums.
 
-Always frame as: "the data points toward" — never "bet X" or "take X."
+Same rule applies to every category: only flag a prop market when the data creates a genuinely clear read. If the data is thin or conflicting, omit it. Always frame as: "the data points toward" — never "bet X" or "take X."
 
 ## UMPIRE RULE
 Name the umpire tendency only if it clearly amplifies another factor. Never lead with it. Pitcher-friendly ump + dominant strikeout pitcher = worth naming. Neutral ump = say nothing.
@@ -82,12 +92,21 @@ For batters include: relevant stats for tonight's matchup specifically
 3 sentences. What does the run line imply — translate it. What does the total imply about how the books see the pitching matchup. Does either number feel off given what the data shows? If the line has moved, name the direction and what it suggests.
 
 ### 06 — THE EDGE
-Where it lands. 2-3 bullets. Specific market environments with directions.
+Where it lands. 2-3 bullets. Specific market environments with directions. Use "the data points toward" and "the stronger case is" — not "creates an environment worth examining."
 
-For the run line: does the data support the favorite covering? Say which way and why.
-For the total: given both starters and both bullpens, does the data point toward over or under? Be specific about why.
-For pitcher props: is the strikeout line set correctly? Is the innings pitched prop consistent with this pitcher's recent workload?
-For batter props: which specific batters have statistical advantages in this matchup? Name them, name the stat category, name why tonight's matchup creates the environment.
+Consider these markets and include only the ones the data genuinely supports. Quality over quantity. If no market has a clear read, say so and omit the rest — never force a market in.
+
+- Run line: does the data support the favorite covering? Say which way and why.
+- Total: given both starters and both bullpens, does the data point toward over or under? Be specific about why.
+- Team totals: when one bullpen's fragility or one offense's matchup advantage creates a lopsided scoring environment that the full-game total doesn't capture, flag the side and direction.
+- First five innings (F5) line: when one starting pitcher is clearly better than the other but the bullpen picture muddies the full-game read, flag F5 direction (moneyline or total).
+- First half / second half totals: when the starter-vs-bullpen split creates a clear lean — e.g., dominant starters with shaky relievers points to a low first-half total and a higher second-half total, or vice versa — flag which half the data favors and which side.
+- NRFI / YRFI: when both starters have strong (NRFI) or weak (YRFI) first-inning ERA and the top of both lineups reinforces that direction, flag it.
+- Pitcher strikeout total props: when the matchup between this pitcher's K/9 and the opposing lineup's strikeout rate strongly supports over or under, name the starter and the direction.
+- Pitcher props (full menu): strikeouts, walks allowed, hits allowed, earned runs allowed, outs recorded / innings pitched — see the Prop Environment Rule for which stats drive each read.
+- Batter props (full menu): hits, total bases, RBIs, walks, home runs — name the batter, the stat category, and why tonight's matchup creates the environment. See the Prop Environment Rule for the stat inputs behind each.
+- Alternate lines: if the data supports a team winning but the main run line feels mispriced, note which alternate number the data better supports.
+- Live betting environment: if the game script has a highly predictable flow (clear starter-dominant early innings, a bullpen meltdown pattern late), flag this as a game worth watching live — never name a specific live bet.
 
 End with exactly: "These are the environments the data creates. Your decision is always yours."
 
@@ -102,6 +121,9 @@ End with exactly: "These are the environments the data creates. Your decision is
 
 ## GLOSSARY CALLOUT
 One term most central to The Edge or What This Means. One plain sentence definition. Rotate through: ERA, WHIP, run line, park factor, bullpen, implied probability, blown save, K/9, total bases, first five innings, strand rate, opener, juice, closing line.
+
+## CARD SUMMARY
+cardSummary: Exactly 2 sentences. This appears on the game card before the user clicks in. Sentence 1: the single most important data point or environment fact about this game. Sentence 2: what the market is implying and whether the data supports it. No fluff. No cliffhangers. No incomplete thoughts. Must make sense as a standalone read.
 
 ## FORBIDDEN
 lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "anything can happen" / "both teams bring" / vague uncertainty language without a specific reason
@@ -129,11 +151,25 @@ Return valid JSON only. No markdown, no preamble.
   "edge": ["string", "string"],
   "edgeClosingLine": "These are the environments the data creates. Your decision is always yours.",
   "decisionLens": "string (Step 07 — WHAT THIS MEANS)",
+  "cardSummary": "string (exactly 2 sentences per CARD SUMMARY rule — shown on the slate card preview)",
   "confidenceLevel": 1 | 2 | 3 | 4,
   "confidenceLabel": "CLEAR SPOT" | "LEAN" | "FRAGILE" | "PASS",
   "glossaryTerm": "string",
   "glossaryDefinition": "string"
 }`;
+
+// Shared instruction block injected before each team's Injuries row.
+// Forces Claude to treat "Availability unconfirmed" / stale entries as
+// UNKNOWN STATUS rather than as confirmed absences. Adapted for MLB —
+// references IL designations and the MLB confidence label set.
+const INJURY_INSTRUCTION = `CRITICAL INSTRUCTION FOR INJURY DATA: Any player listed as 'Availability unconfirmed' or with a last played date more than 5 days ago must be treated as UNKNOWN STATUS — not confirmed out or on the IL.
+
+When writing the breakdown:
+- Never state an unverified player IS out — only say their status is unresolved
+- Never build a key driver around an unverified absence as if it is confirmed
+- Always frame unverified absences as the single biggest variable, not a known fact
+- If more than 3 key players (including a probable starter) have unverified status, set confidence level to FRAGILE automatically and lead the Game Shape with the lineup uncertainty as the primary environmental factor
+- The phrase 'if confirmed' must appear any time an unverified player absence is referenced`;
 
 function buildMLBUserMessage(data: MLBGameDetailData): string {
   const {
@@ -152,7 +188,8 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   };
 
   const formatPitcher = (p: typeof homePitcher) => {
-    if (!p) return "Unknown (probable starter not confirmed)";
+    if (!p) return "[UNCONFIRMED] Probable starter not listed by MLB Stats API";
+    const tag = p.confirmed ? "[CONFIRMED STARTER] " : "[UNCONFIRMED] ";
     const hand = p.hand ? ` (${p.hand}HP)` : "";
     const recent = p.recentERA !== null ? `, last 3 starts ERA: ${formatERA(p.recentERA)}` : "";
     const propStats = [
@@ -162,8 +199,19 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
       p.seasonHR !== null ? `HR allowed: ${p.seasonHR}` : null,
       p.seasonBB !== null ? `BB: ${p.seasonBB}` : null,
     ].filter(Boolean).join(" / ");
-    return `${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
+    return `${tag}${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
   };
+
+  // MLB Stats API probablePitcher is authoritative for pitchers. When a
+  // pitcher is CONFIRMED, strip any Tank01 injury entry for them so Claude
+  // doesn't see conflicting signals.
+  const confirmedPitcherNames = new Set(
+    [homePitcher, awayPitcher]
+      .filter((p): p is NonNullable<typeof homePitcher> => !!p && p.confirmed === true)
+      .map((p) => p.name.toLowerCase())
+  );
+  const stripConfirmedPitcher = (inj: { playerName: string; status: string; description: string }[]) =>
+    inj.filter((p) => !confirmedPitcherNames.has(p.playerName.toLowerCase()));
 
   const formatRecentForm = (games: typeof homeRecentForm) =>
     games.map((g) => `${g.result} ${g.teamScore}-${g.opponentScore} vs ${g.opponent}`).join(", ");
@@ -306,7 +354,8 @@ Runs allowed/game: ${homeTeamStats.runsAllowedPerGame}
 Team ERA: ${formatERA(homeTeamStats.teamERA)}
 Top hitters: ${formatHitters(homeTeamStats.topHitters)}
 Recent form (last 5): ${formatRecentForm(homeRecentForm)}
-Injuries: ${formatInjuries(injuries.homeInjuries)}
+${INJURY_INSTRUCTION}
+Injuries: ${formatInjuries(stripConfirmedPitcher(injuries.homeInjuries))}
 
 ━━━ ${awayTeam.teamAbv} (AWAY) ━━━
 Record: ${formatRecord(awayTeamStats.wins, awayTeamStats.losses)}
@@ -315,7 +364,8 @@ Runs allowed/game: ${awayTeamStats.runsAllowedPerGame}
 Team ERA: ${formatERA(awayTeamStats.teamERA)}
 Top hitters: ${formatHitters(awayTeamStats.topHitters)}
 Recent form (last 5): ${formatRecentForm(awayRecentForm)}
-Injuries: ${formatInjuries(injuries.awayInjuries)}
+${INJURY_INSTRUCTION}
+Injuries: ${formatInjuries(stripConfirmedPitcher(injuries.awayInjuries))}
 
 Now produce the seven-step RawIntel MLB breakdown. Return valid JSON only.`;
 }
@@ -375,6 +425,9 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
     parsed.edgeClosingLine = EDGE_CLOSING_LINE;
   }
   if (!Array.isArray(parsed.edge)) parsed.edge = [];
+
+  // Default cardSummary to empty string if Claude omitted it
+  if (typeof parsed.cardSummary !== "string") parsed.cardSummary = "";
 
   parsed.confidenceLevel = Math.max(1, Math.min(4, parsed.confidenceLevel)) as ConfidenceLevel;
   const labelMap: Record<ConfidenceLevel, ConfidenceLabel> = {

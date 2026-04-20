@@ -290,6 +290,7 @@ function buildPitcher(
     seasonWHIP: details?.seasonWHIP ?? null,
     seasonHR: details?.seasonHR ?? null,
     seasonIP: details?.seasonIP ?? null,
+    confirmed: true, // sourced from MLB Stats API probablePitcher
   };
 }
 

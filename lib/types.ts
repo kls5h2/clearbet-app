@@ -60,6 +60,7 @@ export interface BreakdownResult {
   edge: string[];
   edgeClosingLine: string;
   decisionLens: string;
+  cardSummary: string; // 2-sentence preview shown on slate cards
   confidenceLevel: ConfidenceLevel;
   confidenceLabel: ConfidenceLabel;
   glossaryTerm: string;
@@ -164,7 +165,8 @@ export interface GameDetailData {
   awayTeamStats: TeamSeasonStats;
   homeRecentForm: RecentGame[];
   awayRecentForm: RecentGame[];
-  injuries: InjuryReport;
+  injuries: InjuryReport; // Tank01 — retained only as emergency fallback; NBA prompt uses ESPN
+  espnInjuries: import("./espn-nba-injuries").ESPNInjuryResult;
   homePlayoffContext: PlayoffContext | null;
   awayPlayoffContext: PlayoffContext | null;
   h2h: H2HRecord | null;
@@ -175,14 +177,17 @@ export interface GameDetailData {
 
 export interface MLBPitcher {
   name: string;
-  seasonERA: number | null; // null when no pitching data (e.g. two-way player in DH-only role)
-  recentERA: number | null; // last 3 starts ERA
+  seasonERA: number | null;
+  recentERA: number | null;
   hand: "L" | "R" | null;
   seasonSO: number | null;
   seasonBB: number | null;
   seasonWHIP: number | null;
   seasonHR: number | null;
-  seasonIP: number | null; // innings pitched, for K/9 calculation
+  seasonIP: number | null;
+  // true = listed as probablePitcher by MLB Stats API (authoritative — overrides Tank01 injury data)
+  // false / undefined = Tank01 roster fallback (treat as UNCONFIRMED)
+  confirmed?: boolean;
 }
 
 export interface MLBGame {

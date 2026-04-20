@@ -199,7 +199,7 @@ export default function LineTranslatorClient() {
         <div style={{ marginTop: "56px", paddingTop: "32px", borderTop: "0.5px solid var(--border)" }}>
           {waitlistStatus === "done" ? (
             <p style={{ textAlign: "center", fontSize: "14px", fontWeight: 500, color: "var(--signal)" }}>
-              You&#8217;re on the list.
+              You&#8217;re on the list. We&#8217;ll reach out when we launch.
             </p>
           ) : (
             <form onSubmit={handleWaitlist} style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
@@ -207,7 +207,7 @@ export default function LineTranslatorClient() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Get free breakdowns in your inbox"
+                placeholder="Get notified when we launch"
                 required
                 style={{
                   flex: "1 1 280px", minWidth: 0, maxWidth: "360px",

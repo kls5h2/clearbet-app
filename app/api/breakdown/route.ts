@@ -16,6 +16,7 @@ import {
   getMLBBullpenStats,
   getMLBUmpire,
 } from "@/lib/mlb-stats-api";
+import { fetchESPNNBAInjuries } from "@/lib/espn-nba-injuries";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
 import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
@@ -157,8 +158,9 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     const t01Home = rawGame.homeTeam;
     const t01Away = rawGame.awayTeam;
 
-    // Fetch all data in parallel using Tank01's designations
-    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H] = await Promise.all([
+    // Fetch all data in parallel using Tank01's designations.
+    // ESPN injuries are the authoritative source and override Tank01 entirely.
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries] = await Promise.all([
       getTeamStats(t01Home.teamAbv),
       getTeamStats(t01Away.teamAbv),
       getRecentForm(t01Home.teamAbv),
@@ -167,6 +169,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       fetchNBAOdds().catch(() => new Map()),
       getPlayoffContext(t01Home.teamAbv, t01Away.teamAbv).catch(() => ({ home: null, away: null })),
       getH2HRecord(t01Home.teamAbv, t01Away.teamAbv).catch(() => null),
+      fetchESPNNBAInjuries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
     ]);
 
     // Cross-validate home/away with The Odds API (authoritative for Play-In / Playoff)
@@ -189,6 +192,18 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     const injuries      = flipped
       ? { homeInjuries: t01Injuries.awayInjuries, awayInjuries: t01Injuries.homeInjuries }
       : t01Injuries;
+    const espnInjuriesFinal = flipped && espnInjuries.ok
+      ? { ok: true as const, fetchedAt: espnInjuries.fetchedAt,
+          homeInjuries: espnInjuries.awayInjuries, awayInjuries: espnInjuries.homeInjuries }
+      : espnInjuries;
+    if (espnInjuriesFinal.ok) {
+      console.log(
+        `[breakdown:NBA] ESPN injuries: home=${espnInjuriesFinal.homeInjuries.length}, ` +
+        `away=${espnInjuriesFinal.awayInjuries.length} (fetched ${espnInjuriesFinal.fetchedAt})`
+      );
+    } else {
+      console.warn("[breakdown:NBA] ESPN injuries UNAVAILABLE — prompt will flag as such");
+    }
     const playoffCtx    = flipped
       ? { home: t01Playoff.away, away: t01Playoff.home }
       : t01Playoff;
@@ -232,6 +247,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       homeRecentForm: homeForm,
       awayRecentForm: awayForm,
       injuries,
+      espnInjuries: espnInjuriesFinal,
       homePlayoffContext: playoffCtx.home,
       awayPlayoffContext: playoffCtx.away,
       h2h,
@@ -253,6 +269,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
           away_team: awayTeam.teamAbv,
           sport: "NBA",
           breakdown_content: breakdown,
+          card_summary: breakdown.cardSummary || null,
           confidence_level: breakdown.confidenceLevel,
           confidence_label: breakdown.confidenceLabel,
           user_id: null, // TODO: pass real user ID when Auth is live
@@ -310,12 +327,17 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
       mlbStatsPitchers.get(awayTeam.teamAbv) ??
       null;
 
-    const homePitcher =
-      statsEntry?.home ??
-      (await getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null));
-    const awayPitcher =
-      statsEntry?.away ??
-      (await getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null));
+    // MLB Stats API probablePitcher is the authoritative source. When it's
+    // present, mark the pitcher confirmed=true. When we fall back to Tank01's
+    // roster data, mark confirmed=false so the prompt can flag UNCONFIRMED.
+    const homeFallback = await getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null);
+    const awayFallback = await getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null);
+    const homePitcher = statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null);
+    const awayPitcher = statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null);
+    console.log(
+      `[breakdown:MLB] pitchers: home=${homePitcher?.name ?? "none"} (confirmed=${homePitcher?.confirmed ?? false}), ` +
+      `away=${awayPitcher?.name ?? "none"} (confirmed=${awayPitcher?.confirmed ?? false})`
+    );
 
     const MLB_PARK_FACTORS: Record<string, MLBParkFactor> = {
       COL: { parkName: "Coors Field", factor: "high" },
@@ -391,6 +413,7 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
           away_team: awayTeam.teamAbv,
           sport: "MLB",
           breakdown_content: breakdown,
+          card_summary: breakdown.cardSummary || null,
           confidence_level: breakdown.confidenceLevel,
           confidence_label: breakdown.confidenceLabel,
           user_id: null, // TODO: pass real user ID when Auth is live

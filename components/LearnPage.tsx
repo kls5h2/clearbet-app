@@ -77,9 +77,9 @@ export default function LearnPage({ article }: Props) {
             padding: "22px 24px",
           }}>
             <p style={{
-              fontSize: "10px", fontWeight: 500,
-              textTransform: "uppercase", letterSpacing: "0.14em",
-              color: "var(--muted)", marginBottom: "10px",
+              fontSize: "11px", fontWeight: 500,
+              textTransform: "uppercase", letterSpacing: "0.1em",
+              color: "var(--ink)", opacity: 0.5, marginBottom: "10px",
             }}>
               Example
             </p>
@@ -160,9 +160,9 @@ export default function LearnPage({ article }: Props) {
         {related.length > 0 && (
           <section style={{ borderTop: "0.5px solid var(--border)", paddingTop: "24px" }}>
             <p style={{
-              fontSize: "10px", fontWeight: 500,
-              textTransform: "uppercase", letterSpacing: "0.14em",
-              color: "var(--muted)", marginBottom: "12px",
+              fontSize: "11px", fontWeight: 500,
+              textTransform: "uppercase", letterSpacing: "0.1em",
+              color: "var(--ink)", opacity: 0.5, marginBottom: "12px",
             }}>
               Related terms
             </p>
