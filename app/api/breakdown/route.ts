@@ -69,31 +69,43 @@ export async function POST(req: NextRequest) {
  */
 async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse | null> {
   try {
+    // NOTE: we deliberately DO NOT use .single() here — it errors when the
+    // result set is 0 rows, which silently triggers regeneration on first
+    // visit and masks real problems. Take the first element of the array.
     const { data, error } = await supabase
       .from("breakdowns")
       .select("breakdown_content, sport, home_team, away_team, game_date, created_at")
       .eq("game_id", gameId)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (error || !data) return null;
+    if (error) {
+      console.error(`[breakdown] cache lookup error for ${gameId}:`, error.message);
+      return null;
+    }
+    if (!data || data.length === 0) {
+      console.log(`[breakdown] cache miss: no row for ${gameId}`);
+      return null;
+    }
+    const row = data[0];
 
-    const content = data.breakdown_content as import("@/lib/types").BreakdownResult;
-    if (!content) return null;
+    const content = row.breakdown_content as import("@/lib/types").BreakdownResult;
+    if (!content) {
+      console.warn(`[breakdown] row exists for ${gameId} but breakdown_content is null — treating as miss`);
+      return null;
+    }
 
-    // Reconstruct a minimal game object from what we have stored
-    const sport = (data.sport ?? "NBA") as Sport;
+    const sport = (row.sport ?? "NBA") as Sport;
     const today = getTodayDateString();
     const game: import("@/lib/types").AnyGame = sport === "MLB"
       ? {
           sport: "MLB",
           gameId,
-          gameDate: data.game_date ?? today,
+          gameDate: row.game_date ?? today,
           gameTime: "",
           gameStatus: "scheduled",
-          homeTeam: { teamId: data.home_team, teamAbv: data.home_team, teamName: data.home_team, teamCity: "" },
-          awayTeam: { teamId: data.away_team, teamAbv: data.away_team, teamName: data.away_team, teamCity: "" },
+          homeTeam: { teamId: row.home_team, teamAbv: row.home_team, teamName: row.home_team, teamCity: "" },
+          awayTeam: { teamId: row.away_team, teamAbv: row.away_team, teamName: row.away_team, teamCity: "" },
           odds: null,
           homePitcher: null,
           awayPitcher: null,
@@ -101,22 +113,24 @@ async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse 
       : {
           sport: "NBA",
           gameId,
-          gameDate: data.game_date ?? today,
+          gameDate: row.game_date ?? today,
           gameTime: "",
           gameStatus: "scheduled",
-          homeTeam: { teamId: data.home_team, teamAbv: data.home_team, teamName: data.home_team, teamCity: "" },
-          awayTeam: { teamId: data.away_team, teamAbv: data.away_team, teamName: data.away_team, teamCity: "" },
+          homeTeam: { teamId: row.home_team, teamAbv: row.home_team, teamName: row.home_team, teamCity: "" },
+          awayTeam: { teamId: row.away_team, teamAbv: row.away_team, teamName: row.away_team, teamCity: "" },
           odds: null,
         };
 
+    console.log(`[breakdown] cache HIT for ${gameId} (created ${row.created_at})`);
     return {
       breakdown: content,
       game,
       sport,
       fromCache: true,
-      generatedAt: data.created_at ?? null,
+      generatedAt: row.created_at ?? null,
     };
-  } catch {
+  } catch (err) {
+    console.error(`[breakdown] cache lookup threw for ${gameId}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }

@@ -231,9 +231,15 @@ export default function BreakdownPage() {
                 </button>
               </div>
             ) : (
-              /* Fresh generation banner */
-              <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5 }}>
-                Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.
+              /* Fresh generation banner — also offers Regenerate so users can re-run if data moved */
+              <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                <span>Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.</span>
+                <button
+                  onClick={() => fetchBreakdown(true)}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
+                >
+                  Regenerate →
+                </button>
               </div>
             )}
             <BreakdownView breakdown={breakdown} game={game} />
