@@ -61,6 +61,7 @@ export interface BreakdownResult {
   edgeClosingLine: string;
   decisionLens: string;
   cardSummary: string; // 2-sentence preview shown on slate cards
+  shareHook: string;   // 1-sentence social share hook — most interesting data point, ≤120 chars
   confidenceLevel: ConfidenceLevel;
   confidenceLabel: ConfidenceLabel;
   glossaryTerm: string;

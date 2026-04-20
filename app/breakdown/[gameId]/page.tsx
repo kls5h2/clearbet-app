@@ -274,8 +274,8 @@ export default function BreakdownPage() {
       {status === "done" && breakdown && game && (
         <ShareCard
           game={game}
-          confidenceLevel={breakdown.confidenceLevel}
           confidenceLabel={breakdown.confidenceLabel}
+          shareHook={breakdown.shareHook ?? ""}
           open={shareOpen}
           onClose={() => setShareOpen(false)}
         />

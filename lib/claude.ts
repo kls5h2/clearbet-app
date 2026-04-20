@@ -97,6 +97,9 @@ One term. The one most central to The Edge or What This Means. Defined in one pl
 ## CARD SUMMARY
 cardSummary: Exactly 2 sentences. This appears on the game card before the user clicks in. Sentence 1: the single most important data point or environment fact about this game. Sentence 2: what the market is implying and whether the data supports it. No fluff. No cliffhangers. No incomplete thoughts. Must make sense as a standalone read.
 
+## SHARE HOOK
+shareHook: One sentence. The single most interesting or surprising data point from this breakdown. Something that makes someone who hasn't read it want to click through. No pick implied. Max 120 characters.
+
 ## FORBIDDEN
 lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "sharp money says" / "anything can happen" / "both teams bring" / "it will be interesting" / "could go either way" without a specific reason
 
@@ -124,6 +127,7 @@ Return valid JSON only. No markdown, no preamble.
   "edgeClosingLine": "These are the environments the data creates. Your decision is always yours.",
   "decisionLens": "string (Step 07 — WHAT THIS MEANS)",
   "cardSummary": "string (exactly 2 sentences per CARD SUMMARY rule — shown on the slate card preview)",
+  "shareHook": "string (one sentence, max 120 chars per SHARE HOOK rule — used on share cards)",
   "confidenceLevel": 1 | 2 | 3 | 4,
   "confidenceLabel": "CLEAR SPOT" | "LEAN" | "FRAGILE" | "PASS",
   "glossaryTerm": "string",
@@ -441,6 +445,10 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
 
   // Default cardSummary to empty string if Claude omitted it — slate page renders nothing rather than fallback
   if (typeof parsed.cardSummary !== "string") parsed.cardSummary = "";
+
+  // Default shareHook to empty string; enforce 120-char ceiling.
+  if (typeof parsed.shareHook !== "string") parsed.shareHook = "";
+  if (parsed.shareHook.length > 120) parsed.shareHook = parsed.shareHook.slice(0, 117).trimEnd() + "…";
 
   // Clamp confidence level
   parsed.confidenceLevel = Math.max(1, Math.min(4, parsed.confidenceLevel)) as ConfidenceLevel;

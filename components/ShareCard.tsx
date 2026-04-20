@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { AnyGame, ConfidenceLabel, ConfidenceLevel } from "@/lib/types";
+import type { AnyGame, ConfidenceLabel } from "@/lib/types";
 
 interface Props {
   game: AnyGame;
-  confidenceLevel: ConfidenceLevel;
   confidenceLabel: ConfidenceLabel;
+  shareHook: string;
   open: boolean;
   onClose: () => void;
 }
-
-const GRADES: Record<ConfidenceLevel, string> = { 1: "A", 2: "B", 3: "C", 4: "D" };
 
 // Pill color per confidence label
 const PILL_COLORS: Record<ConfidenceLabel, { bg: string; text: string }> = {
@@ -33,7 +31,7 @@ function formatShareDate(gameDate: string): string {
   return `${months[m]} ${d}, ${y}`;
 }
 
-export default function ShareCard({ game, confidenceLevel, confidenceLabel, open, onClose }: Props) {
+export default function ShareCard({ game, confidenceLabel, shareHook, open, onClose }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState<"copy" | "download" | "link" | null>(null);
@@ -220,24 +218,8 @@ export default function ShareCard({ game, confidenceLevel, confidenceLabel, open
             {game.sport} · {formattedDate}
           </p>
 
-          {/* 4. Signal Grade badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-            <span style={{
-              fontFamily: "Georgia, serif", fontStyle: "italic",
-              fontSize: "26px", color: "#D93B3A", lineHeight: 1,
-            }}>
-              {GRADES[confidenceLevel]}
-            </span>
-            <span style={{
-              fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em",
-              textTransform: "uppercase", color: "#FAFAFA", opacity: 0.75,
-            }}>
-              Signal Grade
-            </span>
-          </div>
-
-          {/* 5. Confidence pill */}
-          <div style={{ marginBottom: "32px" }}>
+          {/* 4. Confidence pill */}
+          <div style={{ marginBottom: "24px" }}>
             <span style={{
               display: "inline-block",
               background: pill.bg, color: pill.text,
@@ -248,11 +230,24 @@ export default function ShareCard({ game, confidenceLevel, confidenceLabel, open
             </span>
           </div>
 
-          {/* 6. Closing line */}
+          {/* 5. Share hook — most interesting data point, pulled from the breakdown */}
+          {shareHook && (
+            <p style={{
+              fontFamily: "var(--sans)", fontStyle: "italic",
+              fontSize: "14px", color: "#FAFAFA",
+              lineHeight: 1.55, margin: 0, marginBottom: "24px",
+              paddingLeft: "14px",
+              borderLeft: "2px solid #D93B3A",
+            }}>
+              {shareHook}
+            </p>
+          )}
+
+          {/* 6. Closing line — smaller, italic serif */}
           <p style={{
             fontFamily: "Georgia, serif", fontStyle: "italic",
-            fontSize: "15px", color: "#FAFAFA", opacity: 0.85,
-            lineHeight: 1.5, margin: 0, marginBottom: "32px",
+            fontSize: "13px", color: "#FAFAFA", opacity: 0.75,
+            lineHeight: 1.5, margin: 0, marginBottom: "28px",
           }}>
             “{CLOSING_LINE}”
           </p>

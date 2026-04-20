@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import Nav from "@/components/Nav";
@@ -8,6 +8,29 @@ import { supabase } from "@/lib/supabase";
 
 type TranslateStatus = "idle" | "loading" | "done" | "error";
 type WaitlistStatus = "idle" | "submitting" | "done" | "error";
+type ImageMime = "image/png" | "image/jpeg" | "image/webp";
+
+const ACCEPT_MIMES: ImageMime[] = ["image/png", "image/jpeg", "image/webp"];
+const ACCEPT_ATTR = ACCEPT_MIMES.join(",");
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB pre-encoding; base64 inflates ~33%
+
+function isAcceptedImage(file: File): file is File & { type: ImageMime } {
+  return (ACCEPT_MIMES as string[]).includes(file.type);
+}
+
+// Reads a File into { base64, dataUrl }. base64 excludes the "data:…;base64," prefix.
+function readImage(file: File): Promise<{ base64: string; dataUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const comma = dataUrl.indexOf(",");
+      resolve({ base64: comma === -1 ? dataUrl : dataUrl.slice(comma + 1), dataUrl });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function LineTranslatorClient() {
   const [input, setInput] = useState("");
@@ -19,22 +42,74 @@ export default function LineTranslatorClient() {
   const [waitlistStatus, setWaitlistStatus] = useState<WaitlistStatus>("idle");
   const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
+  // Image upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageMime, setImageMime] = useState<ImageMime | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  async function ingestFile(file: File) {
+    if (!isAcceptedImage(file)) {
+      setError("Unsupported image type. Use PNG, JPEG, or WebP.");
+      setStatus("error");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError("Image too large — keep it under 4MB.");
+      setStatus("error");
+      return;
+    }
+    const { base64, dataUrl } = await readImage(file);
+    setImageFile(file);
+    setImagePreview(dataUrl);
+    setImageBase64(base64);
+    setImageMime(file.type);
+    setError(null);
+    if (status === "error") setStatus("idle");
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) ingestFile(file);
+    e.target.value = ""; // let the same file be re-selected after removal
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) ingestFile(file);
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageBase64(null);
+    setImageMime(null);
+  }
+
   async function handleTranslate(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed && !imageBase64) return;
     setStatus("loading");
     setError(null);
     setTranslation(null);
     try {
+      const body: { input?: string; image?: { data: string; mediaType: ImageMime } } = {};
+      if (trimmed) body.input = trimmed;
+      if (imageBase64 && imageMime) body.image = { data: imageBase64, mediaType: imageMime };
+
       const res = await fetch("/api/line-translator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: trimmed }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? "Translation failed");
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error ?? "Translation failed");
       }
       const data = await res.json();
       setTranslation(data.translation ?? "");
@@ -116,17 +191,83 @@ export default function LineTranslatorClient() {
             onFocus={(e) => (e.target.style.borderColor = "var(--signal)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
           />
+
+          {/* Image drop zone */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT_ATTR}
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+          {imagePreview ? (
+            <div style={{
+              marginTop: "14px", display: "flex", alignItems: "center", gap: "12px",
+              background: "var(--paper)", border: "0.5px solid var(--border)",
+              borderRadius: "4px", padding: "10px 12px",
+            }}>
+              <img
+                src={imagePreview}
+                alt="Bet slip preview"
+                style={{ width: "56px", height: "56px", objectFit: "cover", borderRadius: "3px", flexShrink: 0 }}
+              />
+              <span style={{ flex: 1, fontFamily: "var(--sans)", fontSize: "13px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {imageFile?.name ?? "Image attached"}
+              </span>
+              <button
+                type="button"
+                onClick={clearImage}
+                aria-label="Remove image"
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--muted)", fontSize: "18px", lineHeight: 1, padding: "4px 8px",
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+              style={{
+                marginTop: "14px",
+                border: `1px dashed ${dragActive ? "var(--signal)" : "var(--border)"}`,
+                borderRadius: "4px",
+                padding: "20px 16px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: dragActive ? "rgba(217,59,58,0.04)" : "transparent",
+                transition: "border-color 150ms ease, background 150ms ease",
+                fontFamily: "var(--sans)",
+              }}
+            >
+              <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0, marginBottom: "4px" }}>
+                or drop an image of your bet slip
+              </p>
+              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, opacity: 0.7 }}>
+                <span style={{ color: "var(--signal)", textDecoration: "underline" }}>upload image</span>
+                {" · PNG, JPEG, or WebP · 4MB max"}
+              </p>
+            </div>
+          )}
+
           <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
             <button
               type="submit"
-              disabled={status === "loading" || !input.trim()}
+              disabled={status === "loading" || (!input.trim() && !imageBase64)}
               style={{
                 background: "var(--signal)", color: "#FAFAFA",
                 border: "none", borderRadius: "4px",
                 fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
                 letterSpacing: "0.04em", padding: "12px 24px",
-                cursor: status === "loading" || !input.trim() ? "default" : "pointer",
-                opacity: status === "loading" || !input.trim() ? 0.6 : 1,
+                cursor: status === "loading" || (!input.trim() && !imageBase64) ? "default" : "pointer",
+                opacity: status === "loading" || (!input.trim() && !imageBase64) ? 0.6 : 1,
                 transition: "opacity 150ms ease",
               }}
             >
