@@ -83,7 +83,7 @@ export default function LineTranslatorClient() {
         }}>R.</span>
         <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto", width: "100%" }}>
           <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
-            Free Tool
+            Line Translator
           </p>
           <h1 style={{
             fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500,
