@@ -129,7 +129,11 @@ function HomePageContent() {
     router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
   }
 
+  // Force ET so the header matches the ET-based slate query. Without this,
+  // a viewer in CT after ~11 PM sees "Monday, April 20" while the games
+  // below are already Tuesday's ET slate.
   const todayLabel = new Date().toLocaleDateString("en-US", {
+    timeZone: "America/New_York",
     weekday: "long",
     month: "long",
     day: "numeric",
