@@ -133,8 +133,8 @@ After building any UI component or page:
 
 Name: RawIntel
 Domain: rawintel.ai
-Tagline: Sports data, plain English.
-One-liner: RawIntel turns raw game data into plain-English breakdowns so you can make informed decisions in under two minutes.
+Tagline: What the data says. Your decision to make.
+One-liner: RawIntel turns raw game data into plain-English analysis so you can make informed decisions in under 60 seconds.
 
 ---
 
