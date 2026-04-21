@@ -31,6 +31,92 @@ import type {
   Sport,
 } from "@/lib/types";
 
+/**
+ * Upsert a breakdown into Supabase with full diagnostic logging.
+ * Runs 3 queries: a pre-check (insert vs update), the upsert itself, and a
+ * read-back to confirm what actually landed in the card_summary column.
+ *
+ * Intentionally awaited (not fire-and-forget) so the diagnostics complete
+ * before the request's log stream closes. The HTTP response to the client
+ * has already been sent by the caller — this runs in the background of the
+ * request lifecycle.
+ */
+async function archiveBreakdown(params: {
+  sport: Sport;
+  gameId: string;
+  gameDate: string;
+  homeAbv: string;
+  awayAbv: string;
+  breakdown: import("@/lib/types").BreakdownResult;
+}): Promise<void> {
+  const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown } = params;
+  const tag = `[breakdown:${sport}:archive]`;
+
+  // 1. Pre-check: does a row already exist? (insert vs update classification)
+  const { data: pre, error: preErr } = await supabase
+    .from("breakdowns")
+    .select("created_at")
+    .eq("game_id", gameId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const wasExisting = !preErr && Array.isArray(pre) && pre.length > 0;
+  const preCreatedAt = wasExisting ? pre![0].created_at : null;
+
+  const incomingSummary = breakdown.cardSummary || "";
+  console.log(`${tag} game_id=${gameId} — ${wasExisting ? `UPDATE (existing row from ${preCreatedAt})` : "INSERT (new row)"}`);
+  console.log(`${tag} card_summary being written: "${incomingSummary.slice(0, 120)}${incomingSummary.length > 120 ? "…" : ""}"`);
+
+  // 2. Upsert
+  const { error: upsertErr } = await supabase
+    .from("breakdowns")
+    .upsert(
+      {
+        game_id: gameId,
+        game_date: gameDate,
+        home_team: homeAbv,
+        away_team: awayAbv,
+        sport,
+        breakdown_content: breakdown,
+        card_summary: breakdown.cardSummary || null,
+        share_hook: breakdown.shareHook || null,
+        confidence_level: breakdown.confidenceLevel,
+        confidence_label: breakdown.confidenceLabel,
+        user_id: null,
+      },
+      { onConflict: "game_id" }
+    );
+
+  if (upsertErr) {
+    console.error(`${tag} upsert FAILED for ${gameId}:`, upsertErr.message);
+    return;
+  }
+  console.log(`${tag} upsert completed for ${gameId}`);
+
+  // 3. Read-back: what actually got stored?
+  const { data: post, error: postErr } = await supabase
+    .from("breakdowns")
+    .select("card_summary, share_hook, created_at")
+    .eq("game_id", gameId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (postErr || !post || post.length === 0) {
+    console.error(`${tag} READBACK FAILED for ${gameId}:`, postErr?.message ?? "no rows");
+    return;
+  }
+  const stored = post[0];
+  const storedSummary = stored.card_summary ?? "";
+  const match = storedSummary === incomingSummary;
+  console.log(
+    `${tag} readback for ${gameId}: ` +
+    `card_summary="${storedSummary.slice(0, 120)}${storedSummary.length > 120 ? "…" : ""}" ` +
+    `(row created ${stored.created_at}) — ${match ? "MATCH" : "MISMATCH with incoming"}`
+  );
+  if (!match) {
+    console.warn(`${tag} !! stored value differs from incoming — another write may have raced, or onConflict failed (missing UNIQUE constraint on game_id?)`);
+  }
+}
+
 export async function POST(req: NextRequest) {
   let gameId: string;
   let sport: Sport;
@@ -298,28 +384,14 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
     console.log(`[breakdown:NBA] confidenceLevel=${breakdown.confidenceLevel}`);
 
     // Archive (non-blocking)
-    supabase
-      .from("breakdowns")
-      .upsert(
-        {
-          game_id: game.gameId,
-          game_date: today,
-          home_team: homeTeam.teamAbv,
-          away_team: awayTeam.teamAbv,
-          sport: "NBA",
-          breakdown_content: breakdown,
-          card_summary: breakdown.cardSummary || null,
-          share_hook: breakdown.shareHook || null,
-          confidence_level: breakdown.confidenceLevel,
-          confidence_label: breakdown.confidenceLabel,
-          user_id: null, // TODO: pass real user ID when Auth is live
-        },
-        { onConflict: "game_id" }
-      )
-      .then(({ error }) => {
-        if (error) console.error("[breakdown:NBA] supabase upsert failed:", error.message);
-        else console.log("[breakdown:NBA] archived to supabase");
-      });
+    archiveBreakdown({
+      sport: "NBA",
+      gameId: game.gameId,
+      gameDate: today,
+      homeAbv: homeTeam.teamAbv,
+      awayAbv: awayTeam.teamAbv,
+      breakdown,
+    }).catch((err) => console.error("[breakdown:NBA:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
     const response: BreakdownApiResponse = { breakdown, game, sport: "NBA", fromCache: false, generatedAt };
@@ -443,28 +515,14 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
     console.log(`[breakdown:MLB] confidenceLevel=${breakdown.confidenceLevel}`);
 
     // Archive (non-blocking)
-    supabase
-      .from("breakdowns")
-      .upsert(
-        {
-          game_id: game.gameId,
-          game_date: today,
-          home_team: homeTeam.teamAbv,
-          away_team: awayTeam.teamAbv,
-          sport: "MLB",
-          breakdown_content: breakdown,
-          card_summary: breakdown.cardSummary || null,
-          share_hook: breakdown.shareHook || null,
-          confidence_level: breakdown.confidenceLevel,
-          confidence_label: breakdown.confidenceLabel,
-          user_id: null, // TODO: pass real user ID when Auth is live
-        },
-        { onConflict: "game_id" }
-      )
-      .then(({ error }) => {
-        if (error) console.error("[breakdown:MLB] supabase upsert failed:", error.message);
-        else console.log("[breakdown:MLB] archived to supabase");
-      });
+    archiveBreakdown({
+      sport: "MLB",
+      gameId: game.gameId,
+      gameDate: today,
+      homeAbv: homeTeam.teamAbv,
+      awayAbv: awayTeam.teamAbv,
+      breakdown,
+    }).catch((err) => console.error("[breakdown:MLB:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
     const response: BreakdownApiResponse = { breakdown, game, sport: "MLB", fromCache: false, generatedAt };
