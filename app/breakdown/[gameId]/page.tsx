@@ -104,6 +104,30 @@ export default function BreakdownPage() {
   const homeName = game?.homeTeam.teamName ?? "";
   const heroMatchup = awayName && homeName ? `${awayName} @ ${homeName}` : "Breakdown";
 
+  // Regenerate is only meaningful before tip-off/first-pitch. Once the game is
+  // live or final, regeneration can't improve the pre-game read, so hide it.
+  // Mirrors GameCard.getEffectiveStatus: if API still says "scheduled", check
+  // whether gameTime has passed.
+  const effectiveStatus: "scheduled" | "live" | "final" = (() => {
+    if (!game) return "scheduled";
+    if (game.gameStatus === "final") return "final";
+    if (game.gameStatus === "live") return "live";
+    const m = game.gameTime?.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
+    if (!m) return "scheduled";
+    let gh = parseInt(m[1], 10);
+    const gm = parseInt(m[2], 10);
+    if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
+    if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+    const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+    const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+    const past = ch * 60 + cm - (gh * 60 + gm);
+    if (past <= 0) return "scheduled";
+    if (past > 180) return "final";
+    return "live";
+  })();
+  const canRegenerate = effectiveStatus === "scheduled";
+
   // game.gameDate is a YYYYMMDD string (e.g., "20260420"). Parse into a local
   // Date and let the browser format the weekday + month name — works for any date.
   const formatGameDate = (yyyymmdd: string): string | null => {
@@ -223,23 +247,27 @@ export default function BreakdownPage() {
                 <span>
                   Breakdown generated at {new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })}
                 </span>
-                <button
-                  onClick={() => fetchBreakdown(true)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
-                >
-                  Regenerate for latest data →
-                </button>
+                {canRegenerate && (
+                  <button
+                    onClick={() => fetchBreakdown(true)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
+                  >
+                    Regenerate for latest data →
+                  </button>
+                )}
               </div>
             ) : (
               /* Fresh generation banner — also offers Regenerate so users can re-run if data moved */
               <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <span>Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.</span>
-                <button
-                  onClick={() => fetchBreakdown(true)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
-                >
-                  Regenerate →
-                </button>
+                {canRegenerate && (
+                  <button
+                    onClick={() => fetchBreakdown(true)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
+                  >
+                    Regenerate →
+                  </button>
+                )}
               </div>
             )}
             <BreakdownView breakdown={breakdown} game={game} />

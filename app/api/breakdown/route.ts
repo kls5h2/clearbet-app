@@ -48,8 +48,9 @@ async function archiveBreakdown(params: {
   homeAbv: string;
   awayAbv: string;
   breakdown: import("@/lib/types").BreakdownResult;
+  game: import("@/lib/types").AnyGame; // full matchup object for cache-hit rehydration
 }): Promise<void> {
-  const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown } = params;
+  const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown, game } = params;
   const tag = `[breakdown:${sport}:archive]`;
 
   // 1. Pre-check: does a row already exist? (insert vs update classification)
@@ -77,6 +78,7 @@ async function archiveBreakdown(params: {
         away_team: awayAbv,
         sport,
         breakdown_content: breakdown,
+        game_snapshot: game,                    // full game object at time of generation
         card_summary: breakdown.cardSummary || null,
         share_hook: breakdown.shareHook || null,
         confidence_level: breakdown.confidenceLevel,
@@ -160,7 +162,7 @@ async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse 
     // visit and masks real problems. Take the first element of the array.
     const { data, error } = await supabase
       .from("breakdowns")
-      .select("breakdown_content, sport, home_team, away_team, game_date, created_at")
+      .select("breakdown_content, game_snapshot, sport, home_team, away_team, game_date, created_at")
       .eq("game_id", gameId)
       .order("created_at", { ascending: false })
       .limit(1);
@@ -183,7 +185,14 @@ async function getCachedBreakdown(gameId: string): Promise<BreakdownApiResponse 
 
     const sport = (row.sport ?? "NBA") as Sport;
     const today = getTodayDateString();
-    const game: import("@/lib/types").AnyGame = sport === "MLB"
+
+    // Prefer the full game snapshot stored at save time — it has real team
+    // names, game time, and MLB pitcher data. Fall back to the minimal
+    // reconstruction only for legacy rows generated before the column existed.
+    const snapshot = row.game_snapshot as import("@/lib/types").AnyGame | null;
+    const game: import("@/lib/types").AnyGame = snapshot
+      ? snapshot
+      : sport === "MLB"
       ? {
           sport: "MLB",
           gameId,
@@ -391,6 +400,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       homeAbv: homeTeam.teamAbv,
       awayAbv: awayTeam.teamAbv,
       breakdown,
+      game,
     }).catch((err) => console.error("[breakdown:NBA:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
@@ -522,6 +532,7 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
       homeAbv: homeTeam.teamAbv,
       awayAbv: awayTeam.teamAbv,
       breakdown,
+      game,
     }).catch((err) => console.error("[breakdown:MLB:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
