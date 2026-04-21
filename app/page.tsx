@@ -304,7 +304,7 @@ function HomePageContent() {
           The numbers don&#8217;t lie. They just need translating. Here&#8217;s the read — <em>you make the call.</em>
         </p>
         <p style={{ fontSize: "12px", color: "var(--muted)" }}>
-          <Logo dark /> · rawintel.ai
+          <Logo dark /> · rawintelsports.com
         </p>
       </div>
 

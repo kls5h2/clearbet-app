@@ -255,7 +255,7 @@ export default function ShareCard({ game, confidenceLabel, shareHook, open, onCl
           {/* 7. Footer */}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <span style={{ fontSize: "11px", color: "#8A8A86", letterSpacing: "0.04em" }}>
-              rawintel.ai
+              rawintelsports.com
             </span>
           </div>
         </div>

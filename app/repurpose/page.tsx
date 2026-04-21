@@ -250,7 +250,7 @@ export default function RepurposePage() {
               />
               <CopyRow
                 label="URL"
-                value={`https://rawintel.ai/learn/${result.learn_page_slug}`}
+                value={`https://rawintelsports.com/learn/${result.learn_page_slug}`}
               />
             </OutputBlock>
           </section>

@@ -158,9 +158,9 @@ Now generate repurposed content. Return valid JSON only, no markdown, no preambl
     "tweet 2 — Key Driver 1 (max 280 chars)",
     "tweet 3 — Key Driver 2 (max 280 chars)",
     "tweet 4 — the Market Read in one sentence (max 280 chars)",
-    "tweet 5 — closing line: This is not a pick. This is what the data says. Your decision is always yours. + rawintel.ai"
+    "tweet 5 — closing line: This is not a pick. This is what the data says. Your decision is always yours. + rawintelsports.com"
   ],
-  "substack_excerpt": "3-4 sentences rewriting the Market Read for a beginner audience. No jargon without defining it. Ends with: Read the full breakdown at rawintel.ai",
+  "substack_excerpt": "3-4 sentences rewriting the Market Read for a beginner audience. No jargon without defining it. Ends with: Read the full breakdown at rawintelsports.com",
   "one_line_stat": "The single most interesting data point from this breakdown in one punchy sentence. No pick implied.",
   "learn_page_slug": "the most relevant slug from this list: what-does-minus-110-mean, how-does-a-point-spread-work, what-is-a-moneyline-bet, what-does-over-under-mean, what-is-juice-or-vig, how-to-read-betting-odds, what-does-plus-150-mean, what-is-a-parlay-bet, what-does-line-movement-mean, what-is-sharp-money, what-is-closing-line-value, what-does-taken-off-the-board-mean, how-do-sportsbooks-make-money, what-is-a-two-way-market, what-is-implied-probability, how-to-know-if-spread-is-too-high, what-to-look-for-betting-a-total, what-does-public-on-one-side-mean, how-injuries-affect-betting-lines, what-is-line-shopping"
 }`;

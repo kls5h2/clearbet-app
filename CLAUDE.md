@@ -132,7 +132,7 @@ After building any UI component or page:
 ## Product Identity
 
 Name: RawIntel
-Domain: rawintel.ai
+Domain: rawintelsports.com
 Tagline: What the data says. Your decision to make.
 One-liner: RawIntel turns raw game data into plain-English analysis so you can make informed decisions in under 60 seconds.
 
