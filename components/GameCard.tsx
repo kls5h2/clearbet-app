@@ -128,8 +128,14 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   const sport = game.sport;
 
   const effectiveStatus = preview ? "scheduled" : getEffectiveStatus(gameStatus, gameTime);
-  const isClickable = effectiveStatus === "scheduled" && !preview;
-  const isDead = effectiveStatus === "final" || effectiveStatus === "live";
+  // Live games remain readable ONLY if a breakdown already exists — users can
+  // click through to the pre-game read while the game is in progress. Live
+  // games without a breakdown stay locked (pre-game data only).
+  const isClickable =
+    !preview &&
+    (effectiveStatus === "scheduled" || (effectiveStatus === "live" && hasBreakdown));
+  const isDead =
+    effectiveStatus === "final" || (effectiveStatus === "live" && !hasBreakdown);
 
   const signal: string | null = isClickable && whatThisMeans ? whatThisMeans : null;
 
@@ -151,9 +157,15 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
         onClick={() => onClick(game.gameId)}
         hasBreakdown={hasBreakdown}
       >
-        {/* Time */}
-        <div style={{ marginBottom: "12px" }}>
+        {/* Time — Live dot shows when a live game is clickable (breakdown exists) */}
+        <div className="flex justify-between items-center" style={{ marginBottom: "12px" }}>
           <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
+          {effectiveStatus === "live" && (
+            <div className="flex items-center gap-[5px]">
+              <span className="w-[5px] h-[5px] rounded-full animate-pulse block" style={{ background: "var(--signal)" }} />
+              <span style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.08em", color: "var(--signal)" }}>Live</span>
+            </div>
+          )}
         </div>
 
         {/* Matchup */}
