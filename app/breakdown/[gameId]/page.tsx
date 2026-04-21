@@ -6,6 +6,7 @@ import BreakdownView from "@/components/BreakdownView";
 import Nav from "@/components/Nav";
 import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
+import { lookupTeam, parseGameId } from "@/lib/team-names";
 
 type Status = "idle" | "loading" | "done" | "error";
 
@@ -100,31 +101,69 @@ export default function BreakdownPage() {
     fetchBreakdown();
   }, [gameId]);
 
-  const awayName = game?.awayTeam.teamName ?? "";
-  const homeName = game?.homeTeam.teamName ?? "";
-  const heroMatchup = awayName && homeName ? `${awayName} @ ${homeName}` : "Breakdown";
+  // Resolve full team names. Fresh breakdowns already have them. Legacy cached
+  // rows (generated before the game_snapshot column existed) come back with
+  // teamName === teamAbv — for those, look up the full name from the
+  // abbreviation, and fall back to parsing the game_id if game isn't loaded.
+  const resolvedNames = ((): { away: string; home: string } => {
+    if (game) {
+      const sport = game.sport as "NBA" | "MLB";
+      const awayIsAbv = !game.awayTeam.teamName || game.awayTeam.teamName === game.awayTeam.teamAbv;
+      const homeIsAbv = !game.homeTeam.teamName || game.homeTeam.teamName === game.homeTeam.teamAbv;
+      const awayLookup = awayIsAbv ? lookupTeam(game.awayTeam.teamAbv, sport) : null;
+      const homeLookup = homeIsAbv ? lookupTeam(game.homeTeam.teamAbv, sport) : null;
+      return {
+        away: awayIsAbv ? (awayLookup?.full ?? game.awayTeam.teamAbv) : game.awayTeam.teamName,
+        home: homeIsAbv ? (homeLookup?.full ?? game.homeTeam.teamAbv) : game.homeTeam.teamName,
+      };
+    }
+    // No game loaded yet — parse game_id so the hero still shows something readable
+    const parsed = parseGameId(gameId);
+    if (!parsed) return { away: "", home: "" };
+    const away = lookupTeam(parsed.awayAbv, sport)?.full ?? parsed.awayAbv;
+    const home = lookupTeam(parsed.homeAbv, sport)?.full ?? parsed.homeAbv;
+    return { away, home };
+  })();
+  const heroMatchup = resolvedNames.away && resolvedNames.home
+    ? `${resolvedNames.away} @ ${resolvedNames.home}`
+    : "Breakdown";
 
   // Regenerate is only meaningful before tip-off/first-pitch. Once the game is
   // live or final, regeneration can't improve the pre-game read, so hide it.
-  // Mirrors GameCard.getEffectiveStatus: if API still says "scheduled", check
-  // whether gameTime has passed.
   const effectiveStatus: "scheduled" | "live" | "final" = (() => {
     if (!game) return "scheduled";
     if (game.gameStatus === "final") return "final";
     if (game.gameStatus === "live") return "live";
+
+    // Try parseable gameTime first
     const m = game.gameTime?.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
-    if (!m) return "scheduled";
-    let gh = parseInt(m[1], 10);
-    const gm = parseInt(m[2], 10);
-    if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
-    if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
-    const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
-    const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-    const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-    const past = ch * 60 + cm - (gh * 60 + gm);
-    if (past <= 0) return "scheduled";
-    if (past > 180) return "final";
-    return "live";
+    if (m) {
+      let gh = parseInt(m[1], 10);
+      const gm = parseInt(m[2], 10);
+      if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
+      if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
+      const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+      const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+      const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+      const past = ch * 60 + cm - (gh * 60 + gm);
+      if (past <= 0) return "scheduled";
+      if (past > 180) return "final";
+      return "live";
+    }
+
+    // Legacy cached rows: no parseable gameTime. Fall back to comparing
+    // gameDate against today (ET). If same day, assume live to hide Regenerate
+    // — safer default than assuming scheduled.
+    if (game.gameDate && /^\d{8}$/.test(game.gameDate)) {
+      const todayEt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/New_York",
+        year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(new Date()).replace(/-/g, "");
+      if (game.gameDate < todayEt) return "final";
+      if (game.gameDate > todayEt) return "scheduled";
+      return "live"; // same day, unknown time — default to live
+    }
+    return "live"; // anything else: hide Regenerate
   })();
   const canRegenerate = effectiveStatus === "scheduled";
 

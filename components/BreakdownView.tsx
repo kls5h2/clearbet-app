@@ -189,9 +189,11 @@ export default function BreakdownView({ breakdown, game }: Props) {
         marginBottom: "10px",
         border: `0.5px solid ${BORDER}`,
       }}>
-        {/* Sport · Time eyebrow — matchup now lives in the dark hero above */}
+        {/* Sport · Time eyebrow — matchup now lives in the dark hero above.
+            Drop the "Time TBD" fallback entirely when gameTime is unknown
+            (legacy cached rows) so the eyebrow shows just the sport. */}
         <p style={{ fontSize: "11px", fontWeight: 700, color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px", fontFamily: SANS }}>
-          {isMLB ? "MLB" : "NBA"} · {game.gameTime || "Time TBD"}
+          {isMLB ? "MLB" : "NBA"}{game.gameTime ? ` · ${game.gameTime}` : ""}
         </p>
 
         {/* MLB probable starters */}
