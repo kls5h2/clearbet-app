@@ -8,7 +8,7 @@ import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
 import { lookupTeam, parseGameId } from "@/lib/team-names";
 
-type Status = "idle" | "loading" | "done" | "error";
+type Status = "idle" | "loading" | "done" | "error" | "limit";
 
 const LOADING_MESSAGES = [
   "Pulling live data...",
@@ -79,9 +79,16 @@ export default function BreakdownPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId, sport, regenerate }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to generate breakdown");
-        return r.json();
+      .then(async (r) => {
+        // Always try to read the body — the API sends a useful { error } message
+        // on 4xx responses that the generic "Failed to generate" string buried.
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const err = new Error(body?.error ?? "Failed to generate breakdown") as Error & { status?: number };
+          err.status = r.status;
+          throw err;
+        }
+        return body;
       })
       .then((data) => {
         setBreakdown(data.breakdown);
@@ -90,9 +97,11 @@ export default function BreakdownPage() {
         setGeneratedAt(data.generatedAt ?? null);
         setStatus("done");
       })
-      .catch((e) => {
+      .catch((e: Error & { status?: number }) => {
         setError(e.message);
-        setStatus("error");
+        // 403 from the API = free-tier cap hit. Route to the upsell panel
+        // instead of the generic "something went wrong" error state.
+        setStatus(e.status === 403 ? "limit" : "error");
       });
   }
 
@@ -274,6 +283,69 @@ export default function BreakdownPage() {
             >
               ← Back to slate
             </button>
+          </div>
+        )}
+
+        {/* Free-tier cap upsell */}
+        {status === "limit" && (
+          <div style={{
+            background: "var(--ink)", color: "#FAFAFA",
+            borderRadius: "8px", padding: "36px 32px", textAlign: "center",
+            position: "relative", overflow: "hidden",
+          }}>
+            <span aria-hidden="true" style={{
+              position: "absolute", right: "-40px", top: "-60px",
+              fontFamily: "Georgia, serif", fontSize: "360px", fontStyle: "italic",
+              color: "rgba(217,59,58,0.08)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+            }}>R.</span>
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <p style={{ fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "14px" }}>
+                Weekly limit reached
+              </p>
+              <h2 style={{
+                fontFamily: "var(--serif)", fontSize: "clamp(26px, 3.5vw, 34px)", fontWeight: 500,
+                color: "#FAFAFA", letterSpacing: "-0.02em", lineHeight: 1.15,
+                margin: 0, marginBottom: "14px", maxWidth: "520px", marginLeft: "auto", marginRight: "auto",
+              }}>
+                You&rsquo;ve used your 3 free breakdowns this week.
+              </h2>
+              <p style={{ fontFamily: "var(--sans)", fontSize: "15px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "460px", margin: "0 auto 24px" }}>
+                Pro unlocks unlimited breakdowns, share cards for any game, regenerate on demand, and full NBA + MLB coverage. $9.99/month, cancel anytime.
+              </p>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+                <button
+                  onClick={() => router.push("/pricing")}
+                  style={{
+                    background: "var(--signal)", color: "#FAFAFA",
+                    border: "none", borderRadius: "4px",
+                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
+                    letterSpacing: "0.04em", padding: "13px 26px", cursor: "pointer",
+                    transition: "opacity 150ms ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  Upgrade to Pro →
+                </button>
+                <button
+                  onClick={() => router.push("/")}
+                  style={{
+                    background: "transparent", color: "#FAFAFA",
+                    border: "0.5px solid rgba(255,255,255,0.25)", borderRadius: "4px",
+                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
+                    letterSpacing: "0.04em", padding: "13px 26px", cursor: "pointer",
+                    opacity: 0.85, transition: "opacity 150ms ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.85")}
+                >
+                  Back to slate
+                </button>
+              </div>
+              <p style={{ fontFamily: "var(--sans)", fontSize: "12px", color: "#6B6B66", marginTop: "18px", margin: "18px 0 0" }}>
+                Your limit resets 7 days after your earliest breakdown this week.
+              </p>
+            </div>
           </div>
         )}
 
