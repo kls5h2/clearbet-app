@@ -169,12 +169,25 @@ export async function POST(req: NextRequest) {
   }
 
   // Fresh generation — gate by tier for free users.
-  const { data: profile } = await authClient
+  const { data: profile, error: profileErr } = await authClient
     .from("profiles")
-    .select("tier")
+    .select("tier, email, stripe_customer_id, subscription_status")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileErr) {
+    console.error(`[breakdown] profile lookup FAILED for user=${user.id}:`, profileErr.message);
+  }
+  if (!profile) {
+    console.warn(`[breakdown] no profile row for user=${user.id} — defaulting to free tier. Check that handle_new_user trigger fired on signup.`);
+  }
+
   const tier = (profile?.tier ?? "free") as "free" | "pro";
+  console.log(
+    `[breakdown] gating: user=${user.id} email=${profile?.email ?? "unknown"} ` +
+    `tier=${tier} stripe_customer_id=${profile?.stripe_customer_id ?? "null"} ` +
+    `subscription_status=${profile?.subscription_status ?? "null"}`
+  );
 
   if (tier === "free") {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -185,6 +198,7 @@ export async function POST(req: NextRequest) {
       .gte("created_at", oneWeekAgo);
     const used = count ?? 0;
     if (used >= 3) {
+      console.warn(`[breakdown] 403 for user=${user.id}: free tier, ${used}/3 used this week`);
       return NextResponse.json(
         { error: "You've used your 3 free breakdowns this week. Upgrade to Pro for unlimited access." },
         { status: 403 }
