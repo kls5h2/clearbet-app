@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "./Logo";
+import { createClient } from "@/lib/supabase/client";
 
 type ActivePage = "today" | "how-it-works" | "glossary" | "line-translator";
 
@@ -21,7 +23,35 @@ const LINKS: { href: string; label: string; page: ActivePage }[] = [
 ];
 
 export default function Nav({ backHref, backLabel = "Back", sportTag, activePage }: NavProps) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? null);
+      setAuthReady(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user?.email ?? null);
+      setAuthReady(true);
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
+  // Shorten long emails for display: "long-user@example.com" → "long-u…@example.com"
+  const displayEmail = email && email.length > 22
+    ? `${email.slice(0, email.indexOf("@") > 8 ? 8 : email.indexOf("@"))}…${email.slice(email.indexOf("@"))}`
+    : email;
 
   const linkStyle = (page: ActivePage): React.CSSProperties => ({
     fontSize: "13px", fontWeight: 400,
@@ -96,6 +126,30 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               </span>
             </Link>
           )}
+          {/* Auth action — Log In when signed out, email + Log Out when signed in */}
+          {authReady && (email ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Link href="/dashboard" style={{ fontSize: "12px", color: "var(--muted)", textDecoration: "none", whiteSpace: "nowrap" }}>
+                {displayEmail}
+              </Link>
+              <button
+                onClick={handleLogout}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "var(--ink)", opacity: 0.7, padding: 0 }}
+              >
+                Log Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              style={{
+                fontSize: "13px", fontWeight: 500,
+                color: "var(--signal)", textDecoration: "none", whiteSpace: "nowrap",
+              }}
+            >
+              Log In
+            </Link>
+          ))}
         </nav>
 
         {/* Hamburger button — mobile only, <768px.
@@ -148,6 +202,27 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               View today&#8217;s {sportTag} slate
             </Link>
           )}
+
+          {/* Auth action — mirrored from desktop nav */}
+          {authReady && (email ? (
+            <>
+              <Link href="/dashboard" onClick={() => setMenuOpen(false)}
+                style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none" }}>
+                {displayEmail}
+              </Link>
+              <button
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "var(--ink)", padding: 0, textAlign: "left" }}
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <Link href="/login" onClick={() => setMenuOpen(false)}
+              style={{ fontSize: "15px", fontWeight: 500, color: "var(--signal)", textDecoration: "none" }}>
+              Log In
+            </Link>
+          ))}
         </div>
       )}
     </header>

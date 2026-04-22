@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 export default function DisclaimerFooter() {
+  const linkStyle: React.CSSProperties = { color: "var(--muted)", textDecoration: "underline" };
   return (
     <footer
       style={{
@@ -19,10 +22,14 @@ export default function DisclaimerFooter() {
           href="https://www.ncpgambling.org"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "var(--muted)", textDecoration: "underline" }}
+          style={linkStyle}
         >
           ncpgambling.org
         </a>
+        {" "}·{" "}
+        <Link href="/terms" style={linkStyle}>Terms of Service</Link>
+        {" "}·{" "}
+        <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>
         {" "}· © RawIntel LLC
       </p>
     </footer>

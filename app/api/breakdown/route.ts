@@ -20,6 +20,7 @@ import { fetchESPNNBAInjuries } from "@/lib/espn-nba-injuries";
 import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
+import { createClient as createAuthClient } from "@/lib/supabase/server";
 import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
 import type {
   GameDetailData,
@@ -49,8 +50,9 @@ async function archiveBreakdown(params: {
   awayAbv: string;
   breakdown: import("@/lib/types").BreakdownResult;
   game: import("@/lib/types").AnyGame; // full matchup object for cache-hit rehydration
+  userId: string | null;
 }): Promise<void> {
-  const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown, game } = params;
+  const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown, game, userId } = params;
   const tag = `[breakdown:${sport}:archive]`;
 
   // 1. Pre-check: does a row already exist? (insert vs update classification)
@@ -83,7 +85,7 @@ async function archiveBreakdown(params: {
         share_hook: breakdown.shareHook || null,
         confidence_level: breakdown.confidenceLevel,
         confidence_label: breakdown.confidenceLabel,
-        user_id: null,
+        user_id: userId,
       },
       { onConflict: "game_id" }
     );
@@ -136,19 +138,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  // Cache check — serve from Supabase if a breakdown exists and regenerate not requested
+  // Auth check — breakdown access requires a logged-in user.
+  const authClient = await createAuthClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Please log in to generate breakdowns" },
+      { status: 401 }
+    );
+  }
+
+  // Cache check — serves cached breakdowns without counting toward usage.
   if (!regenerate) {
     const cached = await getCachedBreakdown(gameId);
     if (cached) {
-      console.log(`[breakdown] serving from cache: gameId=${gameId}`);
+      console.log(`[breakdown] serving from cache: gameId=${gameId} user=${user.id}`);
       return NextResponse.json(cached);
     }
   }
 
-  if (sport === "MLB") {
-    return handleMLBBreakdown(gameId);
+  // Fresh generation — gate by tier for free users.
+  const { data: profile } = await authClient
+    .from("profiles")
+    .select("tier")
+    .eq("id", user.id)
+    .maybeSingle();
+  const tier = (profile?.tier ?? "free") as "free" | "pro";
+
+  if (tier === "free") {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count } = await authClient
+      .from("breakdown_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneWeekAgo);
+    const used = count ?? 0;
+    if (used >= 3) {
+      return NextResponse.json(
+        { error: "You've used your 3 free breakdowns this week. Upgrade to Pro for unlimited access." },
+        { status: 403 }
+      );
+    }
+    console.log(`[breakdown] free-tier usage: ${used}/3 for user=${user.id}`);
   }
-  return handleNBABreakdown(gameId);
+
+  const response = sport === "MLB"
+    ? await handleMLBBreakdown(gameId, user.id)
+    : await handleNBABreakdown(gameId, user.id);
+
+  // Record usage on successful fresh generation.
+  if (response.status === 200) {
+    authClient
+      .from("breakdown_usage")
+      .insert({ user_id: user.id })
+      .then(({ error }) => {
+        if (error) console.error("[breakdown] usage insert failed:", error.message);
+      });
+  }
+
+  return response;
 }
 
 /**
@@ -252,7 +300,7 @@ function isHomeAwayFlipped(tank01HomeName: string, tank01AwayName: string, oddsM
   return false; // indeterminate — trust Tank01
 }
 
-async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
+async function handleNBABreakdown(gameId: string, userId: string | null = null): Promise<NextResponse> {
   try {
     const today = getTodayDateString();
     console.log(`[breakdown:NBA] gameId=${gameId} date=${today}`);
@@ -401,6 +449,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
       awayAbv: awayTeam.teamAbv,
       breakdown,
       game,
+      userId,
     }).catch((err) => console.error("[breakdown:NBA:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
@@ -413,7 +462,7 @@ async function handleNBABreakdown(gameId: string): Promise<NextResponse> {
   }
 }
 
-async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
+async function handleMLBBreakdown(gameId: string, userId: string | null = null): Promise<NextResponse> {
   try {
     const today = getTodayDateString();
     console.log(`[breakdown:MLB] gameId=${gameId} date=${today}`);
@@ -533,6 +582,7 @@ async function handleMLBBreakdown(gameId: string): Promise<NextResponse> {
       awayAbv: awayTeam.teamAbv,
       breakdown,
       game,
+      userId,
     }).catch((err) => console.error("[breakdown:MLB:archive] threw:", err instanceof Error ? err.message : err));
 
     const generatedAt = new Date().toISOString();
