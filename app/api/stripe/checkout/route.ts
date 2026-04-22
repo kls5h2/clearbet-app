@@ -26,22 +26,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const priceId =
-    interval === "annual"
-      ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID
-      : process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
-  if (!priceId) {
-    console.error("[stripe:checkout] price ID env var not set for interval:", interval);
-    return NextResponse.json({ error: "Pricing not configured" }, { status: 500 });
-  }
-
+  // Upfront env check with presence logging (never log the actual values).
   const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    console.error("[stripe:checkout] STRIPE_SECRET_KEY not set");
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  const monthlyPriceId = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
+  const annualPriceId = process.env.STRIPE_PRO_ANNUAL_PRICE_ID;
+  console.log(
+    `[stripe:checkout] env: STRIPE_SECRET_KEY=${!!secret}, ` +
+    `STRIPE_PRO_MONTHLY_PRICE_ID=${!!monthlyPriceId}, ` +
+    `STRIPE_PRO_ANNUAL_PRICE_ID=${!!annualPriceId}, ` +
+    `interval=${interval}, user=${user.id}`
+  );
+
+  const missing: string[] = [];
+  if (!secret) missing.push("STRIPE_SECRET_KEY");
+  if (interval === "monthly" && !monthlyPriceId) missing.push("STRIPE_PRO_MONTHLY_PRICE_ID");
+  if (interval === "annual" && !annualPriceId) missing.push("STRIPE_PRO_ANNUAL_PRICE_ID");
+  if (missing.length > 0) {
+    const msg = `Missing Stripe environment variables: ${missing.join(", ")}`;
+    console.error(`[stripe:checkout] ${msg}`);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  const stripe = new Stripe(secret);
+  const priceId = interval === "annual" ? annualPriceId! : monthlyPriceId!;
+
+  const stripe = new Stripe(secret!);
 
   // Look up the profile so we can reuse any existing Stripe customer ID.
   const { data: profile } = await supabase
@@ -70,7 +78,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
-    console.error("[stripe:checkout] FAILED:", e.message);
-    return NextResponse.json({ error: "Failed to start checkout" }, { status: 500 });
+    // If Stripe gave a structured error (invalid price ID, missing product,
+    // etc.), surface its message so the client isn't stuck with a blank 500.
+    const stripeErr = err as { type?: string; code?: string; message?: string };
+    console.error(
+      `[stripe:checkout] FAILED: type=${stripeErr.type ?? "unknown"}, ` +
+      `code=${stripeErr.code ?? "unknown"}, message=${e.message}`
+    );
+    return NextResponse.json(
+      { error: `Checkout failed: ${e.message}` },
+      { status: 500 }
+    );
   }
 }
