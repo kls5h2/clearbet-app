@@ -125,14 +125,35 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        const base = supabase.from("profiles").update({ subscription_status: sub.status });
-        const { data, error } = await (userId
-          ? base.eq("id", userId).select("id, subscription_status")
-          : base.eq("stripe_customer_id", customer!).select("id, subscription_status"));
-
-        if (error) console.error("[stripe:webhook] subscription status update failed:", error.message);
-        else if (!data || data.length === 0) console.warn(`[stripe:webhook] subscription.updated matched 0 rows`);
-        else console.log(`[stripe:webhook] ${data[0].id} status → ${sub.status} (${data.length} row updated)`);
+        // Prefer stripe_customer_id lookup — always reliable on subscription
+        // events and immune to metadata propagation gaps. Fall back to userId
+        // from metadata only if customer is missing or its update misses.
+        let matched = false;
+        if (customer) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update({ subscription_status: sub.status })
+            .eq("stripe_customer_id", customer)
+            .select("id, subscription_status");
+          if (error) console.error("[stripe:webhook] subscription update by customer failed:", error.message);
+          else if (data && data.length > 0) {
+            matched = true;
+            console.log(`[stripe:webhook] ${data[0].id} status → ${sub.status} via customer (${data.length} row updated)`);
+          }
+        }
+        if (!matched && userId) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update({ subscription_status: sub.status })
+            .eq("id", userId)
+            .select("id, subscription_status");
+          if (error) console.error("[stripe:webhook] subscription update by id failed:", error.message);
+          else if (data && data.length > 0) {
+            matched = true;
+            console.log(`[stripe:webhook] ${data[0].id} status → ${sub.status} via id fallback (${data.length} row updated)`);
+          }
+        }
+        if (!matched) console.warn(`[stripe:webhook] subscription.updated matched 0 rows (customer=${customer ?? "null"} user_id=${userId ?? "null"})`);
         break;
       }
 
@@ -151,14 +172,44 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        const base = supabase.from("profiles").update({ tier: "free", subscription_status: "canceled" });
-        const { data, error } = await (userId
-          ? base.eq("id", userId).select("id, tier")
-          : base.eq("stripe_customer_id", customer!).select("id, tier"));
+        const update = { tier: "free" as const, subscription_status: "canceled" as const };
 
-        if (error) console.error("[stripe:webhook] subscription cancel update failed:", error.message);
-        else if (!data || data.length === 0) console.warn(`[stripe:webhook] subscription.deleted matched 0 rows`);
-        else console.log(`[stripe:webhook] ${data[0].id} downgraded to free (${data.length} row updated)`);
+        // stripe_customer_id is the primary lookup — it was saved on the
+        // profile at checkout time and survives regardless of metadata state.
+        let matched = false;
+        if (customer) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update(update)
+            .eq("stripe_customer_id", customer)
+            .select("id, tier");
+          if (error) console.error("[stripe:webhook] subscription cancel by customer failed:", error.message);
+          else if (data && data.length > 0) {
+            matched = true;
+            console.log(`[stripe:webhook] ${data[0].id} downgraded to free via customer (${data.length} row updated)`);
+          } else {
+            console.warn(`[stripe:webhook] no profile matched stripe_customer_id=${customer} — trying metadata fallback`);
+          }
+        }
+        if (!matched && userId) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update(update)
+            .eq("id", userId)
+            .select("id, tier");
+          if (error) console.error("[stripe:webhook] subscription cancel by id failed:", error.message);
+          else if (data && data.length > 0) {
+            matched = true;
+            console.log(`[stripe:webhook] ${data[0].id} downgraded to free via id fallback (${data.length} row updated)`);
+          }
+        }
+        if (!matched) {
+          console.error(
+            `[stripe:webhook] subscription.deleted matched 0 rows — ` +
+            `customer=${customer ?? "null"} user_id=${userId ?? "null"}. ` +
+            `Was stripe_customer_id persisted on the profile during checkout?`
+          );
+        }
         break;
       }
 
