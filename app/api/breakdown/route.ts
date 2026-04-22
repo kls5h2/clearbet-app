@@ -21,6 +21,7 @@ import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
 import { createClient as createAuthClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
 import type {
   GameDetailData,
@@ -54,9 +55,12 @@ async function archiveBreakdown(params: {
 }): Promise<void> {
   const { sport, gameId, gameDate, homeAbv, awayAbv, breakdown, game, userId } = params;
   const tag = `[breakdown:${sport}:archive]`;
+  // Service-role client bypasses RLS — breakdowns has no INSERT/UPDATE policies
+  // for the anon role, so writes from the anon client would fail post-RLS.
+  const sb = createServiceClient();
 
   // 1. Pre-check: does a row already exist? (insert vs update classification)
-  const { data: pre, error: preErr } = await supabase
+  const { data: pre, error: preErr } = await sb
     .from("breakdowns")
     .select("created_at")
     .eq("game_id", gameId)
@@ -70,7 +74,7 @@ async function archiveBreakdown(params: {
   console.log(`${tag} card_summary being written: "${incomingSummary.slice(0, 120)}${incomingSummary.length > 120 ? "…" : ""}"`);
 
   // 2. Upsert
-  const { error: upsertErr } = await supabase
+  const { error: upsertErr } = await sb
     .from("breakdowns")
     .upsert(
       {
@@ -97,7 +101,7 @@ async function archiveBreakdown(params: {
   console.log(`${tag} upsert completed for ${gameId}`);
 
   // 3. Read-back: what actually got stored?
-  const { data: post, error: postErr } = await supabase
+  const { data: post, error: postErr } = await sb
     .from("breakdowns")
     .select("card_summary, share_hook, created_at")
     .eq("game_id", gameId)

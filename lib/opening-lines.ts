@@ -1,9 +1,12 @@
 /**
  * Opening lines — insert-only. Once a row exists for a game_id it is never updated.
  * First odds fetch of the day locks in the opening line.
+ *
+ * RLS: opening_lines has "authenticated read" policy and no write policy, so
+ * every access here goes through the service-role client to bypass RLS.
  */
 
-import { supabase } from "./supabase";
+import { createServiceClient } from "./supabase/service";
 
 export interface OpeningLineRecord {
   game_id: string;
@@ -36,7 +39,7 @@ export function recordOpeningLine(
   homeMl: number | null,
   awayMl: number | null,
 ): void {
-  supabase
+  createServiceClient()
     .from("opening_lines")
     .upsert(
       {
@@ -61,11 +64,11 @@ export function recordOpeningLine(
  * Fetch the opening line for a game. Returns null if none recorded yet.
  */
 export async function getOpeningLine(gameId: string): Promise<OpeningLineRecord | null> {
-  const { data, error } = await supabase
+  const { data, error } = await createServiceClient()
     .from("opening_lines")
     .select("game_id, spread, total, home_ml, away_ml")
     .eq("game_id", gameId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return data as OpeningLineRecord;

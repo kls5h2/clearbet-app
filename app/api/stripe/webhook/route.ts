@@ -9,17 +9,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
 
 export async function POST(req: NextRequest) {
   const secret = process.env.STRIPE_SECRET_KEY;
@@ -44,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Webhook error: ${msg}` }, { status: 400 });
   }
 
-  const supabase = getServiceClient();
+  const supabase = createServiceClient();
 
   try {
     switch (event.type) {
