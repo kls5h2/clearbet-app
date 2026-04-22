@@ -74,6 +74,12 @@ async function archiveBreakdown(params: {
   console.log(`${tag} card_summary being written: "${incomingSummary.slice(0, 120)}${incomingSummary.length > 120 ? "…" : ""}"`);
 
   // 2. Upsert
+  // NOTE: we overwrite created_at on every write so it always reflects the
+  // time of the CURRENTLY-STORED content. On regeneration the upsert takes
+  // the UPDATE path; without this explicit value Supabase preserves the
+  // original INSERT timestamp and the "Breakdown generated at …" banner on
+  // cache-hit page loads would continue showing the stale first-gen time.
+  const now = new Date().toISOString();
   const { error: upsertErr } = await sb
     .from("breakdowns")
     .upsert(
@@ -90,6 +96,7 @@ async function archiveBreakdown(params: {
         confidence_level: breakdown.confidenceLevel,
         confidence_label: breakdown.confidenceLabel,
         user_id: userId,
+        created_at: now,
       },
       { onConflict: "game_id" }
     );

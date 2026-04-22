@@ -298,7 +298,11 @@ export default function BreakdownPage() {
             ) : (
               /* Fresh generation banner — also offers Regenerate so users can re-run if data moved */
               <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                <span>Generated before {game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury updates or lineup changes after generation are not reflected.</span>
+                <span>
+                  {generatedAt
+                    ? `Generated at ${new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })} using live pre-game data. Injury or lineup changes after generation are not reflected.`
+                    : `Generated before ${game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury or lineup changes after generation are not reflected.`}
+                </span>
                 {canRegenerate && (
                   <button
                     onClick={() => fetchBreakdown(true)}
