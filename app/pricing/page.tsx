@@ -46,6 +46,7 @@ export default function PricingPage() {
   const proBullets = [
     "Unlimited breakdowns",
     "Share cards for any game",
+    "Regenerate any breakdown",
     "NBA + MLB coverage",
   ];
 
