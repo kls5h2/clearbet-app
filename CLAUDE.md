@@ -2,14 +2,14 @@
 
 ## Read this first. Every session. No exceptions.
 
-RawIntel is a decision-support tool for sports bettors. Every line of code, every output, every design decision must serve this product and this product only.
+RawIntel is a decision-support system for sports betting at rawintel.ai. Every line of code, every output, every design decision must serve this product and this product only.
 
 ---
 
 ## What RawIntel IS
 
-- A tool that translates raw game data into plain-English breakdowns
-- A system that interprets data, prioritizes signal over noise, and guides thinking
+- A tool that translates complex game data into clear, structured reasoning
+- A system that interprets data, prioritizes what matters, and guides thinking
 - A product that helps users make informed betting decisions on their own terms
 - An education layer baked into the product experience itself
 
@@ -27,7 +27,7 @@ RawIntel is a decision-support tool for sports bettors. Every line of code, ever
 
 A user should never leave a RawIntel breakdown thinking: "What should I bet?"
 
-They should leave thinking: "I understand this game well enough to decide."
+They should leave thinking: "I understand this well enough to decide."
 
 ---
 
@@ -36,194 +36,237 @@ They should leave thinking: "I understand this game well enough to decide."
 Every breakdown follows this exact structure. Every sport. Every game. Every time.
 
 ### 01 — GAME SHAPE
-Purpose: Define the environment. What kind of game is this?
-Length: 2–4 sentences.
-Include: Pace profile, competitiveness, style, stability vs volatility.
+**Purpose:** Define the environment
+**Answer:** What kind of game is this?
+**Length:** 2–4 sentences
+**Include:** Pace profile, competitiveness, style, stability vs volatility
 
 ### 02 — KEY DRIVERS
-Purpose: Identify what actually matters. What 2–4 factors will decide this game?
-Rule: Only include what materially impacts the outcome. Never equal weighting.
+**Purpose:** Identify what actually matters
+**Answer:** What 2–4 factors will decide this game?
+**Rule:** Only include what materially impacts the outcome. Never equal weighting. Some factors matter more — reflect that.
 
 ### 03 — BASE SCRIPT
-Purpose: Establish the most likely flow. If things play out normally, what happens?
-Length: 1 paragraph.
+**Purpose:** Establish the most likely flow
+**Answer:** If things play out normally, what happens?
+**Length:** 1 paragraph
 
 ### 04 — FRAGILITY CHECK
-Purpose: Identify failure points. What could break the script?
-Limit: 2–3 items maximum.
+**Purpose:** Identify failure points
+**Answer:** What could break the script?
+**Limit:** 2–3 items maximum. Color coded.
 
 ### 05 — MARKET READ
-Purpose: Interpret the betting line. What is the market implying, and does it fit?
-Rule: Always translate the line into plain English probability. Never leave a number unexplained.
+**Purpose:** Interpret the betting line
+**Answer:** What is the market implying, and does it fit?
+**Length:** 1 paragraph
+**Rule:** Always translate the line into plain English probability. Never leave a number unexplained.
 
 ### 06 — DECISION LENS
-Purpose: Guide thinking without giving picks. How should the user approach this game?
-Rule: Always ends with the closing line. Never names a specific bet.
+**Purpose:** Guide thinking without giving picks
+**Answer:** How should the user approach this game?
+**Length:** 1 paragraph
+**Rule:** Always ends with the closing line. Never names a specific bet.
 
 ---
 
 ## The Closing Line — Never Changes
 
-"This is not a pick. This is what the data says. Your decision is always yours."
+> "This is not a pick. This is what the data says. Your decision is always yours."
 
 This line appears at the end of every single Decision Lens. Every sport. Every game. Every time. It never changes. It never gets paraphrased. It never gets removed.
 
 ---
 
-## Voice Rules
+## The Glossary Callout — Every Analysis
 
-The voice is: Sharp without swagger. Calm without being passive. Smart without being academic.
-
-Every sentence must: frame, prioritize, interpret, or caution. If it does none of these — cut it.
-
-Do not use: hype language, fake certainty, exclamation points, emoji in UI copy, filler phrases.
+Every breakdown includes one glossary callout. One term from the analysis defined in one sentence. Always the term most central to understanding the Decision Lens. Links to the Glossary tab.
 
 ---
 
-## Design Rules
+## Voice Rules
 
-### Behave as a senior UI designer, not just a developer.
-Before writing any frontend code, think through: purpose, tone, constraints, and how this component fits the overall design language. Never default to generic patterns.
+**The voice is:** Sharp without swagger. Calm without being passive. Smart without being academic.
 
-### Brand Tokens — use these exclusively, no deviations
-```css
---ink: #0E0E0E;
---signal: #D93B3A;
---paper: #F7F5F0;
---canvas: #FAFAFA;
---muted: #8A8A86;
---border: rgba(14,14,14,0.1);
---serif: 'Playfair Display', Georgia, serif;
---sans: 'Inter', 'Helvetica Neue', sans-serif;
+**Every sentence must:** frame, prioritize, interpret, or caution. If it does none of these → cut it.
+
+**The Lean Formula — mandatory:**
+LEAN + WHY + LIMITER
+Example: "This game leans slower because both teams are comfortable in half-court sets, but shooting variance could open it up quickly."
+
+---
+
+## Confidence Levels
+
+Use exactly one per analysis. Use this language exactly.
+
+| Level | Label | Example |
+|-------|-------|---------|
+| 1 | CLEAR SPOT | "This is one of the cleaner spots on the slate" |
+| 2 | LEAN | "The game leans this way on paper" |
+| 3 | FRAGILE | "There is logic here, but it's fragile" |
+| 4 | PASS | "This is a harder game to trust" |
+
+---
+
+## Signal Grade System
+
+Every breakdown includes a Signal Grade (A–F) calculated from four factors:
+
+1. **Lineup Certainty** — Are starting lineups confirmed?
+2. **Line Stability** — Has the spread moved significantly?
+3. **Historical Data Depth** — Sufficient head-to-head and trend data?
+4. **Environmental Clarity** — Are pace, context, and conditions clear?
+
+Grade reflects data confidence, not outcome confidence.
+
+---
+
+## Allowed Language
+
+**Environment:** stable / volatile / fragile / clean / messy / compressed / open / slower / tight / high-variance / low-variance
+
+**Reasoning:** supports / weakens / depends on / holds if / shifts / aligns with / contradicts
+
+**Guidance:** "if you're looking at this game…" / "the stronger logic centers on…" / "this matters because…"
+
+---
+
+## Forbidden Language — Never Use These
+
+**Hype words:** lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this
+
+**False authority:** "Vegas knows" / "sharp money says" (without data)
+
+**Banned filler:** "anything can happen" / "it will be interesting to see" / "both teams bring…" / "could go either way" (without reasoning)
+
+---
+
+## Color Coding System
+
+- 🔴 **RED** — Negative. Works against the expected outcome.
+- 🟢 **GREEN** — Positive. Reinforces the expected outcome.
+- 🔵 **BLUE** — Neutral. Relevant context, not clearly positive or negative.
+- 🟡 **AMBER** — Status flag. Injury uncertainty, questionable, limited minutes.
+
+---
+
+## Reasoning Rules
+
+1. **Think before writing.** Identify environment → prioritize drivers → define script → identify fragility → interpret market. THEN write.
+2. **Prioritize, don't list.** Max 4 drivers. Max 3 fragility points.
+3. **No surface-level stats.** Every stat must answer: why does this matter for this specific game tonight?
+4. **No equal weighting.** Some factors matter more. Reflect that.
+5. **No fake certainty.** Uncertainty is allowed. Confusion is not.
+6. **Game first, always.** Never make the game fit a bet. The game is the lens.
+7. **Injury framing:** Always use "if confirmed" language for unverified injury status. Auto-assign FRAGILE confidence when multiple players have unverified status.
+8. **Playoff context:** Inject month-based NBA playoff context. Never label a playoff game as regular season.
+
+---
+
+## Hard Guardrails
+
+### Never:
+- Give direct betting instructions
+- Name specific bets or selections
+- Act like or imply picks service behavior
+- Use hype language of any kind
+- Express fake certainty
+- Invent trends without sufficient data
+
+### Always:
+- Guide thinking — never instruct action
+- Maintain six-step structure in every output
+- Translate every betting line into plain English
+- End every Decision Lens with the closing line
+- Include one glossary callout per analysis
+- Reflect real reasoning including uncertainty
+
+---
+
+## Current Build State
+
+The following are live and deployed on Vercel:
+
+- Next.js frontend
+- Supabase database (breakdowns table includes `card_summary` column)
+- Tank01 (NBA + MLB data via RapidAPI)
+- The Odds API (live odds)
+- Claude API (`claude-sonnet-4-6`) for breakdown generation
+- Typography: Playfair Display (headings) + Inter (body) via `next/font/google`
+- ShareCard component with PNG export via html2canvas
+- Line Translator tool at `/tools/line-translator`
+- 20 content pages at `/learn/[slug]`
+- Content repurpose engine at `/api/repurpose` + admin UI at `/repurpose`
+- GameCard and ArchiveCard with hover states
+- Reusable Tooltip component
+- Signal Grade system (defined, not yet auto-calculated from live data)
+
+## Pending — Build in This Order
+
+1. Stripe + Supabase Auth (top priority)
+2. "My Breakdowns" nav item (after Auth — filters archive by `user_id`)
+3. Signal Grade wired to live data
+4. Mobile nav collapse below 768px
+5. Milwaukee Bucks away color accent
+6. Nav z-index fix on archive scroll
+7. Featured card variant (after live slate data layer)
+8. Line movement tracker
+9. PWA setup
+10. Tomorrow's slate preview section
+
+Do not build featured card variant until the live slate data layer is connected.
+
+---
+
+## Design Tokens — Use These Exactly
+
+```
+--ink:     #0E0E0E
+--signal:  #D93B3A
+--paper:   #F7F5F0
+--canvas:  #FAFAFA
+--muted:   #8A8A86
+--border:  rgba(14,14,14,0.1)
+--serif:   Georgia, 'Times New Roman', serif (Playfair Display via next/font)
+--sans:    'Helvetica Neue', Helvetica, Arial, sans-serif (Inter via next/font)
 ```
 
-### Typography
-- Serif (Playfair Display): headlines, matchup names, section titles, hero h1
-- Sans (Inter): body copy, labels, metadata, UI text, nav
-- Never mix these roles
-- Never use system fonts if Google Fonts are available
-- Letter-spacing on headings: -0.025em to -0.03em (tight, confident)
-- Eyebrows and labels: 0.18em to 0.22em (wide, deliberate)
+**Principles:**
+- Dark hero sections (`--ink` background), light content sections (`--canvas` / `--paper`)
+- Signal red (`--signal: #D93B3A`) for accents, CTAs, brand dot
+- Clean and calm — no clutter, no noise
+- Education baked in — glossary callout is part of every output
 
-### Interaction Standards
-- Hover transitions: 150ms ease
-- All interactive elements must have a visible hover state
-- Cards on hover: translateY(-1px) + elevated shadow
-- Buttons on hover: opacity 0.88 or background shift
-- Never leave a clickable element without a hover response
+---
 
-### Screenshot Workflow
-After building any UI component or page:
-1. Take a screenshot using Puppeteer
-2. Review it visually — check spacing, alignment, contrast, hover states
-3. Fix any issues found before marking complete
-4. Take a final screenshot to confirm
+## Data Sources
 
-### Anti-patterns — never do these
-- Purple gradients or generic AI color schemes
-- Rounded corner cards on plain white with no depth
-- Inter or Arial as the only font (use Playfair Display for display text)
-- Generic grid layouts with equal-weight cards
-- Hover states that only change color — add physical movement
-- Unexplained data labels (always tooltip or define on first use)
+- Live odds: The Odds API
+- NBA + MLB game and player data: Tank01 (separate RapidAPI subscriptions)
+- Analysis generation: Claude API (`claude-sonnet-4-6`)
 
 ---
 
 ## Product Identity
 
-Name: RawIntel
-Domain: rawintelsports.com
-Tagline: What the data says. Your decision to make.
-One-liner: RawIntel turns raw game data into plain-English analysis so you can make informed decisions in under 60 seconds.
+**Name:** RawIntel
+**Domain:** rawintel.ai / rawintelsports.com
+**Tagline:** What the data says. Your decision to make.
+**One sentence:** RawIntel turns raw game data into plain-English breakdowns so you can make informed betting decisions in under 60 seconds.
+**GitHub:** kls5h2
+**Deployment:** Vercel
+
+## Companion Brand
+
+**She Bets** — content brand targeting women in sports betting. Social handles and Substack set up, no audience built yet. Drives audience that converts to RawIntel paid users. Build content strategy separately — do not mix with RawIntel product build sessions.
 
 ---
 
-## Signal Grade
+## The Promise
 
-Signal Grade is a data quality rating displayed on every game card and breakdown. It rates how much confidence the data supports going into a breakdown — not a prediction of outcome.
+RawIntel does not predict outcomes.
 
-### How it is calculated
-Signal Grade is computed from four data inputs before Claude generates the breakdown. The score is passed into Claude as context, not estimated by Claude.
+It builds a system that understands how games behave, explains what the data says, and respects the user enough to let them decide.
 
-#### Factor 1 — Lineup Certainty (0–3 points)
-- 3 = All starters confirmed, no injury flags on key players
-- 2 = Minor uncertainty (one role player questionable, no impact player affected)
-- 1 = One key player uncertain (starter questionable or game-time decision)
-- 0 = Major uncertainty (starter out or unknown, lineup significantly affected)
-
-#### Factor 2 — Line Stability (0–3 points)
-- 3 = Line has moved less than 0.5 points since open
-- 2 = Line has moved 0.5–1.5 points
-- 1 = Line has moved 1.5–3 points (sharp action or public steam)
-- 0 = Line has moved more than 3 points or been suspended/reset
-
-#### Factor 3 — Historical Data Depth (0–2 points)
-- 2 = 10+ relevant head-to-head matchups in last 2 seasons, both teams have 15+ games played this season
-- 1 = 5–9 matchups or one team is early in season (under 15 games)
-- 0 = Fewer than 5 matchups or very early season with thin sample
-
-#### Factor 4 — Environmental Clarity (0–2 points)
-- 2 = No significant external factors (weather normal, neutral rest, no back-to-back)
-- 1 = One minor factor present (slight weather concern or one team on second night)
-- 0 = Multiple compounding factors (bad weather + back-to-back + travel etc)
-
-### Grading scale (total out of 10)
-- 9–10 = A — Strong signal. Data is clean, environment stable. Breakdown well-supported.
-- 7–8 = B — Solid signal. Minor uncertainty in one area but breakdown holds.
-- 5–6 = C — Limited signal. Meaningful unknowns present. Read fragility check carefully.
-- 3–4 = D — Weak signal. Multiple unknowns. Breakdown is directional at best.
-- 0–2 = F — Noise. Too many variables unresolved. Treat as speculative.
-
-### Where it appears
-- On every game card as "Signal Grade" + letter
-- In the breakdown header
-- Defined in the glossary
-- A grade of C or below should cause Claude to surface more fragility points in the Fragility Check step
-
-### Data sources for calculation
-- Lineup Certainty: Tank01 injury and lineup data
-- Line Stability: The Odds API (compare opening line to current line)
-- Historical Data Depth: Tank01 head-to-head and season game counts
-- Environmental Clarity: weather API for outdoor sports, schedule data for back-to-backs
-
-### Implementation status
-Signal Grade calculation logic not yet built. Currently displayed as a static placeholder. Build the calculation function before connecting live data to game cards.
-
----
-
-## Tech Stack
-
-- Frontend: Next.js
-- Deployment: Vercel
-- Database: Supabase
-- Odds API: The Odds API
-- Sports data: Tank01 (RapidAPI — NBA and MLB are separate subscriptions)
-- AI: Claude API (claude-sonnet-4-6) for breakdown generation
-- Payments: Stripe (pending)
-- Version control: GitHub (kls5h2)
-
----
-
-## Current Known Issues — fix these when encountered
-- Nav bar z-index overlap on archive breakdown scroll
-- Milwaukee Bucks away color accent
-- Mobile nav has no collapse/hamburger below 600px
-- /repurpose admin gate is client-side only (localStorage email check). When Supabase Auth is implemented, replace with server-side session verification and add JWT auth header to the /api/repurpose route.
-
----
-
-## Hard Rules
-
-Never:
-- Give direct betting instructions in any output
-- Name specific bets or selections
-- Use hype language of any kind
-- Express fake certainty
-- Build beyond current scope without instruction
-
-Always:
-- Maintain six-step structure in every breakdown output
-- Translate every betting line into plain English
-- End every Decision Lens with the closing line
-- Include one glossary callout per analysis
-- Use brand tokens — never hardcode hex values outside the token system
+Every build decision should serve that promise.
