@@ -38,56 +38,127 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
+  // Every webhook event gets one summary log so we can trace what arrived.
+  console.log(`[stripe:webhook] received event type=${event.type} id=${event.id}`);
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id ?? (session.metadata?.supabase_user_id ?? null);
-        if (!userId) {
-          console.warn("[stripe:webhook] checkout.session.completed missing supabase user id");
-          break;
-        }
+        const userId = session.client_reference_id ?? session.metadata?.supabase_user_id ?? null;
+        const email = session.customer_email ?? session.customer_details?.email ?? null;
+
+        console.log(
+          `[stripe:webhook] checkout.session.completed: ` +
+          `session_id=${session.id} ` +
+          `client_reference_id=${session.client_reference_id ?? "null"} ` +
+          `metadata.supabase_user_id=${session.metadata?.supabase_user_id ?? "null"} ` +
+          `customer=${typeof session.customer === "string" ? session.customer : "null"} ` +
+          `subscription=${typeof session.subscription === "string" ? session.subscription : "null"} ` +
+          `email=${email ?? "null"}`
+        );
+
         const update = {
           tier: "pro" as const,
           stripe_customer_id: typeof session.customer === "string" ? session.customer : null,
           stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null,
           subscription_status: "active" as const,
         };
-        const { error } = await supabase.from("profiles").update(update).eq("id", userId);
-        if (error) console.error("[stripe:webhook] profile upgrade failed:", error.message);
-        else console.log(`[stripe:webhook] ${userId} upgraded to pro`);
+
+        // Try update by ID first (preferred — came from our own metadata).
+        if (userId) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update(update)
+            .eq("id", userId)
+            .select("id, tier, email");
+          if (error) {
+            console.error("[stripe:webhook] profile upgrade by id failed:", error.message);
+          } else if (!data || data.length === 0) {
+            console.warn(
+              `[stripe:webhook] UPDATE by id=${userId} matched 0 rows. ` +
+              `Either the profile row doesn't exist (handle_new_user trigger didn't fire?) ` +
+              `or the user_id from Stripe doesn't match any profile.`
+            );
+          } else {
+            console.log(`[stripe:webhook] ${userId} upgraded to pro (${data.length} row updated)`);
+            break;
+          }
+        } else {
+          console.warn("[stripe:webhook] checkout.session.completed has neither client_reference_id nor metadata.supabase_user_id");
+        }
+
+        // Fallback: try to find the profile by email. Only useful as a recovery
+        // path for sessions that somehow lost the metadata.
+        if (email) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .update(update)
+            .eq("email", email)
+            .select("id, tier, email");
+          if (error) {
+            console.error("[stripe:webhook] profile upgrade by email failed:", error.message);
+          } else if (!data || data.length === 0) {
+            console.error(`[stripe:webhook] UPDATE by email=${email} also matched 0 rows — user is not upgraded`);
+          } else {
+            console.log(`[stripe:webhook] recovered by email: ${email} → upgraded to pro (${data.length} row updated)`);
+          }
+        } else {
+          console.error("[stripe:webhook] no user_id AND no email available — cannot upgrade anyone");
+        }
         break;
       }
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.supabase_user_id ?? null;
-        if (!userId) {
-          console.warn("[stripe:webhook] subscription.updated missing supabase user id");
+        const customer = typeof sub.customer === "string" ? sub.customer : null;
+
+        console.log(
+          `[stripe:webhook] subscription.updated: ` +
+          `sub_id=${sub.id} status=${sub.status} ` +
+          `metadata.supabase_user_id=${userId ?? "null"} customer=${customer ?? "null"}`
+        );
+
+        if (!userId && !customer) {
+          console.warn("[stripe:webhook] subscription.updated has no user_id or customer to match");
           break;
         }
-        const { error } = await supabase
-          .from("profiles")
-          .update({ subscription_status: sub.status })
-          .eq("id", userId);
+
+        const base = supabase.from("profiles").update({ subscription_status: sub.status });
+        const { data, error } = await (userId
+          ? base.eq("id", userId).select("id, subscription_status")
+          : base.eq("stripe_customer_id", customer!).select("id, subscription_status"));
+
         if (error) console.error("[stripe:webhook] subscription status update failed:", error.message);
-        else console.log(`[stripe:webhook] ${userId} status → ${sub.status}`);
+        else if (!data || data.length === 0) console.warn(`[stripe:webhook] subscription.updated matched 0 rows`);
+        else console.log(`[stripe:webhook] ${data[0].id} status → ${sub.status} (${data.length} row updated)`);
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.supabase_user_id ?? null;
-        if (!userId) {
-          console.warn("[stripe:webhook] subscription.deleted missing supabase user id");
+        const customer = typeof sub.customer === "string" ? sub.customer : null;
+
+        console.log(
+          `[stripe:webhook] subscription.deleted: ` +
+          `sub_id=${sub.id} metadata.supabase_user_id=${userId ?? "null"} customer=${customer ?? "null"}`
+        );
+
+        if (!userId && !customer) {
+          console.warn("[stripe:webhook] subscription.deleted has no user_id or customer to match");
           break;
         }
-        const { error } = await supabase
-          .from("profiles")
-          .update({ tier: "free", subscription_status: "canceled" })
-          .eq("id", userId);
+
+        const base = supabase.from("profiles").update({ tier: "free", subscription_status: "canceled" });
+        const { data, error } = await (userId
+          ? base.eq("id", userId).select("id, tier")
+          : base.eq("stripe_customer_id", customer!).select("id, tier"));
+
         if (error) console.error("[stripe:webhook] subscription cancel update failed:", error.message);
-        else console.log(`[stripe:webhook] ${userId} downgraded to free`);
+        else if (!data || data.length === 0) console.warn(`[stripe:webhook] subscription.deleted matched 0 rows`);
+        else console.log(`[stripe:webhook] ${data[0].id} downgraded to free (${data.length} row updated)`);
         break;
       }
 
