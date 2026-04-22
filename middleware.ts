@@ -16,6 +16,7 @@ const PUBLIC_PREFIXES = [
   "/tools/line-translator",
   "/learn",
   "/auth/callback",
+  "/api/games",              // powers the public slate at "/"
   "/api/line-translator",
   "/api/stripe/webhook",
 ];
