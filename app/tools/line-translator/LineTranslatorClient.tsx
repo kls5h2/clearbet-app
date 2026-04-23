@@ -50,6 +50,62 @@ export default function LineTranslatorClient() {
   const [imageMime, setImageMime] = useState<ImageMime | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
+  // Share state — flashes "Copied!" for 2s after a successful clipboard write.
+  const [shareCopied, setShareCopied] = useState(false);
+
+  function extractFirstSentences(md: string, maxSentences = 2): string {
+    // Strip markdown formatting, then grab the first 1-2 sentence-terminated chunks.
+    const plain = md
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/_([^_]+)_/g, "$1")
+      .replace(/#{1,6}\s+/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\n+/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    const sentences: string[] = [];
+    const re = /[^.!?]+[.!?]+/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(plain)) !== null && sentences.length < maxSentences) {
+      sentences.push(m[0].trim());
+    }
+    return sentences.join(" ") || plain.slice(0, 180);
+  }
+
+  async function handleShare() {
+    if (!translation) return;
+    const firstSentences = extractFirstSentences(translation, 2);
+    const trimmedInput = input.trim();
+    const tweet = trimmedInput
+      ? `${trimmedInput} — here's what that actually means: ${firstSentences} Full breakdown: rawintelsports.com/tools/line-translator`
+      : `Here's what this betting line actually means: ${firstSentences} Full breakdown: rawintelsports.com/tools/line-translator`;
+    try {
+      await navigator.clipboard.writeText(tweet);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable (older browsers, insecure context, permission denied).
+      // Fall back to a throwaway textarea + execCommand so the share still works.
+      const ta = document.createElement("textarea");
+      ta.value = tweet;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2000);
+      } catch {
+        // swallow — no harm if both paths fail
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+  }
+
   async function ingestFile(file: File) {
     if (!isAcceptedImage(file)) {
       setError("Unsupported image type. Use PNG, JPEG, or WebP.");
@@ -317,6 +373,32 @@ export default function LineTranslatorClient() {
             >
               {translation}
             </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Share — copies a pre-written tweet to clipboard */}
+        {status === "done" && translation && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: "16px" }}>
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="Copy a shareable tweet of this translation"
+              style={{
+                background: "transparent",
+                color: shareCopied ? "var(--signal)" : "var(--ink)",
+                border: `0.5px solid ${shareCopied ? "var(--signal)" : "var(--border)"}`,
+                borderRadius: "4px",
+                fontFamily: "var(--sans)",
+                fontSize: "13px",
+                fontWeight: 500,
+                letterSpacing: "0.04em",
+                padding: "10px 20px",
+                cursor: "pointer",
+                transition: "color 150ms ease, border-color 150ms ease",
+              }}
+            >
+              {shareCopied ? "Copied!" : "Share this translation"}
+            </button>
           </div>
         )}
 
