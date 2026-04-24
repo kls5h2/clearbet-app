@@ -1,7 +1,8 @@
 /**
- * Magic-link callback — Supabase redirects here after the user clicks the
- * email link. Exchange the code for a session, set the cookie, then forward
- * to wherever the user was headed (?next=…) or /dashboard as default.
+ * Email-confirmation callback — Supabase redirects here after the user clicks
+ * the confirmation link sent during sign-up (if email confirmation is enabled).
+ * Exchange the code for a session, set the cookie, then forward to wherever
+ * the user was headed (?next=…) or /dashboard as default.
  */
 
 import { NextRequest, NextResponse } from "next/server";
