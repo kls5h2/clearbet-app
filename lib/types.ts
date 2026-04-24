@@ -306,9 +306,11 @@ export interface BreakdownApiRequest {
 }
 
 export interface BreakdownApiResponse {
-  breakdown: BreakdownResult;
+  breakdown: BreakdownResult | null;   // null only when gated === "cap" | "mlb"
   game: AnyGame;
   sport: Sport;
   fromCache: boolean;
-  generatedAt: string | null; // ISO timestamp of when the breakdown was created
+  generatedAt: string | null;          // ISO timestamp of when the breakdown was created
+  tier?: "free" | "pro";               // so the client can gate Share / Regenerate UI
+  gated?: "cap" | "mlb";               // soft gate reason — when present, breakdown is null and client renders the blurred preview
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/server";
+import { getStartOfDayET } from "@/lib/usage-window";
 
 export default async function DashboardPage({
   searchParams,
@@ -16,10 +17,10 @@ export default async function DashboardPage({
     ? await supabase.from("profiles").select("email, tier, subscription_status").eq("id", user.id).maybeSingle()
     : { data: null };
 
-  // Usage this week
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // Usage since midnight ET — matches the free-tier daily cap in /api/breakdown.
+  const startOfDayET = getStartOfDayET();
   const { count: usageCount } = user
-    ? await supabase.from("breakdown_usage").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", oneWeekAgo)
+    ? await supabase.from("breakdown_usage").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", startOfDayET)
     : { count: 0 };
 
   const tier = profile?.tier ?? "free";
@@ -59,7 +60,7 @@ export default async function DashboardPage({
           {tier === "free" ? (
             <>
               <p style={{ fontFamily: "var(--sans)", fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, margin: 0, marginBottom: "16px" }}>
-                {usageCount ?? 0} of 3 breakdowns used this week.
+                {usageCount ?? 0} of 1 breakdown used today. Resets at midnight ET.
               </p>
               <Link
                 href="/pricing"

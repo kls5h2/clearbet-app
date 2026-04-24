@@ -270,3 +270,13 @@ RawIntel does not predict outcomes.
 It builds a system that understands how games behave, explains what the data says, and respects the user enough to let them decide.
 
 Every build decision should serve that promise.
+
+---
+
+## Decision Council
+
+When I say "council gather" — invoke all three subagents in parallel on the idea I provide. Each agent documents reasoning in shared_reasoning.md before returning its report. After all three complete, synthesize a consensus recommendation that identifies where perspectives overlap.
+
+Agents: optimist-strategist, devils-advocate, neutral-analyst
+Trigger phrase: "council gather"
+Output: Individual reports + consensus + shared_reasoning.md updated

@@ -4,7 +4,7 @@ import Tooltip from "./Tooltip";
 interface Props {
   level: ConfidenceLevel;
   label: ConfidenceLabel;
-  compact?: boolean; // true = Signal Grade only (for cards), false = full label + description (for breakdown header)
+  compact?: boolean; // true = letter only (free tier — hides 4-factor detail); false = full label + description (Pro)
 }
 
 const grades: Record<ConfidenceLevel, string> = {
@@ -46,11 +46,12 @@ function SignalGradeLabel() {
 
 export default function ConfidenceBadge({ level, label, compact = false }: Props) {
   if (compact) {
+    // Free tier — letter only, no label or tooltip (the tooltip copy enumerates
+    // the 4 factors, which is the very detail Pro unlocks).
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <SignalGradeLabel />
-        <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "13px", color: "var(--signal)" }}>{grades[level]}</span>
-      </div>
+      <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "18px", color: "var(--signal)" }}>
+        {grades[level]}
+      </span>
     );
   }
 

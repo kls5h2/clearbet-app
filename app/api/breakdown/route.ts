@@ -23,6 +23,8 @@ import { supabase } from "@/lib/supabase";
 import { createClient as createAuthClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { recordOpeningLine, getOpeningLine, calcLineMovement } from "@/lib/opening-lines";
+import { getStartOfDayET } from "@/lib/usage-window";
+import { buildLightGame } from "@/lib/light-game";
 import type {
   GameDetailData,
   MLBGameDetailData,
@@ -159,16 +161,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Cache check — serves cached breakdowns without counting toward usage.
-  if (!regenerate) {
-    const cached = await getCachedBreakdown(gameId);
-    if (cached) {
-      console.log(`[breakdown] serving from cache: gameId=${gameId} user=${user.id}`);
-      return NextResponse.json(cached);
-    }
-  }
-
-  // Fresh generation — gate by tier for free users.
+  // Tier lookup up front — needed for the MLB Pro gate, which applies to
+  // both cache hits and fresh generation. One extra query per request, but
+  // we also use the profile row for the diagnostic log below.
   const { data: profile, error: profileErr } = await authClient
     .from("profiles")
     .select("tier, email, stripe_customer_id, subscription_status")
@@ -185,43 +180,85 @@ export async function POST(req: NextRequest) {
   const tier = (profile?.tier ?? "free") as "free" | "pro";
   console.log(
     `[breakdown] gating: user=${user.id} email=${profile?.email ?? "unknown"} ` +
-    `tier=${tier} stripe_customer_id=${profile?.stripe_customer_id ?? "null"} ` +
+    `tier=${tier} sport=${sport} stripe_customer_id=${profile?.stripe_customer_id ?? "null"} ` +
     `subscription_status=${profile?.subscription_status ?? "null"}`
   );
 
+  // MLB is a Pro-only sport. Gate applies to cached and fresh alike.
+  // Soft gate — return game context so the page shows header + odds with a
+  // blurred body + upsell, instead of a redirect or bare 403.
+  if (sport === "MLB" && tier === "free") {
+    console.warn(`[breakdown] soft gate (MLB) for user=${user.id}`);
+    const game = await buildLightGame(gameId, "MLB");
+    if (!game) {
+      return NextResponse.json({ error: "Invalid gameId" }, { status: 400 });
+    }
+    return NextResponse.json({
+      breakdown: null,
+      game,
+      sport: "MLB",
+      fromCache: false,
+      generatedAt: null,
+      tier,
+      gated: "mlb",
+    });
+  }
+
+  // Cache check — serves cached breakdowns without counting toward usage.
+  if (!regenerate) {
+    const cached = await getCachedBreakdown(gameId);
+    if (cached) {
+      console.log(`[breakdown] serving from cache: gameId=${gameId} user=${user.id}`);
+      return NextResponse.json({ ...cached, tier });
+    }
+  }
+
+  // Fresh generation — 1/day cap for free tier. Window is the current ET
+  // calendar day (midnight-to-midnight ET), NOT a rolling 24h. Resets at 00:00 ET.
   if (tier === "free") {
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const startOfDayET = getStartOfDayET();
     const { count } = await authClient
       .from("breakdown_usage")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .gte("created_at", oneWeekAgo);
+      .gte("created_at", startOfDayET);
     const used = count ?? 0;
-    if (used >= 3) {
-      console.warn(`[breakdown] 403 for user=${user.id}: free tier, ${used}/3 used this week`);
-      return NextResponse.json(
-        { error: "You've used your 3 free breakdowns this week. Upgrade to Pro for unlimited access." },
-        { status: 403 }
-      );
+    if (used >= 1) {
+      console.warn(`[breakdown] soft gate (cap) for user=${user.id}: ${used}/1 used since ${startOfDayET}`);
+      const game = await buildLightGame(gameId, sport);
+      if (!game) {
+        return NextResponse.json({ error: "Invalid gameId" }, { status: 400 });
+      }
+      return NextResponse.json({
+        breakdown: null,
+        game,
+        sport,
+        fromCache: false,
+        generatedAt: null,
+        tier,
+        gated: "cap",
+      });
     }
-    console.log(`[breakdown] free-tier usage: ${used}/3 for user=${user.id}`);
+    console.log(`[breakdown] free-tier usage: ${used}/1 since ${startOfDayET} for user=${user.id}`);
   }
 
   const response = sport === "MLB"
     ? await handleMLBBreakdown(gameId, user.id)
     : await handleNBABreakdown(gameId, user.id);
 
-  // Record usage on successful fresh generation.
-  if (response.status === 200) {
-    authClient
-      .from("breakdown_usage")
-      .insert({ user_id: user.id })
-      .then(({ error }) => {
-        if (error) console.error("[breakdown] usage insert failed:", error.message);
-      });
-  }
+  if (response.status !== 200) return response;
 
-  return response;
+  // Record usage and re-wrap body so the client gets `tier` alongside the
+  // generated breakdown — the UI uses it to gate Share / Regenerate.
+  authClient
+    .from("breakdown_usage")
+    .insert({ user_id: user.id })
+    .then(({ error }) => {
+      if (error) console.error("[breakdown] usage insert failed:", error.message);
+    });
+
+  const bodyJson = await response.json();
+  return NextResponse.json({ ...bodyJson, tier });
 }
 
 /**

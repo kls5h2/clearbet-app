@@ -10,6 +10,8 @@ import { createServerClient } from "@supabase/ssr";
 // Routes (and prefixes) that do NOT require a session.
 const PUBLIC_PREFIXES = [
   "/login",
+  "/forgot-password",
+  "/reset-password",
   "/pricing",
   "/terms",
   "/privacy",

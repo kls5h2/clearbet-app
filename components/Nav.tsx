@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "./Logo";
 import { createClient } from "@/lib/supabase/client";
+import type { Tier } from "@/lib/tier";
 
-type ActivePage = "today" | "how-it-works" | "glossary" | "line-translator";
+type ActivePage = "today" | "how-it-works" | "glossary" | "line-translator" | "my-breakdowns";
 
 interface NavProps {
   backHref?: string;
@@ -15,28 +16,47 @@ interface NavProps {
   activePage?: ActivePage;
 }
 
-const LINKS: { href: string; label: string; page: ActivePage }[] = [
+const LINKS: { href: string; label: string; page: ActivePage; proOnly?: boolean }[] = [
   { href: "/",                        label: "Today's Intel",   page: "today" },
   { href: "/how-it-works",            label: "How It Works",    page: "how-it-works" },
   { href: "/glossary",                label: "Glossary",        page: "glossary" },
   { href: "/tools/line-translator",   label: "Line Translator", page: "line-translator" },
+  { href: "/my-breakdowns",           label: "My Breakdowns",   page: "my-breakdowns", proOnly: true },
 ];
 
 export default function Nav({ backHref, backLabel = "Back", sportTag, activePage }: NavProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [tier, setTier] = useState<Tier | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
+
+    async function loadTier(userId: string) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("tier")
+        .eq("id", userId)
+        .maybeSingle();
+      setTier((data?.tier as Tier | undefined) ?? "free");
+    }
+
     supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email ?? null);
+      const user = data.user;
+      setEmail(user?.email ?? null);
       setAuthReady(true);
+      if (user) loadTier(user.id);
+      else setTier(null);
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user?.email ?? null);
+      const user = session?.user;
+      setEmail(user?.email ?? null);
       setAuthReady(true);
+      if (user) loadTier(user.id);
+      else setTier(null);
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
@@ -76,8 +96,8 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           maxWidth: "1100px", margin: "0 auto",
         }}
       >
-        {/* Left: back link + logo with hairline */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", paddingRight: "40px", borderRight: "0.5px solid var(--border)", marginRight: "32px", flexShrink: 0 }}>
+        {/* Left: back link + logo — flex:1 so left/center/right share space evenly */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "1rem", minWidth: 0 }}>
           {backHref && (
             <>
               <Link href={backHref} style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}>
@@ -92,13 +112,17 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
           </Link>
         </div>
 
-        {/* Desktop nav links — visible at ≥768px, right-aligned via margin-left: auto */}
-        <nav className="hidden md:flex" style={{ gap: "1.5rem", alignItems: "center", marginLeft: "auto" }}>
-          {LINKS.map((l) => (
+        {/* Center: nav links — flex:1 with justify-content:center for true centering */}
+        <nav className="hidden md:flex" style={{ flex: 1, gap: "1.5rem", alignItems: "center", justifyContent: "center" }}>
+          {LINKS.filter((l) => !l.proOnly || tier === "pro").map((l) => (
             <Link key={l.page} href={l.href} style={linkStyle(l.page)}>
               {l.label}
             </Link>
           ))}
+        </nav>
+
+        {/* Right: sport tag + auth — flex:1 with justify-content:flex-end */}
+        <div className="hidden md:flex" style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", gap: "1.5rem" }}>
           {sportTag && (
             <Link
               href={`/?sport=${sportTag.toLowerCase()}`}
@@ -126,7 +150,6 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               </span>
             </Link>
           )}
-          {/* Auth action — Log In when signed out, email + Log Out when signed in */}
           {authReady && (email ? (
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Link href="/dashboard" style={{ fontSize: "12px", color: "var(--muted)", textDecoration: "none", whiteSpace: "nowrap" }}>
@@ -150,11 +173,11 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
               Log In
             </Link>
           ))}
-        </nav>
+        </div>
 
         {/* Hamburger button — mobile only, <768px.
             Wrapper carries md:hidden so inline display:flex on the button doesn't override it. */}
-        <div className="md:hidden" style={{ marginLeft: "auto" }}>
+        <div className="md:hidden">
           <button
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Toggle menu"
@@ -182,7 +205,7 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
             display: "flex", flexDirection: "column", gap: "0.75rem",
           }}
         >
-          {LINKS.map((l) => (
+          {LINKS.filter((l) => !l.proOnly || tier === "pro").map((l) => (
             <Link
               key={l.page}
               href={l.href}

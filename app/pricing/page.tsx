@@ -38,16 +38,19 @@ export default function PricingPage() {
   }
 
   const freeBullets = [
-    "3 breakdowns per week",
-    "All 6 steps of analysis",
-    "Signal Grade on every game",
+    "1 breakdown per day",
+    "NBA games only",
+    "Signal Grade letter",
     "Line Translator (always free)",
   ];
   const proBullets = [
-    "Unlimited breakdowns",
+    "Full NBA + MLB coverage — every game on the slate",
+    "Your complete breakdown archive — filter by sport, date, outcome",
+    "Outcome tracking (W / L / Push / No Action) on every breakdown",
+    "Signal Grade with 4-factor detail",
     "Share cards for any game",
     "Regenerate any breakdown",
-    "NBA + MLB coverage",
+    "Unlimited breakdowns",
   ];
 
   return (

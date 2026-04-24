@@ -2,13 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import BreakdownView from "@/components/BreakdownView";
+import BreakdownView, { type GatedReason } from "@/components/BreakdownView";
 import Nav from "@/components/Nav";
 import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
+import type { Tier } from "@/lib/tier";
 import { lookupTeam, parseGameId } from "@/lib/team-names";
 
-type Status = "idle" | "loading" | "done" | "error" | "limit";
+// Placeholder content that sits under the blur when a free user hits the
+// daily cap or opens an MLB game. The blur hides the text — readers just
+// see shapes — but having real-looking prose makes the overlay read as
+// "here's what you'd see" rather than "empty space."
+const PLACEHOLDER_BREAKDOWN: BreakdownResult = {
+  gameShape: "A tightly contested environment driven by complementary rotations and familiar pacing. The script holds until star usage patterns shift mid-game, at which point volatility enters.",
+  keyDrivers: [
+    { factor: "Home-court rhythm against a travel-fatigued opponent.",           weight: "primary",   direction: "positive" },
+    { factor: "Top scorer questionable — availability sets the range.",          weight: "primary",   direction: "negative" },
+    { factor: "Tempo compression has held through the last ten meetings.",       weight: "secondary", direction: "neutral"  },
+    { factor: "Bench depth supports the script if rotations shorten.",           weight: "secondary", direction: "positive" },
+  ],
+  baseScript: "Expect the home team to dictate early pace, with the second quarter setting the tone. Adjustments likely come in the third, and the fourth becomes a matchup of closers.",
+  fragilityCheck: [
+    { item: "Two lineup dependencies remain unverified pre-tipoff — watch the inactives report.", color: "amber" },
+    { item: "Third game in four nights for one side introduces fatigue risk.",                     color: "red" },
+  ],
+  marketRead: "The line sits closer to the recent baseline than the opening number implied. Value depends on which matchup you prioritize and how the lineup news lands.",
+  edge: [
+    "Totals market has moved in line with pace projection — no clear edge either way.",
+    "Player prop context depends on starter confirmation.",
+  ],
+  edgeClosingLine: "Markets are pricing this close to fair. The edge, if any, is in the lineup news.",
+  decisionLens: "Let the lineup news drive your read. This is not a pick. This is what the data says. Your decision is always yours.",
+  cardSummary: "A tight spot with lineup-dependent range. The script holds if both stars suit up.",
+  shareHook: "Placeholder share hook",
+  confidenceLevel: 3,
+  confidenceLabel: "FRAGILE",
+  glossaryTerm: "Pace",
+  glossaryDefinition: "The number of possessions a team uses per 48 minutes — a core tempo measure.",
+};
+
+type Status = "idle" | "loading" | "done" | "error";
 
 const LOADING_MESSAGES = [
   "Pulling live data...",
@@ -66,6 +99,8 @@ export default function BreakdownPage() {
   const [fromCache, setFromCache] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [tier, setTier] = useState<Tier | null>(null);
+  const [gated, setGated] = useState<GatedReason | null>(null);
 
   const { message, visible } = useRotatingMessage(status === "loading");
 
@@ -73,6 +108,7 @@ export default function BreakdownPage() {
     setStatus("loading");
     setBreakdown(null);
     setGame(null);
+    setGated(null);
 
     fetch("/api/breakdown", {
       method: "POST",
@@ -80,8 +116,6 @@ export default function BreakdownPage() {
       body: JSON.stringify({ gameId, sport, regenerate }),
     })
       .then(async (r) => {
-        // Always try to read the body — the API sends a useful { error } message
-        // on 4xx responses that the generic "Failed to generate" string buried.
         const body = await r.json().catch(() => ({}));
         if (!r.ok) {
           const err = new Error(body?.error ?? "Failed to generate breakdown") as Error & { status?: number };
@@ -91,17 +125,28 @@ export default function BreakdownPage() {
         return body;
       })
       .then((data) => {
+        // Soft gate — API returned 200 with game context + `gated` reason.
+        // We render the real header/odds and a blurred body + upsell overlay.
+        if (data.gated) {
+          setBreakdown(PLACEHOLDER_BREAKDOWN);
+          setGame(data.game);
+          setGated(data.gated as GatedReason);
+          setTier((data.tier as Tier | undefined) ?? "free");
+          setFromCache(false);
+          setGeneratedAt(null);
+          setStatus("done");
+          return;
+        }
         setBreakdown(data.breakdown);
         setGame(data.game);
         setFromCache(data.fromCache ?? false);
         setGeneratedAt(data.generatedAt ?? null);
+        setTier((data.tier as Tier | undefined) ?? "free");
         setStatus("done");
       })
       .catch((e: Error & { status?: number }) => {
         setError(e.message);
-        // 403 from the API = free-tier cap hit. Route to the upsell panel
-        // instead of the generic "something went wrong" error state.
-        setStatus(e.status === 403 ? "limit" : "error");
+        setStatus("error");
       });
   }
 
@@ -286,79 +331,17 @@ export default function BreakdownPage() {
           </div>
         )}
 
-        {/* Free-tier cap upsell */}
-        {status === "limit" && (
-          <div style={{
-            background: "var(--ink)", color: "#FAFAFA",
-            borderRadius: "8px", padding: "36px 32px", textAlign: "center",
-            position: "relative", overflow: "hidden",
-          }}>
-            <span aria-hidden="true" style={{
-              position: "absolute", right: "-40px", top: "-60px",
-              fontFamily: "Georgia, serif", fontSize: "360px", fontStyle: "italic",
-              color: "rgba(217,59,58,0.08)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
-            }}>R.</span>
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <p style={{ fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "14px" }}>
-                Weekly limit reached
-              </p>
-              <h2 style={{
-                fontFamily: "var(--serif)", fontSize: "clamp(26px, 3.5vw, 34px)", fontWeight: 500,
-                color: "#FAFAFA", letterSpacing: "-0.02em", lineHeight: 1.15,
-                margin: 0, marginBottom: "14px", maxWidth: "520px", marginLeft: "auto", marginRight: "auto",
-              }}>
-                You&rsquo;ve used your 3 free breakdowns this week.
-              </h2>
-              <p style={{ fontFamily: "var(--sans)", fontSize: "15px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "460px", margin: "0 auto 24px" }}>
-                Pro unlocks unlimited breakdowns, share cards for any game, regenerate on demand, and full NBA + MLB coverage. $9.99/month, cancel anytime.
-              </p>
-              <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
-                <button
-                  onClick={() => router.push("/pricing")}
-                  style={{
-                    background: "var(--signal)", color: "#FAFAFA",
-                    border: "none", borderRadius: "4px",
-                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-                    letterSpacing: "0.04em", padding: "13px 26px", cursor: "pointer",
-                    transition: "opacity 150ms ease",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                >
-                  Upgrade to Pro →
-                </button>
-                <button
-                  onClick={() => router.push("/")}
-                  style={{
-                    background: "transparent", color: "#FAFAFA",
-                    border: "0.5px solid rgba(255,255,255,0.25)", borderRadius: "4px",
-                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-                    letterSpacing: "0.04em", padding: "13px 26px", cursor: "pointer",
-                    opacity: 0.85, transition: "opacity 150ms ease",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.85")}
-                >
-                  Back to slate
-                </button>
-              </div>
-              <p style={{ fontFamily: "var(--sans)", fontSize: "12px", color: "#6B6B66", marginTop: "18px", margin: "18px 0 0" }}>
-                Your limit resets 7 days after your earliest breakdown this week.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Done state */}
         {status === "done" && breakdown && game && (
           <>
-            {fromCache && generatedAt ? (
+            {/* Generation banner — skipped when gated (no breakdown was generated) */}
+            {!gated && fromCache && generatedAt && (
               /* Cached breakdown banner */
               <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <span>
                   Breakdown generated at {new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })}
                 </span>
-                {canRegenerate && (
+                {canRegenerate && tier === "pro" && (
                   <button
                     onClick={() => fetchBreakdown(true)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
@@ -367,7 +350,8 @@ export default function BreakdownPage() {
                   </button>
                 )}
               </div>
-            ) : (
+            )}
+            {!gated && !(fromCache && generatedAt) && (
               /* Fresh generation banner — also offers Regenerate so users can re-run if data moved */
               <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <span>
@@ -375,7 +359,7 @@ export default function BreakdownPage() {
                     ? `Generated at ${new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })} using live pre-game data. Injury or lineup changes after generation are not reflected.`
                     : `Generated before ${game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury or lineup changes after generation are not reflected.`}
                 </span>
-                {canRegenerate && (
+                {canRegenerate && tier === "pro" && (
                   <button
                     onClick={() => fetchBreakdown(true)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
@@ -385,27 +369,29 @@ export default function BreakdownPage() {
                 )}
               </div>
             )}
-            <BreakdownView breakdown={breakdown} game={game} />
+            <BreakdownView breakdown={breakdown} game={game} tier={tier ?? "free"} gated={gated ?? undefined} />
 
-            {/* Share button */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
-              <button
-                onClick={() => setShareOpen(true)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  fontFamily: "var(--sans)",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  letterSpacing: "0.04em",
-                  color: "var(--signal, #D93B3A)",
-                }}
-              >
-                Share this read →
-              </button>
-            </div>
+            {/* Share button — Pro only, and never when gated */}
+            {!gated && tier === "pro" && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
+                <button
+                  onClick={() => setShareOpen(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    fontFamily: "var(--sans)",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    color: "var(--signal, #D93B3A)",
+                  }}
+                >
+                  Share this read →
+                </button>
+              </div>
+            )}
           </>
         )}
 

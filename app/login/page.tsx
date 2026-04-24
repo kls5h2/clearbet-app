@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/client";
@@ -97,7 +98,7 @@ function LoginContent() {
   const heading = isSignup ? "Create your account." : "Welcome back.";
   const eyebrow = isSignup ? "Sign Up" : "Log In";
   const subhead = isSignup
-    ? "Start with 3 free breakdowns per week. Upgrade anytime."
+    ? "Get an NBA breakdown a day to try the product. Pro opens MLB and your complete breakdown archive with outcome tracking."
     : "Sign in with your email and password.";
 
   return (
@@ -180,6 +181,20 @@ function LoginContent() {
                   onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
                 />
               </>
+            )}
+
+            {!isSignup && (
+              <div style={{ marginTop: "10px", textAlign: "right" }}>
+                <Link
+                  href="/forgot-password"
+                  style={{
+                    fontFamily: "var(--sans)", fontSize: "12px",
+                    color: "var(--muted)", textDecoration: "underline",
+                  }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
             )}
 
             <button

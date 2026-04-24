@@ -1,13 +1,40 @@
 "use client";
 
+import Link from "next/link";
 import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
+import type { Tier } from "@/lib/tier";
 import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
+
+export type GatedReason = "cap" | "mlb";
 
 interface Props {
   breakdown: BreakdownResult;
   game: AnyGame;
+  tier?: Tier;
+  gated?: GatedReason;
 }
+
+const GATE_COPY: Record<GatedReason, { eyebrow: string; heading: string }> = {
+  cap: {
+    eyebrow: "Daily limit",
+    heading: "You've used your breakdown for today.",
+  },
+  mlb: {
+    eyebrow: "Pro coverage",
+    heading: "MLB is a Pro sport.",
+  },
+};
+
+const PRO_FEATURES = [
+  "Full NBA + MLB coverage — every game on the slate",
+  "Your complete breakdown archive — filter by sport, date, outcome",
+  "Outcome tracking (W / L / Push / No Action) on every breakdown",
+  "Signal Grade with 4-factor detail",
+  "Share cards for any game",
+  "Regenerate any breakdown",
+  "Unlimited breakdowns",
+];
 
 // Design tokens
 const INK = "#0E0E0E";
@@ -146,7 +173,7 @@ const legendItemStyle: React.CSSProperties = {
   fontSize: "10px", fontWeight: 600, color: MUTED, fontFamily: SANS,
 };
 
-export default function BreakdownView({ breakdown, game }: Props) {
+export default function BreakdownView({ breakdown, game, tier = "free", gated }: Props) {
   const { homeTeam, awayTeam, gameStatus } = game;
   const odds = game.odds;
   const isMLB = game.sport === "MLB";
@@ -268,13 +295,20 @@ export default function BreakdownView({ breakdown, game }: Props) {
           </div>
         )}
 
-        {/* Confidence row */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} />
-        </div>
+        {/* Confidence row — hidden when gated (no real breakdown) */}
+        {!gated && (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} compact={tier !== "pro"} />
+          </div>
+        )}
 
         {/* Banners handled by the breakdown page wrapper — not duplicated here */}
       </div>
+
+      {/* Body — six sections. Wrapped in a relative container so the gated
+          overlay can sit on top of the blurred content. */}
+      <div style={{ position: "relative" }}>
+      <div style={gated ? { filter: "blur(6px)", userSelect: "none", pointerEvents: "none" } : undefined}>
 
       {/* 01 — Game Shape (prose) */}
       <ProseCard>
@@ -384,6 +418,94 @@ export default function BreakdownView({ breakdown, game }: Props) {
         <p style={proseBodyStyle}>{breakdown.decisionLens}</p>
         <GlossaryCallout term={breakdown.glossaryTerm} definition={breakdown.glossaryDefinition} />
       </ProseCard>
+
+      </div>
+      {gated && <GatedBodyOverlay reason={gated} />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Overlay panel that sits on top of the blurred body for free users who hit
+ * the daily cap or clicked an MLB game. Rendered inline (not as a full-page
+ * modal) so the game header card and odds row remain visible above it.
+ */
+function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
+  const copy = GATE_COPY[reason];
+  return (
+    <div style={{
+      position: "absolute", inset: 0,
+      display: "flex", alignItems: "flex-start", justifyContent: "center",
+      paddingTop: "40px",
+      background: "linear-gradient(to bottom, rgba(250,250,250,0.35) 0%, rgba(250,250,250,0.92) 18%, rgba(250,250,250,0.96) 100%)",
+    }}>
+      <div style={{
+        background: INK, borderRadius: "8px",
+        padding: "40px 32px",
+        maxWidth: "480px", width: "calc(100% - 32px)",
+        textAlign: "center",
+        boxShadow: "0 8px 32px rgba(14,14,14,0.18)",
+        position: "relative", overflow: "hidden",
+      }}>
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-30px", top: "-50px",
+          fontFamily: SERIF, fontSize: "280px", fontStyle: "italic",
+          color: "rgba(217,59,58,0.08)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
+        }}>R.</span>
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <p style={{
+            fontFamily: SANS, fontSize: "11px", fontWeight: 500,
+            letterSpacing: "0.22em", textTransform: "uppercase",
+            color: SIGNAL, margin: 0, marginBottom: "12px",
+          }}>
+            {copy.eyebrow}
+          </p>
+          <h2 style={{
+            fontFamily: SERIF, fontSize: "clamp(22px, 3vw, 28px)",
+            fontWeight: 500, color: "#FAFAFA",
+            letterSpacing: "-0.02em", lineHeight: 1.2,
+            margin: 0, marginBottom: "20px",
+          }}>
+            {copy.heading}
+          </h2>
+
+          <ul style={{
+            listStyle: "none", padding: 0, margin: 0, marginBottom: "24px",
+            display: "flex", flexDirection: "column", gap: "8px",
+            textAlign: "left",
+          }}>
+            {PRO_FEATURES.map((feature) => (
+              <li key={feature} style={{
+                fontFamily: SANS, fontSize: "13px",
+                color: "#C9C9C4", lineHeight: 1.5,
+                paddingLeft: "18px", position: "relative",
+              }}>
+                <span style={{
+                  position: "absolute", left: 0, top: "7px",
+                  width: "6px", height: "6px", borderRadius: "999px",
+                  background: SIGNAL,
+                }} />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/pricing"
+            style={{
+              display: "inline-block",
+              background: SIGNAL, color: "#FAFAFA",
+              fontFamily: SANS, fontSize: "13px", fontWeight: 500,
+              letterSpacing: "0.04em", textDecoration: "none",
+              padding: "12px 26px", borderRadius: "4px",
+            }}
+          >
+            Upgrade to Pro →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
