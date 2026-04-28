@@ -172,7 +172,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
               { label: "Total",     value: total,     cls: "" },
               { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "hl-ml-col" },
               { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "hl-ml-col" },
-              { label: "Signal",    value: grade,     cls: "", sig: true },
+              { label: "Signal",    value: grade,     cls: "hl-sig-col", sig: true },
             ].map((s, i) => (
               <div key={s.label} className={s.cls} style={{
                 padding: "13px 14px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
@@ -299,19 +299,26 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
 
 // ─── Locked game card ─────────────────────────────────────────────────────────
 
-function LockedGameCard({ game, bd, showUpgrade }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean }) {
+function LockedGameCard({ game, bd, showUpgrade, onRead }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; onRead: () => void }) {
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
   const barColor = c?.bar ?? "var(--pass)";
   const teaser = bd?.cardSummary ?? "There's a clear angle here — but it takes some digging to see it...";
 
   return (
-    <div style={{
-      background: "var(--surface)", borderRadius: "10px",
-      border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-      color: "var(--ink)", opacity: 0.75,
-      boxShadow: "var(--shadow-sm)",
-    }}>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onRead}
+      onKeyDown={(e) => e.key === "Enter" && onRead()}
+      style={{
+        background: "var(--surface)", borderRadius: "10px",
+        border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
+        color: "var(--ink)", opacity: 0.75,
+        boxShadow: "var(--shadow-sm)",
+        cursor: "pointer", outline: "none",
+      }}
+    >
       <div style={{ height: "3px", background: barColor }} />
       <div style={{ padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
@@ -578,7 +585,7 @@ function HomePageContent() {
   });
 
   function handleRead(gameId: string) {
-    if (userId === null) {
+    if (userId === null || (tier === "free" && dailyUsed)) {
       router.push("/login?mode=signup");
       return;
     }
@@ -589,8 +596,8 @@ function HomePageContent() {
     <>
     <style>{`
       @media (max-width: 768px) {
-        .hl-ml-col { display: none !important; }
-        .hl-stats-grid { grid-template-columns: repeat(3, 1fr) !important; min-width: 0 !important; }
+        .hl-ml-col, .hl-sig-col { display: none !important; }
+        .hl-stats-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
       }
     `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
@@ -712,7 +719,7 @@ function HomePageContent() {
                     const bd = breakdowns.get(game.gameId) ?? null;
                     return proUser
                       ? <OpenGameCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} />
-                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} />;
+                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} onRead={() => handleRead(game.gameId)} />;
                   })}
             </div>
           </div>

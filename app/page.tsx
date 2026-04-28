@@ -93,7 +93,8 @@ export default function HomePage() {
           .hp-game-row { grid-template-columns: 1fr auto !important; gap: 12px !important; }
           .hp-game-cta { display: none !important; }
           .hp-preview-wrap { padding: 28px 20px 0 !important; }
-          .hp-stats-bar { grid-template-columns: repeat(3, 1fr) !important; }
+          .hp-stats-bar { grid-template-columns: repeat(2, 1fr) !important; }
+          .hp-stats-bar > div:nth-child(n+3) { display: none !important; }
           .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
           .hp-preview-fade { padding-bottom: 48px !important; height: 300px !important; }
@@ -436,7 +437,7 @@ export default function HomePage() {
             </div>
 
             <div style={{ padding: "16px 32px 0" }}>
-              <div style={{
+              <div className="hp-stats-bar" style={{
                 display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
                 border: "1px solid var(--border-med)", borderRadius: "7px", overflow: "hidden",
               }}>

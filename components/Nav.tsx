@@ -260,9 +260,9 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
           ))}
           {authReady && (email ? (
             <>
-              <span style={{ fontSize: "12px", color: "var(--muted-light)", fontFamily: "var(--mono)" }}>
+              <Link href="/account" onClick={() => setMenuOpen(false)} style={{ fontSize: "12px", color: "var(--muted-light)", fontFamily: "var(--mono)", textDecoration: "none" }}>
                 {displayEmail}
-              </span>
+              </Link>
               <button
                 onClick={() => { setMenuOpen(false); handleLogout(); }}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "var(--ink)", padding: 0, textAlign: "left" }}
