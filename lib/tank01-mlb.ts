@@ -30,13 +30,13 @@ function getMLBHeaders() {
   };
 }
 
-async function fetchMLB<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+async function fetchMLB<T>(path: string, params: Record<string, string> = {}, revalidate = 900): Promise<T> {
   const url = new URL(`${MLB_BASE_URL}${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const res = await fetch(url.toString(), {
     headers: getMLBHeaders(),
-    next: { revalidate: 900 },
+    next: { revalidate },
   });
 
   if (!res.ok) {
@@ -190,9 +190,13 @@ export async function getMLBGamesForDate(dateStr: string): Promise<{
 }[]> {
   const raw = await fetchMLB<RawMLBGamesResponse>("/getMLBGamesForDate", {
     gameDate: dateStr,
-  });
+  }, 60);
 
-  if (!raw.body || !Array.isArray(raw.body)) return [];
+  if (!raw.body) return [];
+  const gamesArray: RawMLBGame[] = Array.isArray(raw.body)
+    ? raw.body
+    : Object.values(raw.body as Record<string, RawMLBGame>);
+  if (gamesArray.length === 0) return [];
 
   const teamMap = await getMLBTeamMap();
   // Build a secondary lookup by full team name for when Tank01 returns a name instead of abbreviation
@@ -217,7 +221,7 @@ export async function getMLBGamesForDate(dateStr: string): Promise<{
     return { abv: raw, info: undefined };
   };
 
-  return raw.body.map((g) => {
+  return gamesArray.map((g) => {
     const home = resolveTeam(g.homeTeamAbbr, g.home ?? "");
     const away = resolveTeam(g.awayTeamAbbr, g.away ?? "");
 

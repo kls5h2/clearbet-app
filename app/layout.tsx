@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import DisclaimerFooter from "@/components/DisclaimerFooter";
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-serif",
-});
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-sans",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -28,11 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${inter.variable} h-full`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col">
-        {children}
-        <DisclaimerFooter />
-      </body>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

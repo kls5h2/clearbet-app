@@ -1,24 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
-import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import { useEffect, useRef, useState } from "react";
 import Nav from "@/components/Nav";
-import { supabase } from "@/lib/supabase";
 
-type TranslateStatus = "idle" | "loading" | "done" | "error";
-type WaitlistStatus = "idle" | "submitting" | "done" | "error";
+type Mode = "text" | "image";
+type Status = "idle" | "loading" | "done" | "error";
 type ImageMime = "image/png" | "image/jpeg" | "image/webp";
 
 const ACCEPT_MIMES: ImageMime[] = ["image/png", "image/jpeg", "image/webp"];
-const ACCEPT_ATTR = ACCEPT_MIMES.join(",");
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB pre-encoding; base64 inflates ~33%
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
-function isAcceptedImage(file: File): file is File & { type: ImageMime } {
-  return (ACCEPT_MIMES as string[]).includes(file.type);
+interface TranslateResult {
+  line: string;
+  translation: string;
+  impliedProbability: number;
+  context: string;
+  watch: string[];
 }
 
-// Reads a File into { base64, dataUrl }. base64 excludes the "data:…;base64," prefix.
+const EXAMPLES = [
+  { label: "Denver -3.5 (-110)", value: "Denver Nuggets -3.5 (-110)" },
+  { label: "Jokić o28.5 pts", value: "Jokić over 28.5 points (-115)" },
+  { label: "Lakers +130 ML", value: "Lakers +130 moneyline" },
+  { label: "Over 214.5 (-108)", value: "Celtics vs Hawks over 214.5 (-108)" },
+  { label: "Spurs +9.5 RL", value: "San Antonio Spurs +9.5 run line" },
+];
+
 function readImage(file: File): Promise<{ base64: string; dataUrl: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -33,103 +40,58 @@ function readImage(file: File): Promise<{ base64: string; dataUrl: string }> {
 }
 
 export default function LineTranslatorClient() {
+  const [mode, setMode] = useState<Mode>("text");
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState<TranslateStatus>("idle");
-  const [translation, setTranslation] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>("idle");
+  const [result, setResult] = useState<TranslateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [probBarWidth, setProbBarWidth] = useState(0);
 
-  const [email, setEmail] = useState("");
-  const [waitlistStatus, setWaitlistStatus] = useState<WaitlistStatus>("idle");
-  const [waitlistError, setWaitlistError] = useState<string | null>(null);
-
-  // Image upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<ImageMime | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // Share state — flashes "Copied!" for 2s after a successful clipboard write.
-  const [shareCopied, setShareCopied] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
-  function extractFirstSentences(md: string, maxSentences = 2): string {
-    // Strip markdown formatting, then grab the first 1-2 sentence-terminated chunks.
-    const plain = md
-      .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/\*([^*]+)\*/g, "$1")
-      .replace(/_([^_]+)_/g, "$1")
-      .replace(/#{1,6}\s+/g, "")
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/`([^`]+)`/g, "$1")
-      .replace(/\n+/g, " ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-    const sentences: string[] = [];
-    const re = /[^.!?]+[.!?]+/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(plain)) !== null && sentences.length < maxSentences) {
-      sentences.push(m[0].trim());
+  useEffect(() => {
+    if (result) {
+      const prob = Math.round(result.impliedProbability) || 0;
+      const t = setTimeout(() => setProbBarWidth(prob), 100);
+      return () => clearTimeout(t);
     }
-    return sentences.join(" ") || plain.slice(0, 180);
-  }
+  }, [result]);
 
-  async function handleShare() {
-    if (!translation) return;
-    const firstSentences = extractFirstSentences(translation, 2);
-    const trimmedInput = input.trim();
-    const tweet = trimmedInput
-      ? `${trimmedInput} — here's what that actually means: ${firstSentences} Full breakdown: rawintelsports.com/tools/line-translator`
-      : `Here's what this betting line actually means: ${firstSentences} Full breakdown: rawintelsports.com/tools/line-translator`;
-    try {
-      await navigator.clipboard.writeText(tweet);
-      setShareCopied(true);
-      window.setTimeout(() => setShareCopied(false), 2000);
-    } catch {
-      // Clipboard API unavailable (older browsers, insecure context, permission denied).
-      // Fall back to a throwaway textarea + execCommand so the share still works.
-      const ta = document.createElement("textarea");
-      ta.value = tweet;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand("copy");
-        setShareCopied(true);
-        window.setTimeout(() => setShareCopied(false), 2000);
-      } catch {
-        // swallow — no harm if both paths fail
-      } finally {
-        document.body.removeChild(ta);
-      }
-    }
+  function setExample(value: string) {
+    setMode("text");
+    setInput(value);
+    setResult(null);
+    setError(null);
+    setStatus("idle");
+    setProbBarWidth(0);
   }
 
   async function ingestFile(file: File) {
-    if (!isAcceptedImage(file)) {
+    if (!(ACCEPT_MIMES as string[]).includes(file.type)) {
       setError("Unsupported image type. Use PNG, JPEG, or WebP.");
-      setStatus("error");
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
       setError("Image too large — keep it under 4MB.");
-      setStatus("error");
       return;
     }
     const { base64, dataUrl } = await readImage(file);
-    setImageFile(file);
     setImagePreview(dataUrl);
     setImageBase64(base64);
-    setImageMime(file.type);
+    setImageMime(file.type as ImageMime);
     setError(null);
-    if (status === "error") setStatus("idle");
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) ingestFile(file);
-    e.target.value = ""; // let the same file be re-selected after removal
+  function clearImage() {
+    setImagePreview(null);
+    setImageBase64(null);
+    setImageMime(null);
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
@@ -139,23 +101,18 @@ export default function LineTranslatorClient() {
     if (file) ingestFile(file);
   }
 
-  function clearImage() {
-    setImageFile(null);
-    setImagePreview(null);
-    setImageBase64(null);
-    setImageMime(null);
-  }
+  const canTranslate = mode === "text" ? !!input.trim() : !!imageBase64;
 
-  async function handleTranslate(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed && !imageBase64) return;
+  async function handleTranslate() {
+    if (!canTranslate) return;
     setStatus("loading");
     setError(null);
-    setTranslation(null);
+    setResult(null);
+    setProbBarWidth(0);
+
     try {
       const body: { input?: string; image?: { data: string; mediaType: ImageMime } } = {};
-      if (trimmed) body.input = trimmed;
+      if (input.trim()) body.input = input.trim();
       if (imageBase64 && imageMime) body.image = { data: imageBase64, mediaType: imageMime };
 
       const res = await fetch("/api/line-translator", {
@@ -164,307 +121,319 @@ export default function LineTranslatorClient() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(errBody?.error ?? "Translation failed");
       }
-      const data = await res.json();
-      setTranslation(data.translation ?? "");
+      const data = await res.json() as TranslateResult;
+      setResult(data);
       setStatus("done");
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStatus("error");
     }
   }
 
-  async function handleWaitlist(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setWaitlistError("Enter a valid email");
-      setWaitlistStatus("error");
-      return;
-    }
-    setWaitlistStatus("submitting");
-    setWaitlistError(null);
-    try {
-      const { error: sbError } = await supabase.from("waitlist").insert({
-        email: trimmed,
-        source: "line-translator",
-      });
-      if (sbError) throw new Error(sbError.message);
-      setWaitlistStatus("done");
-      setEmail("");
-    } catch (err) {
-      console.error("[waitlist] insert failed:", err);
-      setWaitlistError("Couldn't save your email. Try again in a moment.");
-      setWaitlistStatus("error");
-    }
+  function resetTool() {
+    setStatus("idle");
+    setResult(null);
+    setError(null);
+    setInput("");
+    clearImage();
+    setProbBarWidth(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
-    <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
+    <div style={{ background: "#F8F6F2", minHeight: "100vh" }}>
+      <style>{`
+        @keyframes ltSpin { to { transform: rotate(360deg); } }
+        @keyframes ltResultIn { from { opacity: 0; transform: translateY(16px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .lt-result { animation: ltResultIn 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+        .lt-translate-btn:hover:not(:disabled) { background: #b02e24 !important; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,53,42,0.35) !important; }
+        .lt-example-pill:hover { color: var(--ink) !important; border-color: rgba(17,17,16,0.25) !important; background: #F0EDE6 !important; }
+        .lt-try-again:hover { color: var(--ink) !important; }
+        .lt-mode-tab:hover:not(.lt-mode-active) { background: #F0EDE6 !important; color: var(--ink) !important; }
+        .lt-drop-zone:hover { border-color: var(--signal) !important; background: rgba(201,53,42,0.03) !important; }
+      `}</style>
+
       <Nav />
 
-      {/* Dark hero — standardized */}
-      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 40px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
-        <span aria-hidden="true" style={{
-          position: "absolute", right: "-60px", top: "-80px",
-          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
-          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
-        }}>R.</span>
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto", width: "100%" }}>
-          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
-            Line Translator
-          </p>
-          <h1 style={{
-            fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500,
-            color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0,
-          }}>
-            What does that line actually mean?
-          </h1>
-          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", maxWidth: "520px", lineHeight: 1.6, marginTop: "16px", marginBottom: 0 }}>
-            Paste any betting line — spread, moneyline, total, prop, or player stat. Get plain English back. No account needed.
-          </p>
+      {/* Hero band */}
+      <div style={{ background: "var(--ink)", padding: "32px 40px", position: "relative", overflow: "hidden" }}>
+        <div aria-hidden style={{
+          position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
+          fontSize: "clamp(140px,22vw,260px)", fontWeight: 900, color: "transparent",
+          WebkitTextStroke: "1px rgba(255,255,255,0.03)", lineHeight: 1,
+          pointerEvents: "none", userSelect: "none", fontFamily: "var(--sans)",
+        }}>R</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px" }}>
+          <span style={{ width: "20px", height: "1px", background: "var(--signal)", flexShrink: 0, display: "inline-block" }} />
+          Line Translator
+        </div>
+        <div style={{ fontSize: "clamp(22px,4vw,34px)", fontWeight: 800, letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.15, marginBottom: "8px", fontFamily: "var(--sans)" }}>
+          What does that line<br />actually mean?
+        </div>
+        <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.42)", lineHeight: 1.6, maxWidth: "480px", fontFamily: "var(--sans)" }}>
+          Paste any betting line — spread, moneyline, total, or prop. Get a plain-English translation, implied probability, and context read back.
         </div>
       </div>
 
-      {/* Input + result */}
-      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "48px 24px 0" }}>
-        <form onSubmit={handleTranslate}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g. -110, Celtics -7.5, LaMelo 24.5 PRAs, Ohtani to hit a HR"
-            maxLength={200}
-            style={{
-              width: "100%", boxSizing: "border-box",
-              background: "var(--paper)", border: "0.5px solid var(--border)",
-              borderRadius: "4px", padding: "14px 18px",
-              fontFamily: "var(--sans)", fontSize: "16px", color: "var(--ink)",
-              outline: "none", transition: "border-color 150ms ease",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "var(--signal)")}
-            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-          />
+      {/* Page content */}
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px 40px 80px" }}>
 
-          {/* Image drop zone */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT_ATTR}
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-          />
-          {imagePreview ? (
-            <div style={{
-              marginTop: "14px", display: "flex", alignItems: "center", gap: "12px",
-              background: "var(--paper)", border: "0.5px solid var(--border)",
-              borderRadius: "4px", padding: "10px 12px",
-            }}>
-              <img
-                src={imagePreview}
-                alt="Bet slip preview"
-                style={{ width: "56px", height: "56px", objectFit: "cover", borderRadius: "3px", flexShrink: 0 }}
-              />
-              <span style={{ flex: 1, fontFamily: "var(--sans)", fontSize: "13px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {imageFile?.name ?? "Image attached"}
-              </span>
-              <button
-                type="button"
-                onClick={clearImage}
-                aria-label="Remove image"
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  color: "var(--muted)", fontSize: "18px", lineHeight: 1, padding: "4px 8px",
-                }}
-              >
-                ×
-              </button>
+        {/* Input card */}
+        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>
+
+          {/* Header */}
+          <div style={{ padding: "20px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontFamily: "var(--mono)", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>
+              Paste a line or upload a slip
             </div>
-          ) : (
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
-              style={{
-                marginTop: "14px",
-                border: `1px dashed ${dragActive ? "var(--signal)" : "var(--border)"}`,
-                borderRadius: "4px",
-                padding: "20px 16px",
-                textAlign: "center",
-                cursor: "pointer",
-                background: dragActive ? "rgba(217,59,58,0.04)" : "transparent",
-                transition: "border-color 150ms ease, background 150ms ease",
-                fontFamily: "var(--sans)",
-              }}
-            >
-              <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0, marginBottom: "4px" }}>
-                or drop an image of your bet slip
-              </p>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, opacity: 0.7 }}>
-                <span style={{ color: "var(--signal)", textDecoration: "underline" }}>upload image</span>
-                {" · PNG, JPEG, or WebP · 4MB max"}
-              </p>
+            <div style={{ display: "flex", border: "1px solid rgba(17,17,16,0.15)", borderRadius: "6px", overflow: "hidden" }}>
+              {(["text", "image"] as Mode[]).map((m, i) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`lt-mode-tab${mode === m ? " lt-mode-active" : ""}`}
+                  style={{
+                    fontSize: "12.5px", fontWeight: 500, fontFamily: "var(--sans)",
+                    color: mode === m ? "#fff" : "var(--muted)",
+                    background: mode === m ? "var(--ink)" : "transparent",
+                    border: "none", borderRight: i === 0 ? "1px solid rgba(17,17,16,0.15)" : "none",
+                    padding: "6px 14px", cursor: "pointer", transition: "all 0.12s",
+                    display: "flex", alignItems: "center", gap: "6px",
+                  }}
+                >
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--signal)", opacity: mode === m ? 1 : 0, transition: "opacity 0.12s", flexShrink: 0 }} />
+                  {m === "text" ? "Type" : "Image"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Text mode */}
+          {mode === "text" && (
+            <div style={{ padding: "14px 22px 20px" }}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleTranslate(); } }}
+                placeholder="e.g. Denver Nuggets -3.5, Jokić over 28.5 pts, Lakers +130..."
+                rows={3}
+                style={{
+                  width: "100%", minHeight: "80px", resize: "none",
+                  fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 500,
+                  color: "var(--ink)", background: "transparent",
+                  border: "none", outline: "none", lineHeight: 1.5,
+                }}
+              />
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+          {/* Image mode */}
+          {mode === "image" && (
+            <div style={{ padding: "14px 22px 20px" }}>
+              {imagePreview ? (
+                <div style={{ position: "relative" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagePreview} alt="Bet slip preview" style={{ width: "100%", borderRadius: "6px", maxHeight: "200px", objectFit: "cover" }} />
+                  <button
+                    onClick={clearImage}
+                    style={{ position: "absolute", top: "8px", right: "8px", background: "var(--ink)", color: "#fff", border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: 600, padding: "4px 10px", cursor: "pointer" }}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                  className="lt-drop-zone"
+                  style={{
+                    border: `2px dashed ${dragActive ? "var(--signal)" : "rgba(17,17,16,0.15)"}`,
+                    borderRadius: "8px", padding: "32px 20px", textAlign: "center",
+                    cursor: "pointer", transition: "all 0.15s",
+                    background: dragActive ? "rgba(201,53,42,0.03)" : "#F8F6F2",
+                    position: "relative",
+                  }}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) ingestFile(f); e.target.value = ""; }}
+                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                  />
+                  <div style={{ fontSize: "24px", marginBottom: "8px" }}>📸</div>
+                  <div style={{ fontSize: "13px", color: "var(--muted)", lineHeight: 1.5 }}>
+                    <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Drop your bet slip here</strong> or click to upload
+                  </div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "#9B9790", marginTop: "4px", letterSpacing: "0.04em" }}>
+                    PNG · JPEG · WebP · 4MB max
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{ padding: "12px 22px 16px", borderTop: "1px solid rgba(14,14,14,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+            <div style={{ fontSize: "12px", color: "#9B9790", fontStyle: "italic" }}>
+              Works with spreads, moneylines, totals, and props.
+            </div>
             <button
-              type="submit"
-              disabled={status === "loading" || (!input.trim() && !imageBase64)}
+              onClick={handleTranslate}
+              disabled={status === "loading" || !canTranslate}
+              className="lt-translate-btn"
               style={{
-                background: "var(--signal)", color: "#FAFAFA",
-                border: "none", borderRadius: "4px",
-                fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-                letterSpacing: "0.04em", padding: "12px 24px",
-                cursor: status === "loading" || (!input.trim() && !imageBase64) ? "default" : "pointer",
-                opacity: status === "loading" || (!input.trim() && !imageBase64) ? 0.6 : 1,
-                transition: "opacity 150ms ease",
+                fontSize: "13.5px", fontWeight: 700, color: "#fff",
+                background: "var(--signal)", border: "none", borderRadius: "6px",
+                padding: "10px 24px", cursor: status === "loading" || !canTranslate ? "default" : "pointer",
+                display: "flex", alignItems: "center", gap: "8px",
+                transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
+                boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
+                opacity: status === "loading" || !canTranslate ? 0.6 : 1,
+                fontFamily: "var(--sans)",
               }}
             >
-              {status === "loading" ? "Translating…" : "Translate it"}
+              {status === "loading" ? (
+                <span style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "ltSpin 0.7s linear infinite", display: "inline-block" }} />
+              ) : (
+                <span>Translate it →</span>
+              )}
             </button>
           </div>
-        </form>
+        </div>
+
+        {/* Examples */}
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9B9790", marginBottom: "10px" }}>
+            Try an example
+          </div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex.value}
+                onClick={() => setExample(ex.value)}
+                className="lt-example-pill"
+                style={{
+                  fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)",
+                  background: "#fff", border: "1px solid rgba(17,17,16,0.15)",
+                  padding: "5px 12px", borderRadius: "4px", cursor: "pointer",
+                  transition: "all 0.12s", whiteSpace: "nowrap",
+                }}
+              >
+                {ex.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Error */}
         {status === "error" && error && (
-          <p style={{ marginTop: "20px", textAlign: "center", fontSize: "13px", color: "var(--signal)" }}>
-            {error}
-          </p>
+          <p style={{ marginBottom: "16px", fontSize: "13px", color: "var(--signal)" }}>{error}</p>
         )}
 
-        {/* Translation card — single container, all markdown renders inside */}
-        {status === "done" && translation && (
-          <div style={{
-            marginTop: "28px",
-            background: "var(--paper)",
-            border: "0.5px solid var(--border)",
-            borderLeft: "3px solid var(--signal)",
-            borderRadius: "6px",
-            padding: "22px 24px",
-            fontFamily: "Georgia, serif", fontSize: "16px", color: "var(--ink)", lineHeight: 1.6,
-            display: "flex", flexDirection: "column", gap: "12px",
-          }}>
-            <ReactMarkdown
-              components={{
-                // All block elements use margin: 0 so the flex gap handles spacing — no stacked-card illusion
-                p: ({ children }) => <p style={{ margin: 0, lineHeight: 1.6 }}>{children}</p>,
-                strong: ({ children }) => <strong style={{ fontWeight: 600, color: "var(--ink)" }}>{children}</strong>,
-                em: ({ children }) => <em style={{ fontStyle: "italic" }}>{children}</em>,
-                ul: ({ children }) => <ul style={{ margin: 0, paddingLeft: "20px" }}>{children}</ul>,
-                ol: ({ children }) => <ol style={{ margin: 0, paddingLeft: "20px" }}>{children}</ol>,
-                li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
-                h1: ({ children }) => <p style={{ margin: 0, fontWeight: 600, fontSize: "18px" }}>{children}</p>,
-                h2: ({ children }) => <p style={{ margin: 0, fontWeight: 600, fontSize: "17px" }}>{children}</p>,
-                h3: ({ children }) => <p style={{ margin: 0, fontWeight: 600, fontSize: "16px" }}>{children}</p>,
-                h4: ({ children }) => <p style={{ margin: 0, fontWeight: 600, fontSize: "16px" }}>{children}</p>,
-                blockquote: ({ children }) => <div style={{ margin: 0, paddingLeft: "12px", borderLeft: "2px solid var(--border)", color: "var(--muted)" }}>{children}</div>,
-                hr: () => null, // Never inject a visual divider that fakes a second card
-                code: ({ children }) => <code style={{ fontFamily: "var(--sans)", fontSize: "14px", background: "rgba(14,14,14,0.06)", padding: "1px 5px", borderRadius: "3px" }}>{children}</code>,
-                pre: ({ children }) => <pre style={{ margin: 0, fontFamily: "var(--sans)", fontSize: "14px", background: "rgba(14,14,14,0.06)", padding: "10px 12px", borderRadius: "4px", overflowX: "auto" }}>{children}</pre>,
-                a: ({ children, href }) => <a href={href} style={{ color: "var(--signal)", textDecoration: "underline" }}>{children}</a>,
-              }}
-            >
-              {translation}
-            </ReactMarkdown>
-          </div>
-        )}
+        {/* Result card */}
+        {status === "done" && result && (
+          <div ref={resultRef} className="lt-result">
+            <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", boxShadow: "0 2px 4px rgba(17,17,16,0.04), 0 6px 16px rgba(17,17,16,0.07), 0 16px 32px rgba(17,17,16,0.05), 0 0 0 1px rgba(17,17,16,0.04), inset 0 1px 0 rgba(255,255,255,0.6)" }}>
 
-        {/* Share — copies a pre-written tweet to clipboard */}
-        {status === "done" && translation && (
-          <div style={{ display: "flex", justifyContent: "center", marginTop: "16px" }}>
-            <button
-              type="button"
-              onClick={handleShare}
-              aria-label="Copy a shareable tweet of this translation"
-              style={{
-                background: "transparent",
-                color: shareCopied ? "var(--signal)" : "var(--ink)",
-                border: `0.5px solid ${shareCopied ? "var(--signal)" : "var(--border)"}`,
-                borderRadius: "4px",
-                fontFamily: "var(--sans)",
-                fontSize: "13px",
-                fontWeight: 500,
-                letterSpacing: "0.04em",
-                padding: "10px 20px",
-                cursor: "pointer",
-                transition: "color 150ms ease, border-color 150ms ease",
-              }}
-            >
-              {shareCopied ? "Copied!" : "Share this translation"}
-            </button>
-          </div>
-        )}
+              {/* Header */}
+              <div style={{ background: "var(--ink)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--signal)", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
+                    Translation
+                  </div>
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {result.line}
+                </div>
+              </div>
 
-        {/* CTA block — only after a successful translation */}
-        {status === "done" && translation && (
-          <div style={{ textAlign: "center", marginTop: "36px" }}>
-            <p style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "12px" }}>
-              Want the full breakdown for today&#8217;s games?
-            </p>
-            <Link href="/" style={{
-              display: "inline-block", background: "var(--signal)", color: "#FAFAFA",
-              fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500, letterSpacing: "0.04em",
-              padding: "12px 24px", borderRadius: "4px", textDecoration: "none",
-            }}>
-              See today&#8217;s slate →
-            </Link>
-          </div>
-        )}
-
-        {/* Email capture */}
-        <div style={{ marginTop: "56px", paddingTop: "32px", borderTop: "0.5px solid var(--border)" }}>
-          {waitlistStatus === "done" ? (
-            <p style={{ textAlign: "center", fontSize: "14px", fontWeight: 500, color: "var(--signal)" }}>
-              You&#8217;re on the list. We&#8217;ll reach out when we launch.
-            </p>
-          ) : (
-            <form onSubmit={handleWaitlist} style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Get notified when we launch"
-                required
-                style={{
-                  flex: "1 1 280px", minWidth: 0, maxWidth: "360px",
-                  background: "var(--paper)", border: "0.5px solid var(--border)",
-                  borderRadius: "4px", padding: "12px 16px",
-                  fontFamily: "var(--sans)", fontSize: "14px", color: "var(--ink)",
-                  outline: "none",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--signal)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+              {/* Translation */}
+              <div
+                style={{ padding: "22px 24px", fontSize: "16px", lineHeight: 1.7, color: "#2E2C2A", borderBottom: "1px solid rgba(14,14,14,0.06)" }}
+                dangerouslySetInnerHTML={{ __html: result.translation }}
               />
-              <button
-                type="submit"
-                disabled={waitlistStatus === "submitting"}
-                style={{
-                  background: "var(--ink)", color: "#FAFAFA",
-                  border: "none", borderRadius: "4px",
-                  fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-                  letterSpacing: "0.04em", padding: "12px 20px",
-                  cursor: waitlistStatus === "submitting" ? "default" : "pointer",
-                  opacity: waitlistStatus === "submitting" ? 0.6 : 1,
-                }}
-              >
-                {waitlistStatus === "submitting" ? "Submitting…" : "Notify me"}
-              </button>
-            </form>
-          )}
-          {waitlistStatus === "error" && waitlistError && (
-            <p style={{ marginTop: "10px", textAlign: "center", fontSize: "12px", color: "var(--signal)" }}>
-              {waitlistError}
-            </p>
-          )}
-        </div>
+
+              {/* Implied probability */}
+              <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", gap: "16px", borderBottom: "1px solid rgba(14,14,14,0.06)", background: "#F8F6F2" }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", flexShrink: 0 }}>
+                  Implied Probability
+                </div>
+                <div style={{ flex: 1, height: "6px", background: "#F0EDE6", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "var(--signal)", borderRadius: "3px", width: `${probBarWidth}%`, transition: "width 1s cubic-bezier(0.16,1,0.3,1)" }} />
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, color: "var(--ink)", flexShrink: 0, minWidth: "40px", textAlign: "right" }}>
+                  {Math.round(result.impliedProbability)}%
+                </div>
+              </div>
+
+              {/* What the market is saying */}
+              <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(14,14,14,0.06)" }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  What the market is saying
+                  <span style={{ flex: 1, height: "1px", background: "rgba(14,14,14,0.06)", display: "inline-block" }} />
+                </div>
+                <div
+                  style={{ fontSize: "14px", lineHeight: 1.65, color: "#2E2C2A" }}
+                  dangerouslySetInnerHTML={{ __html: result.context }}
+                />
+              </div>
+
+              {/* What to watch */}
+              <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(14,14,14,0.06)" }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  What to watch
+                  <span style={{ flex: 1, height: "1px", background: "rgba(14,14,14,0.06)", display: "inline-block" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {result.watch.map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "14px", color: "#2E2C2A", lineHeight: 1.5 }}>
+                      <span style={{ color: "var(--signal)", fontSize: "13px", flexShrink: 0, marginTop: "2px" }}>→</span>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: "14px 24px", background: "#F8F6F2", borderTop: "1px solid rgba(14,14,14,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <button
+                  onClick={resetTool}
+                  className="lt-try-again"
+                  style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--sans)", transition: "color 0.12s", padding: 0 }}
+                >
+                  ← Translate another line
+                </button>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "#9B9790", letterSpacing: "0.04em" }}>
+                  Not a pick · Your decision is always yours
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
       </div>
+
+      <footer style={{ textAlign: "center", padding: "24px 40px", fontSize: "12px", color: "#9B9790", lineHeight: 1.8 }}>
+        For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br />
+        <a href="https://www.ncpgambling.org" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>ncpgambling.org</a>
+        {" · "}
+        <a href="/terms" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Terms of Service</a>
+        {" · "}
+        <a href="/privacy" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Privacy Policy</a>
+        {" · © RawIntel LLC"}
+      </footer>
     </div>
   );
 }

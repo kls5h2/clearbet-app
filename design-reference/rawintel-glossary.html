@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Glossary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --clear: #1A7A48; --clear-bg: #E4F3EC;
+  --lean: #1852A8;  --lean-bg: #E4EDFA;
+  --fragile: #B56A12; --fragile-bg: #FAF0E2;
+  --pass: #6E6B66;  --pass-bg: #EDECEA;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.rd1 { transition-delay: 0.06s; }
+.rd2 { transition-delay: 0.12s; }
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+  padding-right: 24px; border-right: 1px solid var(--border-med);
+  margin-right: 20px; flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--cream); }
+.nav-links a.active { color: var(--ink); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.btn-login {
+  font-size: 12.5px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 7px 16px; border-radius: 5px;
+  border: 1px solid var(--border-med); transition: all 0.15s;
+}
+.btn-login:hover { color: var(--ink); border-color: var(--border-strong); }
+.btn-cta {
+  font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: none;
+  padding: 7px 18px; border-radius: 5px; background: var(--signal); transition: all 0.15s;
+}
+.btn-cta:hover { background: #b02e24; }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 36px 40px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(140px, 22vw, 260px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+.hero-headline {
+  font-size: clamp(26px, 5vw, 40px); font-weight: 800;
+  letter-spacing: -0.035em; color: #fff; line-height: 1.1; margin-bottom: 10px;
+}
+.hero-sub { font-size: 15px; color: rgba(255,255,255,0.45); line-height: 1.6; max-width: 480px; }
+
+/* ━━━ SEARCH ━━━ */
+.search-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border-med);
+  padding: 16px 40px;
+  position: sticky; top: 54px; z-index: 90;
+  box-shadow: 0 2px 8px rgba(17,17,16,0.04);
+}
+.search-input-wrap {
+  max-width: 760px; margin: 0 auto; position: relative;
+}
+.search-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--muted-light); pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 11px 14px 11px 40px;
+  font-family: var(--sans); font-size: 14px; font-weight: 400;
+  color: var(--ink); background: var(--warm-white);
+  border: 1px solid var(--border-med); border-radius: 7px;
+  outline: none; transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.search-input::placeholder { color: var(--muted-light); }
+.search-input:focus { border-color: var(--signal); background: var(--surface); }
+
+/* ━━━ PAGE ━━━ */
+.page { max-width: 760px; margin: 0 auto; padding: 48px 40px 80px; }
+
+/* ━━━ CATEGORY ━━━ */
+.category { margin-bottom: 52px; }
+.category-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.category-icon {
+  width: 32px; height: 32px; border-radius: 6px; background: var(--cream);
+  border: 1px solid var(--border-med);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.category-icon svg { color: var(--signal); }
+.category-name {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: var(--mono); color: var(--muted);
+}
+.category-name-line { flex: 1; height: 1px; background: var(--border-med); }
+
+/* ━━━ TERM ROWS ━━━ */
+.terms-list { display: flex; flex-direction: column; gap: 2px; }
+
+.term-row {
+  background: var(--surface); border-radius: 7px;
+  border: 1px solid rgba(17,17,16,0.06);
+  padding: 16px 20px;
+  display: grid; grid-template-columns: 200px 1fr;
+  gap: 24px; align-items: baseline;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.term-row:hover { box-shadow: 0 2px 12px rgba(17,17,16,0.08); transform: translateY(-1px); }
+.term-row.hidden { display: none; }
+
+@media (max-width: 600px) {
+  .term-row { grid-template-columns: 1fr; gap: 6px; }
+}
+
+.term-name {
+  font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
+}
+.term-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 3px; margin-top: 4px;
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.term-badge .dot { width: 5px; height: 5px; border-radius: 50%; }
+.tb-clear { background: var(--clear-bg); color: var(--clear); } .tb-clear .dot { background: var(--clear); }
+.tb-lean  { background: var(--lean-bg);  color: var(--lean); }  .tb-lean .dot  { background: var(--lean); }
+.tb-fragile { background: var(--fragile-bg); color: var(--fragile); } .tb-fragile .dot { background: var(--fragile); }
+.tb-pass { background: var(--pass-bg); color: var(--pass); } .tb-pass .dot { background: var(--pass); }
+
+.term-def { font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+.term-def strong { font-weight: 600; color: var(--ink); }
+
+/* ━━━ NO RESULTS ━━━ */
+.no-results {
+  text-align: center; padding: 48px 20px; display: none;
+  font-size: 14px; color: var(--muted);
+}
+.no-results strong { display: block; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 24px 40px; font-size: 12px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="f1">
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Today's Intel</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#" class="active">Glossary</a></li>
+    <li><a href="#">Line Translator</a></li>
+    <li><a href="#">My Breakdowns</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="btn-login">Log in</a>
+    <a href="#" class="btn-cta">Start free</a>
+  </div>
+</nav>
+
+<!-- HERO BAND -->
+<div class="page-hero f2">
+  <div class="hero-eyebrow">Glossary</div>
+  <div class="hero-headline">Know the language.</div>
+  <div class="hero-sub">Every term in the RawIntel system, plus the betting and stats vocabulary that shows up in every breakdown. Read smarter.</div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-bar f2">
+  <div class="search-input-wrap">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="search-input" type="text" placeholder="Search terms..." id="search" autocomplete="off">
+  </div>
+</div>
+
+<div class="page">
+
+  <div id="no-results" class="no-results">
+    <strong>No terms found.</strong>
+    Try a different search — or check the <a href="#">Glossary</a> for the full list.
+  </div>
+
+  <!-- CATEGORY: RAWINTEL SYSTEM -->
+  <div class="category reveal" data-category="rawintel">
+    <div class="category-header">
+      <div class="category-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="category-name">RawIntel System</div>
+      <div class="category-name-line"></div>
+    </div>
+    <div class="terms-list">
+
+      <div class="term-row" data-terms="base script expected outcome probable">
+        <div><div class="term-name">Base Script</div></div>
+        <div class="term-def">The most probable game flow given the data, if nothing unexpected happens. Not a prediction — a structured description of the expected shape. The foundation of the breakdown.</div>
+      </div>
+
+      <div class="term-row" data-terms="breakdown rawintel analysis">
+        <div><div class="term-name">Breakdown</div></div>
+        <div class="term-def">RawIntel's six-step analysis of a game. Covers game shape, key drivers, base script, fragility, market read, and what it all means. <strong>Not a pick.</strong></div>
+      </div>
+
+      <div class="term-row" data-terms="clear spot confidence">
+        <div>
+          <div class="term-name">Clear Spot</div>
+          <div class="term-badge tb-clear"><span class="dot"></span>Clear Spot</div>
+        </div>
+        <div class="term-def">The data points cleanly in one direction. The environment is stable and the logic holds. One of the cleaner reads on tonight's board.</div>
+      </div>
+
+      <div class="term-row" data-terms="confidence level clear spot lean fragile pass">
+        <div><div class="term-name">Confidence Level</div></div>
+        <div class="term-def">An honest assessment of how clearly the data points in one direction. Four levels: <strong>Clear Spot, Lean, Fragile, Pass.</strong> Tells you how clean the read is — not how likely you are to win.</div>
+      </div>
+
+      <div class="term-row" data-terms="fragile confidence risk conditional">
+        <div>
+          <div class="term-name">Fragile</div>
+          <div class="term-badge tb-fragile"><span class="dot"></span>Fragile</div>
+        </div>
+        <div class="term-def">The logic holds but depends on a few things going right. One injury or lineup change could flip the script. <strong>Read the Fragility Check carefully.</strong></div>
+      </div>
+
+      <div class="term-row" data-terms="fragility check risk what breaks">
+        <div><div class="term-name">Fragility Check</div></div>
+        <div class="term-def">Step 4 of every breakdown. The specific, checkable things that would flip the base script — injuries, lineup changes, early momentum shifts. Read this before deciding anything.</div>
+      </div>
+
+      <div class="term-row" data-terms="game shape type fast slow">
+        <div><div class="term-name">Game Shape</div></div>
+        <div class="term-def">Step 1 of every breakdown. Defines what kind of game this is — fast, slow, high-scoring, grind-it-out — before anything else. Sets the context for all other factors.</div>
+      </div>
+
+      <div class="term-row" data-terms="lean confidence directional">
+        <div>
+          <div class="term-name">Lean</div>
+          <div class="term-badge tb-lean"><span class="dot"></span>Lean</div>
+        </div>
+        <div class="term-def">There's a directional read but it's not clean. Real factors point one way with enough noise on the other side to keep it from being a Clear Spot.</div>
+      </div>
+
+      <div class="term-row" data-terms="pass confidence skip no edge">
+        <div>
+          <div class="term-name">Pass</div>
+          <div class="term-badge tb-pass"><span class="dot"></span>Pass</div>
+        </div>
+        <div class="term-def">Too many moving parts to form a strong view. The data doesn't land clearly. Knowing when to pass is part of thinking clearly about betting.</div>
+      </div>
+
+      <div class="term-row" data-terms="signal grade letter quality data">
+        <div><div class="term-name">Signal Grade</div></div>
+        <div class="term-def">A letter grade (A–D) rating the quality of the data environment for a game. <strong>Not a confidence rating on the outcome</strong> — a measure of how much useful signal the data contains.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CATEGORY: GAME DNA -->
+  <div class="category reveal" data-category="dna">
+    <div class="category-header">
+      <div class="category-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </div>
+      <div class="category-name">Game DNA Tags</div>
+      <div class="category-name-line"></div>
+    </div>
+    <div class="terms-list">
+
+      <div class="term-row" data-terms="half court slow deliberate sets">
+        <div><div class="term-name">🧱 Half-Court</div></div>
+        <div class="term-def">Slow, deliberate game. Teams run set plays with fewer fast breaks. Totals are usually lower. Execution and defensive schemes matter more than athleticism.</div>
+      </div>
+
+      <div class="term-row" data-terms="low ceiling low scoring defensive tight">
+        <div><div class="term-name">💤 Low Ceiling</div></div>
+        <div class="term-def">Limited scoring upside for both teams. This game is unlikely to blow open in either direction. Strong defensive matchup, slow pace, or both. The under is often the natural lean.</div>
+      </div>
+
+      <div class="term-row" data-terms="star driven player dependent key player">
+        <div><div class="term-name">🎯 Star Driven</div></div>
+        <div class="term-def">One or two key players will decide this game. Their performance tonight determines the outcome. Check injury reports and recent form before deciding anything.</div>
+      </div>
+
+      <div class="term-row" data-terms="transition clash pace tempo fast">
+        <div><div class="term-name">⚡ Transition Clash</div></div>
+        <div class="term-def">Both teams play at different preferred tempos. Whoever forces their pace controls the game. Watch early possessions — the first team to establish their speed usually wins that battle.</div>
+      </div>
+
+      <div class="term-row" data-terms="volatile high variance unpredictable">
+        <div><div class="term-name">🧨 Volatile</div></div>
+        <div class="term-def">High variance game. The outcome is harder to predict than the line suggests. Could go either way by a large margin. Props and totals carry extra risk here.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CATEGORY: BETTING BASICS -->
+  <div class="category reveal" data-category="betting">
+    <div class="category-header">
+      <div class="category-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="category-name">Betting Basics</div>
+      <div class="category-name-line"></div>
+    </div>
+    <div class="terms-list">
+
+      <div class="term-row" data-terms="cover ats against the spread win">
+        <div><div class="term-name">Cover</div></div>
+        <div class="term-def">When a team wins against the spread. If Denver is −3.5 and wins by 7, they covered. If they win by 2, they did not cover — even though they won the game outright.</div>
+      </div>
+
+      <div class="term-row" data-terms="implied probability percentage odds chance">
+        <div><div class="term-name">Implied Probability</div></div>
+        <div class="term-def">What a moneyline translates to as a percentage chance of winning. <strong>−150 implies roughly 60% probability. +130 implies roughly 43%.</strong> The gap between implied probability and your read is where edges live.</div>
+      </div>
+
+      <div class="term-row" data-terms="juice vig vigorish sportsbook margin">
+        <div><div class="term-name">Juice / Vig</div></div>
+        <div class="term-def">The sportsbook's cut — built into the odds. Most standard bets are priced at −110 on both sides, meaning you bet $110 to win $100. That extra $10 is the juice. It's how the house makes money regardless of the outcome.</div>
+      </div>
+
+      <div class="term-row" data-terms="line movement shift move sharp money">
+        <div><div class="term-name">Line Movement</div></div>
+        <div class="term-def">When the spread or total changes after it opens. <strong>Significant movement usually signals sharp (informed) money</strong> on one side. Not a reason to blindly follow — but worth knowing.</div>
+      </div>
+
+      <div class="term-row" data-terms="moneyline ml win straight up">
+        <div><div class="term-name">Moneyline</div></div>
+        <div class="term-def">A bet on which team wins outright, no spread involved. <strong>Negative = favorite</strong> (−150 means bet $150 to win $100). <strong>Positive = underdog</strong> (+130 means bet $100 to win $130).</div>
+      </div>
+
+      <div class="term-row" data-terms="prop proposition player stat bet">
+        <div><div class="term-name">Prop Bet</div></div>
+        <div class="term-def">A bet on a specific event within a game — usually a player stat. <strong>Examples:</strong> Jokić over 28.5 points, LeBron over 7.5 assists. Props are more sensitive to lineup changes and game pace than spread bets.</div>
+      </div>
+
+      <div class="term-row" data-terms="push tie spread result no winner">
+        <div><div class="term-name">Push</div></div>
+        <div class="term-def">When the final margin exactly matches the spread, resulting in a tie. Your bet is refunded. <strong>Example:</strong> Denver is −3 and wins by exactly 3. No winner, no loser — money back.</div>
+      </div>
+
+      <div class="term-row" data-terms="sharp money informed bettors professional">
+        <div><div class="term-name">Sharp Money</div></div>
+        <div class="term-def">Bets placed by professional or highly informed bettors. Sportsbooks often move lines in response to sharp action. When the line moves against the public, sharp money is usually driving it.</div>
+      </div>
+
+      <div class="term-row" data-terms="spread point spread ats cover">
+        <div><div class="term-name">Spread</div></div>
+        <div class="term-def">The point handicap a sportsbook assigns to level the playing field. <strong>Example:</strong> Denver −3.5 means Denver must win by 4+ for a bet on them to pay. Orlando +3.5 means Orlando can lose by 3 and still cover.</div>
+      </div>
+
+      <div class="term-row" data-terms="total over under ou points scored">
+        <div><div class="term-name">Total (Over/Under)</div></div>
+        <div class="term-def">A bet on the combined score of both teams. The sportsbook sets a number — you bet whether the actual score goes over or under it. Unrelated to which team wins.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CATEGORY: STATS & DATA -->
+  <div class="category reveal" data-category="stats">
+    <div class="category-header">
+      <div class="category-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div class="category-name">Stats &amp; Data</div>
+      <div class="category-name-line"></div>
+    </div>
+    <div class="terms-list">
+
+      <div class="term-row" data-terms="ats record against spread cover losses wins">
+        <div><div class="term-name">ATS Record</div></div>
+        <div class="term-def">A team's record against the spread — wins and losses covering, not outright. <strong>A team can be 10–2 straight up but 4–8 ATS.</strong> More relevant to betting than win-loss record alone.</div>
+      </div>
+
+      <div class="term-row" data-terms="defensive rating efficiency points allowed 100">
+        <div><div class="term-name">Defensive Rating</div></div>
+        <div class="term-def">Points allowed per 100 possessions. <strong>Lower is better.</strong> The best defensive teams hold opponents under 110. Elite defenses under 108.</div>
+      </div>
+
+      <div class="term-row" data-terms="era earned run average pitching baseball">
+        <div><div class="term-name">ERA</div></div>
+        <div class="term-def">Earned Run Average — the average runs a pitcher allows per nine innings. <strong>Under 3.00 is elite. Over 5.00 is a concern.</strong> One of the most important factors in MLB totals and run lines.</div>
+      </div>
+
+      <div class="term-row" data-terms="first five innings f5 mlb baseball starter">
+        <div><div class="term-name">First Five Innings (F5)</div></div>
+        <div class="term-def">An MLB bet that settles after five innings regardless of the final score. <strong>Useful when you trust the starting pitchers but not the bullpens.</strong> Removes late-game variance from the equation entirely.</div>
+      </div>
+
+      <div class="term-row" data-terms="home away splits location road performance">
+        <div><div class="term-name">Home / Away Splits</div></div>
+        <div class="term-def">How dramatically a team's performance changes depending on location. Some teams are elite at home and average on the road. <strong>Splits matter most in playoff situations and for teams with strong home crowds.</strong></div>
+      </div>
+
+      <div class="term-row" data-terms="load management rest minutes nba player">
+        <div><div class="term-name">Load Management</div></div>
+        <div class="term-def">When a team intentionally limits a healthy player's minutes — usually late in the season. <strong>Check load management situations before any game involving star players.</strong> Undisclosed until close to tip-off.</div>
+      </div>
+
+      <div class="term-row" data-terms="net rating efficiency plus minus points">
+        <div><div class="term-name">Net Rating</div></div>
+        <div class="term-def">Points scored minus points allowed per 100 possessions. <strong>The single best summary of a team's overall quality.</strong> Positive is good. Higher is better. More reliable than win-loss record over small samples.</div>
+      </div>
+
+      <div class="term-row" data-terms="offensive rating efficiency scoring points 100">
+        <div><div class="term-name">Offensive Rating</div></div>
+        <div class="term-def">Points scored per 100 possessions. Measures how efficiently a team scores, independent of pace. Useful for comparing teams that play at very different speeds.</div>
+      </div>
+
+      <div class="term-row" data-terms="pace possessions per game speed tempo">
+        <div><div class="term-name">Pace</div></div>
+        <div class="term-def">How many possessions a team averages per game. <strong>High pace = more possessions, higher totals.</strong> Low pace = fewer possessions, tighter games. One of the most important factors in setting the game shape.</div>
+      </div>
+
+      <div class="term-row" data-terms="pythagorean record expected wins points luck">
+        <div><div class="term-name">Pythagorean Record</div></div>
+        <div class="term-def">Expected wins based on points scored versus points allowed — not actual results. <strong>Teams that significantly outperform their Pythagorean record tend to regress.</strong> More predictive than straight win-loss over small samples.</div>
+      </div>
+
+      <div class="term-row" data-terms="run line baseball spread rl">
+        <div><div class="term-name">Run Line</div></div>
+        <div class="term-def">Baseball's version of the spread — almost always set at ±1.5 runs. The favorite must win by 2+. The underdog can lose by 1 and still cover. Changes the implied probability significantly.</div>
+      </div>
+
+      <div class="term-row" data-terms="usage rate player possessions props involved percent">
+        <div><div class="term-name">Usage Rate</div></div>
+        <div class="term-def">The percentage of team possessions a player is involved in while on the court. <strong>High usage = more shot attempts, more prop relevance.</strong> When a teammate is injured, usage rate often spikes — and props follow.</div>
+      </div>
+
+      <div class="term-row" data-terms="whip walks hits innings pitcher baseball">
+        <div><div class="term-name">WHIP</div></div>
+        <div class="term-def">Walks plus Hits per Inning Pitched. Measures how many baserunners a pitcher allows. <strong>Under 1.10 is elite. Over 1.40 is a red flag.</strong> Lower is better.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+<script>
+  // scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.05 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // search
+  const searchInput = document.getElementById('search');
+  const noResults = document.getElementById('no-results');
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.term-row');
+    const categories = document.querySelectorAll('.category');
+
+    if (!q) {
+      rows.forEach(r => r.classList.remove('hidden'));
+      categories.forEach(c => c.style.display = '');
+      noResults.style.display = 'none';
+      return;
+    }
+
+    let anyVisible = false;
+    rows.forEach(row => {
+      const terms = row.getAttribute('data-terms') || '';
+      const name = row.querySelector('.term-name')?.textContent.toLowerCase() || '';
+      const def = row.querySelector('.term-def')?.textContent.toLowerCase() || '';
+      const match = terms.includes(q) || name.includes(q) || def.includes(q);
+      row.classList.toggle('hidden', !match);
+      if (match) anyVisible = true;
+    });
+
+    categories.forEach(cat => {
+      const visible = [...cat.querySelectorAll('.term-row')].some(r => !r.classList.contains('hidden'));
+      cat.style.display = visible ? '' : 'none';
+    });
+
+    noResults.style.display = anyVisible ? 'none' : 'block';
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 16px 32px rgba(17,17,16,0.05),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+html, body { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--ink);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 720px) {
+  body { grid-template-columns: 1fr; }
+  .left-panel { display: none; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.1s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.2s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ━━━ LEFT PANEL ━━━ */
+.left-panel {
+  background: var(--ink); padding: 48px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.left-panel::after {
+  content: 'R'; position: absolute; right: -8%; bottom: -5%;
+  font-size: 420px; font-weight: 900; letter-spacing: -0.05em;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+/* glow */
+.left-panel::before {
+  content: ''; position: absolute; top: -20%; left: -20%;
+  width: 70%; height: 70%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,53,42,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.left-brand {
+  font-size: 17px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: #fff; display: flex; align-items: center; gap: 1px;
+  position: relative; z-index: 1;
+}
+.left-brand .intel { color: rgba(255,255,255,0.4); font-weight: 500; }
+.left-brand .dot { color: var(--signal); }
+
+.left-copy { position: relative; z-index: 1; }
+.left-headline {
+  font-size: clamp(28px, 3.5vw, 40px); font-weight: 800;
+  letter-spacing: -0.04em; color: #fff; line-height: 1.1; margin-bottom: 16px;
+}
+.left-headline .signal { color: var(--signal); }
+.left-sub { font-size: 14px; color: rgba(255,255,255,0.4); line-height: 1.65; max-width: 320px; }
+
+.left-proof { position: relative; z-index: 1; }
+.proof-items { display: flex; flex-direction: column; gap: 12px; }
+.proof-item { display: flex; align-items: flex-start; gap: 10px; }
+.proof-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(201,53,42,0.15); color: var(--signal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.proof-text { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.45; }
+.proof-text strong { color: rgba(255,255,255,0.8); font-weight: 600; }
+
+/* ━━━ RIGHT PANEL ━━━ */
+.right-panel {
+  background: var(--warm-white);
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 40px;
+}
+
+.auth-card {
+  width: 100%; max-width: 400px;
+}
+
+.auth-card-mobile-brand {
+  display: none; margin-bottom: 32px;
+  font-size: 17px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+}
+.auth-card-mobile-brand .intel { color: var(--muted-light); font-weight: 500; }
+.auth-card-mobile-brand .dot { color: var(--signal); }
+@media (max-width: 720px) { .auth-card-mobile-brand { display: block; } }
+
+/* mode toggle */
+.auth-toggle {
+  display: flex; gap: 0;
+  background: var(--cream); border-radius: 8px; padding: 3px;
+  margin-bottom: 32px;
+}
+.toggle-btn {
+  flex: 1; text-align: center;
+  font-size: 13.5px; font-weight: 600; color: var(--muted);
+  background: transparent; border: none; padding: 9px 16px;
+  border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  font-family: var(--sans);
+}
+.toggle-btn.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-md); }
+
+/* form header */
+.auth-header { margin-bottom: 28px; }
+.auth-title {
+  font-size: 24px; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--ink); margin-bottom: 6px;
+}
+.auth-sub { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+
+/* form fields */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 12.5px; font-weight: 600;
+  color: var(--ink-2); margin-bottom: 6px; letter-spacing: 0.01em;
+}
+.form-input {
+  width: 100%; padding: 11px 14px;
+  font-family: var(--sans); font-size: 14px; font-weight: 400;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border-med); border-radius: 7px;
+  outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+}
+.form-input::placeholder { color: var(--muted-light); }
+.form-input:focus {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px rgba(201,53,42,0.08);
+}
+
+.form-input-wrap { position: relative; }
+.password-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--muted-light);
+  font-size: 12px; font-weight: 500; font-family: var(--sans);
+  transition: color 0.12s; padding: 4px;
+}
+.password-toggle:hover { color: var(--ink); }
+
+/* forgot password */
+.forgot-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+}
+.forgot-link {
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  text-decoration: none; transition: color 0.12s;
+}
+.forgot-link:hover { color: var(--ink); }
+
+/* signup only fields */
+.signup-only { display: none; }
+.signup-only.visible { display: block; }
+
+/* submit */
+.auth-submit {
+  width: 100%; padding: 13px;
+  font-family: var(--sans); font-size: 14px; font-weight: 700;
+  color: #fff; background: var(--signal);
+  border: none; border-radius: 7px; cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 8px rgba(201,53,42,0.25);
+}
+.auth-submit:hover { background: #b02e24; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,53,42,0.35); }
+
+/* bottom note */
+.auth-bottom {
+  margin-top: 20px; text-align: center;
+  font-size: 12.5px; color: var(--muted); line-height: 1.6;
+}
+.auth-bottom a { color: var(--signal); text-decoration: none; font-weight: 500; }
+.auth-bottom a:hover { text-decoration: underline; }
+
+/* legal */
+.auth-legal {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted-light); text-align: center; line-height: 1.7;
+}
+.auth-legal a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+/* free callout for signup */
+.free-callout {
+  background: var(--cream); border-radius: 7px;
+  border: 1px solid var(--border-med); padding: 12px 16px;
+  margin-bottom: 24px; display: none;
+}
+.free-callout.visible { display: flex; align-items: flex-start; gap: 10px; }
+.free-callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.free-callout-text { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.free-callout-text strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel f1">
+  <a href="#" class="left-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+
+  <div class="left-copy">
+    <div class="left-headline">Raw data.<br>Clear read.<br><span class="signal">Your call.</span></div>
+    <div class="left-sub">The same structured breakdown on every game. No picks. No noise. Just the read — and the decision is always yours.</div>
+  </div>
+
+  <div class="left-proof">
+    <div class="proof-items">
+      <div class="proof-item">
+        <div class="proof-check">✓</div>
+        <div class="proof-text"><strong>One free breakdown every day.</strong> Your pick, any game on the slate.</div>
+      </div>
+      <div class="proof-item">
+        <div class="proof-check">✓</div>
+        <div class="proof-text"><strong>Six-step analysis</strong> — game shape, key drivers, market read, and more.</div>
+      </div>
+      <div class="proof-item">
+        <div class="proof-check">✓</div>
+        <div class="proof-text"><strong>No card required</strong> to start. Upgrade when one isn't enough.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="auth-card f2">
+
+    <a href="#" class="auth-card-mobile-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+
+    <!-- TOGGLE -->
+    <div class="auth-toggle">
+      <button class="toggle-btn active" id="login-tab" onclick="setMode('login')">Log in</button>
+      <button class="toggle-btn" id="signup-tab" onclick="setMode('signup')">Create account</button>
+    </div>
+
+    <!-- FREE CALLOUT (signup only) -->
+    <div class="free-callout" id="free-callout">
+      <div class="free-callout-icon">🎉</div>
+      <div class="free-callout-text"><strong>Free to start.</strong> One breakdown a day, no card required. Upgrade anytime.</div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="auth-header">
+      <div class="auth-title" id="auth-title">Welcome back.</div>
+      <div class="auth-sub" id="auth-sub">Sign in to access your breakdowns.</div>
+    </div>
+
+    <!-- FORM -->
+    <form onsubmit="return false;">
+
+      <!-- Signup only: name -->
+      <div class="form-group signup-only" id="name-group">
+        <label class="form-label" for="name">Your name</label>
+        <input class="form-input" type="text" id="name" placeholder="First name" autocomplete="given-name">
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <div class="forgot-row">
+          <label class="form-label" for="password" style="margin-bottom:0;">Password</label>
+          <a href="#" class="forgot-link" id="forgot-link">Forgot password?</a>
+        </div>
+        <div class="form-input-wrap">
+          <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="password-toggle" onclick="togglePassword()">Show</button>
+        </div>
+      </div>
+
+      <!-- Signup only: confirm password -->
+      <div class="form-group signup-only" id="confirm-group">
+        <label class="form-label" for="confirm">Confirm password</label>
+        <div class="form-input-wrap">
+          <input class="form-input" type="password" id="confirm" placeholder="••••••••" autocomplete="new-password">
+        </div>
+      </div>
+
+      <button type="submit" class="auth-submit" id="auth-submit">Log in</button>
+
+    </form>
+
+    <div class="auth-bottom" id="auth-bottom">
+      Don't have an account? <a href="#" onclick="setMode('signup'); return false;">Create one free</a>
+    </div>
+
+    <div class="auth-legal">
+      By continuing you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentMode = 'login';
+let passwordVisible = false;
+
+function setMode(mode) {
+  currentMode = mode;
+  const isSignup = mode === 'signup';
+
+  // toggle tabs
+  document.getElementById('login-tab').classList.toggle('active', !isSignup);
+  document.getElementById('signup-tab').classList.toggle('active', isSignup);
+
+  // show/hide signup fields
+  document.querySelectorAll('.signup-only').forEach(el => el.classList.toggle('visible', isSignup));
+  document.getElementById('free-callout').classList.toggle('visible', isSignup);
+
+  // update copy
+  document.getElementById('auth-title').textContent = isSignup ? 'Start for free.' : 'Welcome back.';
+  document.getElementById('auth-sub').textContent = isSignup
+    ? 'Create your account — no card required.'
+    : 'Sign in to access your breakdowns.';
+  document.getElementById('auth-submit').textContent = isSignup ? 'Create account' : 'Log in';
+  document.getElementById('forgot-link').style.display = isSignup ? 'none' : '';
+  document.getElementById('auth-bottom').innerHTML = isSignup
+    ? 'Already have an account? <a href="#" onclick="setMode(\'login\'); return false;">Log in</a>'
+    : 'Don\'t have an account? <a href="#" onclick="setMode(\'signup\'); return false;">Create one free</a>';
+
+  // update password autocomplete
+  document.getElementById('password').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+}
+
+function togglePassword() {
+  passwordVisible = !passwordVisible;
+  const input = document.getElementById('password');
+  input.type = passwordVisible ? 'text' : 'password';
+  document.querySelector('.password-toggle').textContent = passwordVisible ? 'Hide' : 'Show';
+}
+</script>
+
+</body>
+</html>

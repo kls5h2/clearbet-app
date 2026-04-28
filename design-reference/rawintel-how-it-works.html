@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --clear: #1A7A48; --clear-bg: #E4F3EC;
+  --lean: #1852A8;  --lean-bg: #E4EDFA;
+  --fragile: #B56A12; --fragile-bg: #FAF0E2;
+  --pass: #6E6B66;  --pass-bg: #EDECEA;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.rd1 { transition-delay: 0.08s; }
+.rd2 { transition-delay: 0.16s; }
+.rd3 { transition-delay: 0.24s; }
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+  padding-right: 24px; border-right: 1px solid var(--border-med);
+  margin-right: 20px; flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--cream); }
+.nav-links a.active { color: var(--ink); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.btn-login {
+  font-size: 12.5px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 7px 16px; border-radius: 5px;
+  border: 1px solid var(--border-med); transition: all 0.15s;
+}
+.btn-login:hover { color: var(--ink); border-color: var(--border-strong); }
+.btn-cta {
+  font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: none;
+  padding: 7px 18px; border-radius: 5px; background: var(--signal); transition: all 0.15s;
+}
+.btn-cta:hover { background: #b02e24; }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 36px 40px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(140px, 22vw, 260px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+.hero-headline {
+  font-size: clamp(26px, 5vw, 40px); font-weight: 800;
+  letter-spacing: -0.035em; color: #fff; line-height: 1.1; margin-bottom: 10px;
+}
+.hero-sub {
+  font-size: 15px; color: rgba(255,255,255,0.45); line-height: 1.6; max-width: 520px;
+}
+
+/* ━━━ PAGE ━━━ */
+.page { max-width: 760px; margin: 0 auto; padding: 56px 40px 80px; }
+
+/* ━━━ SECTION HEADERS ━━━ */
+.section-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--signal);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.section-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+
+.section-headline {
+  font-size: clamp(24px, 4vw, 34px); font-weight: 800;
+  letter-spacing: -0.03em; color: var(--ink); line-height: 1.1; margin-bottom: 16px;
+}
+
+.section-body {
+  font-size: 15px; color: var(--ink-2); line-height: 1.75;
+}
+.section-body p { margin-bottom: 14px; }
+.section-body p:last-child { margin-bottom: 0; }
+.section-body strong { font-weight: 600; color: var(--ink); }
+
+.section-divider {
+  height: 1px; background: var(--border-med); margin: 56px 0;
+}
+
+/* ━━━ PHILOSOPHY BLOCK ━━━ */
+.philosophy {
+  background: var(--ink); border-radius: 10px;
+  padding: 36px 40px; margin-bottom: 56px;
+}
+.philosophy-text {
+  font-size: clamp(18px, 3vw, 24px); font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.45; color: rgba(255,255,255,0.7);
+}
+.philosophy-text em { font-style: normal; color: #fff; }
+.philosophy-text .signal { color: var(--signal); }
+.philosophy-rule { width: 32px; height: 2px; background: var(--signal); margin: 24px 0; opacity: 0.6; }
+.philosophy-close {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.25); line-height: 1.7;
+}
+.philosophy-close strong { color: rgba(255,255,255,0.45); }
+
+/* ━━━ SIX STEPS ━━━ */
+.steps-list { display: flex; flex-direction: column; gap: 0; margin-top: 32px; }
+
+.step-row {
+  display: grid; grid-template-columns: 1fr;
+  padding: 24px 0; border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.step-row:last-child { border-bottom: none; }
+
+@media (min-width: 600px) {
+  .step-row { grid-template-columns: 180px 1fr; gap: 32px; }
+}
+
+.step-label-col {}
+.step-name {
+  font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
+  margin-bottom: 4px;
+}
+.step-num {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; color: var(--signal); text-transform: uppercase;
+}
+
+.step-content {}
+.step-desc {
+  font-size: 15px; color: var(--ink-2); line-height: 1.65; margin-bottom: 12px;
+}
+.step-desc strong { font-weight: 600; color: var(--ink); }
+
+.step-example {
+  background: var(--cream); border-radius: 6px;
+  border-left: 2px solid var(--border-strong);
+  padding: 12px 14px;
+  font-size: 13.5px; color: var(--muted); line-height: 1.55; font-style: italic;
+}
+.step-example strong { font-style: normal; font-weight: 600; color: var(--ink-2); }
+
+/* ━━━ CONFIDENCE LEVELS ━━━ */
+.conf-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+
+.conf-card {
+  background: var(--surface); border-radius: 8px;
+  border: 1px solid rgba(17,17,16,0.06); overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.conf-card-bar { height: 4px; }
+.conf-card-bar-clear   { background: var(--clear); }
+.conf-card-bar-lean    { background: var(--lean); }
+.conf-card-bar-fragile { background: var(--fragile); }
+.conf-card-bar-pass    { background: var(--pass); }
+
+.conf-card-body { padding: 18px 20px; }
+.conf-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.conf-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 4px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.conf-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+.cb-clear { background: var(--clear-bg); color: var(--clear); } .cb-clear .dot { background: var(--clear); }
+.cb-lean  { background: var(--lean-bg);  color: var(--lean); }  .cb-lean .dot  { background: var(--lean); }
+.cb-fragile { background: var(--fragile-bg); color: var(--fragile); } .cb-fragile .dot { background: var(--fragile); }
+.cb-pass { background: var(--pass-bg); color: var(--pass); } .cb-pass .dot { background: var(--pass); }
+
+.conf-card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); }
+.conf-card-desc { font-size: 14px; color: var(--ink-2); line-height: 1.6; margin-bottom: 10px; }
+.conf-card-example {
+  font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.5;
+  padding: 10px 12px; background: var(--cream); border-radius: 5px;
+}
+
+/* ━━━ SIGNAL GRADE ━━━ */
+.signal-explainer {
+  background: var(--surface); border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(17,17,16,0.06); box-shadow: var(--shadow-sm);
+  margin-top: 28px;
+}
+.signal-header {
+  background: var(--ink); padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.signal-grade-display {
+  font-family: var(--mono); font-size: 40px; font-weight: 600;
+  color: var(--signal); letter-spacing: -0.02em; line-height: 1;
+}
+.signal-header-copy {}
+.signal-header-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 4px;
+}
+.signal-header-desc { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.4; }
+
+.signal-factors { padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
+.signal-factor { display: flex; align-items: flex-start; gap: 12px; }
+.signal-factor-num {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; color: var(--signal); flex-shrink: 0; padding-top: 2px; min-width: 20px;
+}
+.signal-factor-body {}
+.signal-factor-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.signal-factor-desc { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+
+.signal-scale {
+  margin: 0 24px 20px; padding: 16px 18px;
+  background: var(--cream); border-radius: 7px;
+}
+.signal-scale-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+}
+.signal-grades-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.sg-pill {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  padding: 5px 12px; border-radius: 4px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border-med);
+}
+.sg-pill.active { background: var(--signal); color: #fff; border-color: var(--signal); }
+
+/* ━━━ DNA TAGS ━━━ */
+.dna-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 28px; }
+.dna-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; background: var(--surface); border-radius: 7px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.dna-tag-pill {
+  font-size: 12.5px; font-weight: 600; color: var(--muted);
+  background: var(--cream); border: 1px solid var(--border-med);
+  padding: 4px 10px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+}
+.dna-def { font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+.dna-def strong { font-weight: 600; color: var(--ink); }
+
+/* ━━━ CTA BLOCK ━━━ */
+.cta-block {
+  background: var(--ink); border-radius: 10px; padding: 40px;
+  text-align: center; margin-top: 56px;
+}
+.cta-headline {
+  font-size: clamp(20px, 3.5vw, 28px); font-weight: 800;
+  letter-spacing: -0.03em; color: #fff; margin-bottom: 10px; line-height: 1.2;
+}
+.cta-sub { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 28px; line-height: 1.55; }
+.cta-btn {
+  font-size: 14px; font-weight: 700; color: #fff; text-decoration: none;
+  padding: 13px 32px; border-radius: 6px; background: var(--signal);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 8px rgba(201,53,42,0.3);
+}
+.cta-btn:hover { background: #b02e24; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,53,42,0.4); }
+.cta-btn::after { content: '→'; transition: transform 0.15s; }
+.cta-btn:hover::after { transform: translateX(3px); }
+.cta-note { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.2); margin-top: 16px; letter-spacing: 0.04em; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 24px 40px; font-size: 12px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="f1">
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Today's Intel</a></li>
+    <li><a href="#" class="active">How It Works</a></li>
+    <li><a href="#">Glossary</a></li>
+    <li><a href="#">Line Translator</a></li>
+    <li><a href="#">My Breakdowns</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="btn-login">Log in</a>
+    <a href="#" class="btn-cta">Start free</a>
+  </div>
+</nav>
+
+<!-- HERO BAND -->
+<div class="page-hero f2">
+  <div class="hero-eyebrow">How It Works</div>
+  <div class="hero-headline">Not picks.<br>A system for thinking.</div>
+  <div class="hero-sub">RawIntel doesn't tell you what to bet. It gives you the same structured analysis on every game — so you can make an informed decision yourself.</div>
+</div>
+
+<div class="page">
+
+  <!-- PHILOSOPHY -->
+  <div class="philosophy reveal">
+    <div class="philosophy-text">
+      <em>There's a lot of noise in sports betting.</em>
+      <span style="color:rgba(255,255,255,0.4);font-weight:400;"> Picks services tell you what to do. Data tools overwhelm you with numbers. Neither one actually helps you think.</span>
+      <br><br>
+      <span style="color:rgba(255,255,255,0.4);font-weight:400;">RawIntel takes the data, runs it through the same structured framework on every game, and hands you the read in plain English.</span>
+      <br><br>
+      <span class="signal">What you do with it is always yours.</span>
+    </div>
+    <div class="philosophy-rule"></div>
+  </div>
+
+  <!-- THE SIX STEPS -->
+  <div class="reveal">
+    <div class="section-eyebrow">The Breakdown Framework</div>
+    <div class="section-headline">Six steps.<br>Every game. Every time.</div>
+    <div class="section-body">
+      <p>Every breakdown on RawIntel follows the same six steps — in the same order. That's intentional. Once you know the framework, you can read any breakdown in under two minutes and know exactly where you are.</p>
+    </div>
+  </div>
+
+  <div class="steps-list">
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 01</div>
+        <div class="step-name">Game Shape</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc">The first question: <strong>what kind of game is this?</strong> Fast or slow? High-scoring or a grinder? Playoff intensity or regular season? Game shape sets the context for everything that follows.</div>
+        <div class="step-example">"This is a pace control game. Denver wants structure. Minnesota wants chaos. Whoever wins that battle sets the tone for everything else."</div>
+      </div>
+    </div>
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 02</div>
+        <div class="step-name">Key Drivers</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc">Two or three factors that will <strong>actually decide this game</strong>. Not a list of everything — just what materially matters tonight. Color-coded so you know at a glance whether each factor supports or threatens the expected outcome.</div>
+        <div class="step-example">"Denver's half-court execution rate is elite. <span style="color:var(--clear);font-weight:600;">Supports the script.</span> Gobert's availability is unconfirmed. <span style="color:var(--fragile);font-weight:600;">Injury uncertainty.</span>"</div>
+      </div>
+    </div>
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 03</div>
+        <div class="step-name">Base Script</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc">If nothing unexpected happens, <strong>this is how the game most likely plays out</strong>. Not a prediction — a structured description of the most probable game shape given the data. The foundation everything else is built on.</div>
+        <div class="step-example">"Denver controls pace, Jokić operates in space, the game stays tight and goes under the total."</div>
+      </div>
+    </div>
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 04</div>
+        <div class="step-name">Fragility Check</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc"><strong>What breaks the base script?</strong> Specific, checkable things — an injury, a lineup change, a weather shift — that would flip the expected outcome. Read this before you decide anything.</div>
+        <div class="step-example">"If Gobert plays healthy, Denver's paint efficiency drops and this tightens considerably. Check his status before game time."</div>
+      </div>
+    </div>
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 05</div>
+        <div class="step-name">Market Read</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc"><strong>What the betting line is actually saying</strong> — in plain English. Line movement, where sharp money is going, whether the market agrees or disagrees with the data. Not a reason to bet — context for your decision.</div>
+        <div class="step-example">"Denver opened −3 and has been bet to −1.5. Sharp money is on Minnesota. The market knows something worth factoring in."</div>
+      </div>
+    </div>
+
+    <div class="step-row reveal">
+      <div class="step-label-col">
+        <div class="step-num">Step 06</div>
+        <div class="step-name">What This Means</div>
+      </div>
+      <div class="step-content">
+        <div class="step-desc">The summary. Everything above, distilled into <strong>one clear read</strong> — what the data says, where the edge environment is, and what areas are worth looking at across spread, total, and props. Always ends the same way.</div>
+        <div class="step-example">"This is not a pick. This is what the data says. Your decision is always yours."</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- CONFIDENCE LEVELS -->
+  <div class="reveal">
+    <div class="section-eyebrow">Confidence Levels</div>
+    <div class="section-headline">Four levels.<br>One honest read.</div>
+    <div class="section-body">
+      <p>Every breakdown gets a confidence level. It's not a rating of how likely you are to win — it's an honest assessment of how clear the data picture is. Some games are clean. Some are a mess. We tell you which is which.</p>
+    </div>
+  </div>
+
+  <div class="conf-grid">
+    <div class="conf-card reveal">
+      <div class="conf-card-bar conf-card-bar-clear"></div>
+      <div class="conf-card-body">
+        <div class="conf-card-header">
+          <div class="conf-badge cb-clear"><span class="dot"></span>Clear Spot</div>
+          <div class="conf-card-title">The data points cleanly in one direction.</div>
+        </div>
+        <div class="conf-card-desc">The environment is stable, the logic holds, and the key factors align. This doesn't mean it's a lock — no game is. It means the picture is unusually clear tonight.</div>
+        <div class="conf-card-example">"Denver's pace advantage is real, the market confirms it, and the fragility points are specific and checkable."</div>
+      </div>
+    </div>
+
+    <div class="conf-card reveal rd1">
+      <div class="conf-card-bar conf-card-bar-lean"></div>
+      <div class="conf-card-body">
+        <div class="conf-card-header">
+          <div class="conf-badge cb-lean"><span class="dot"></span>Lean</div>
+          <div class="conf-card-title">There's a directional read — but it's not clean.</div>
+        </div>
+        <div class="conf-card-desc">Real factors point one way, but there's enough noise on the other side to keep this from being a clear spot. Worth reading before deciding.</div>
+        <div class="conf-card-example">"The data leans Detroit, but Orlando's home court advantage and low total create real variance risk."</div>
+      </div>
+    </div>
+
+    <div class="conf-card reveal rd2">
+      <div class="conf-card-bar conf-card-bar-fragile"></div>
+      <div class="conf-card-body">
+        <div class="conf-card-header">
+          <div class="conf-badge cb-fragile"><span class="dot"></span>Fragile</div>
+          <div class="conf-card-title">The logic holds — but it depends on a few things going right.</div>
+        </div>
+        <div class="conf-card-desc">One injury, one lineup change, one early momentum shift could flip this entirely. Read the fragility check carefully before doing anything with this game.</div>
+        <div class="conf-card-example">"This analysis holds if Gobert plays. If he doesn't, the entire picture changes."</div>
+      </div>
+    </div>
+
+    <div class="conf-card reveal rd3">
+      <div class="conf-card-bar conf-card-bar-pass"></div>
+      <div class="conf-card-body">
+        <div class="conf-card-header">
+          <div class="conf-badge cb-pass"><span class="dot"></span>Pass</div>
+          <div class="conf-card-title">Too many moving parts to form a strong view.</div>
+        </div>
+        <div class="conf-card-desc">The data doesn't land clearly enough to warrant a strong opinion. Some games are just hard to read. Knowing when to pass is part of thinking clearly about betting.</div>
+        <div class="conf-card-example">"High variance matchup. Both rosters have injury uncertainty and the line has moved in both directions this week."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- SIGNAL GRADE -->
+  <div class="reveal">
+    <div class="section-eyebrow">Signal Grade</div>
+    <div class="section-headline">A letter grade<br>for the data environment.</div>
+    <div class="section-body">
+      <p>Signal Grade is a letter grade — A through D — that summarizes the overall quality of the data environment for a given game. It's not a confidence rating on the outcome. It's a rating of <strong>how much signal the data contains</strong>.</p>
+      <p>A high Signal Grade means the data is rich, directional, and consistent across multiple factors. A low grade means the data is noisy, conflicting, or thin.</p>
+    </div>
+  </div>
+
+  <div class="signal-explainer reveal rd1">
+    <div class="signal-header">
+      <div class="signal-grade-display">B+</div>
+      <div class="signal-header-copy">
+        <div class="signal-header-label">Example Signal Grade</div>
+        <div class="signal-header-desc">Strong data environment. Clear directional lean with specific, checkable fragility points.</div>
+      </div>
+    </div>
+    <div class="signal-factors">
+      <div class="signal-factor">
+        <div class="signal-factor-num">01</div>
+        <div class="signal-factor-body">
+          <div class="signal-factor-name">Data Depth</div>
+          <div class="signal-factor-desc">How much relevant data exists for this matchup. Recent games, pace stats, efficiency splits, historical patterns.</div>
+        </div>
+      </div>
+      <div class="signal-factor">
+        <div class="signal-factor-num">02</div>
+        <div class="signal-factor-body">
+          <div class="signal-factor-name">Directional Clarity</div>
+          <div class="signal-factor-desc">How clearly the data points in one direction. High clarity means multiple factors align. Low clarity means conflict.</div>
+        </div>
+      </div>
+      <div class="signal-factor">
+        <div class="signal-factor-num">03</div>
+        <div class="signal-factor-body">
+          <div class="signal-factor-name">Market Alignment</div>
+          <div class="signal-factor-desc">Whether the betting market agrees or disagrees with the data read. Disagreement isn't always bad — sometimes it creates opportunity.</div>
+        </div>
+      </div>
+      <div class="signal-factor">
+        <div class="signal-factor-num">04</div>
+        <div class="signal-factor-body">
+          <div class="signal-factor-name">Fragility Score</div>
+          <div class="signal-factor-desc">How many things need to go right for the base script to hold. Fewer dependencies = higher grade.</div>
+        </div>
+      </div>
+    </div>
+    <div class="signal-scale">
+      <div class="signal-scale-label">Grade Scale</div>
+      <div class="signal-grades-row">
+        <div class="sg-pill">A</div>
+        <div class="sg-pill active">B+</div>
+        <div class="sg-pill">B</div>
+        <div class="sg-pill">B−</div>
+        <div class="sg-pill">C+</div>
+        <div class="sg-pill">C</div>
+        <div class="sg-pill">C−</div>
+        <div class="sg-pill">D</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- DNA TAGS -->
+  <div class="reveal">
+    <div class="section-eyebrow">Game DNA Tags</div>
+    <div class="section-headline">Instant game shape<br>at a glance.</div>
+    <div class="section-body">
+      <p>DNA tags give you the game's character in a word or two. They appear on every breakdown card so you can understand the game type before you read a single line of analysis.</p>
+    </div>
+  </div>
+
+  <div class="dna-grid reveal rd1">
+    <div class="dna-row">
+      <div class="dna-tag-pill">⚡ Transition Clash</div>
+      <div class="dna-def">Both teams play at different tempos. <strong>Whoever forces their pace controls the game.</strong> Watch early possessions — the first team to establish their preferred speed usually wins that battle.</div>
+    </div>
+    <div class="dna-row">
+      <div class="dna-tag-pill">🧱 Half-Court</div>
+      <div class="dna-def">Slow, deliberate game. Teams run set plays, fewer fast breaks. <strong>Totals are usually lower.</strong> Execution matters more than athleticism. Defense has more time to set up.</div>
+    </div>
+    <div class="dna-row">
+      <div class="dna-tag-pill">🎯 Star Driven</div>
+      <div class="dna-def">This game is decided by one or two key players. <strong>Their performance tonight determines the outcome.</strong> Check injury reports and recent form before deciding anything.</div>
+    </div>
+    <div class="dna-row">
+      <div class="dna-tag-pill">🧨 Volatile</div>
+      <div class="dna-def">High variance game. <strong>The outcome is harder to predict than the line suggests.</strong> Could go either way by a large margin. Props and totals are especially risky here.</div>
+    </div>
+    <div class="dna-row">
+      <div class="dna-tag-pill">💤 Low Ceiling</div>
+      <div class="dna-def">Limited scoring upside for both teams. <strong>This game is unlikely to blow open.</strong> Strong defensive matchup, slow pace, or both. The under is often the natural lean.</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-block reveal">
+    <div class="cta-headline">Ready to read tonight's intel?</div>
+    <div class="cta-sub">Every game on tonight's slate has a breakdown ready. Start with one, free.</div>
+    <a href="#" class="cta-btn">See today's slate</a>
+    <div class="cta-note">Free account required · No card needed to start</div>
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

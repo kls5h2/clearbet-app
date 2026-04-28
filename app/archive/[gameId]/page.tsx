@@ -116,7 +116,7 @@ export default async function ArchiveDetailPage({
 
   return (
     <div style={{ background: "var(--canvas, #FAFAFA)", minHeight: "100vh", paddingBottom: "5rem" }}>
-      <Nav backHref="/archive" backLabel="Archive" sportTag={row.sport} />
+      <Nav backHref="/archive" backLabel="Archive" />
 
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
         {/* Snapshot banner */}

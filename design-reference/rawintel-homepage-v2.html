@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Raw data. Clear read. Your call.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #111110; --ink-2: #2E2C2A; --signal: #C9352A;
+  --warm-white: #F8F6F2; --surface: #FFFFFF; --cream: #F0EDE6;
+  --muted: #8C8880; --muted-light: #B4B0A8;
+  --border: rgba(17,17,16,0.08); --border-med: rgba(17,17,16,0.13);
+  --sans: 'Inter', -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace;
+  --shadow-md: 0 2px 4px rgba(17,17,16,0.04), 0 6px 16px rgba(17,17,16,0.07), 0 16px 32px rgba(17,17,16,0.05), 0 0 0 1px rgba(17,17,16,0.04), inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-lg: 0 4px 8px rgba(17,17,16,0.05), 0 12px 24px rgba(17,17,16,0.08), 0 28px 48px rgba(17,17,16,0.07), 0 0 0 1px rgba(17,17,16,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--ink); color: var(--warm-white); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 0 48px; height: 56px; display: flex; align-items: center; background: linear-gradient(to bottom, rgba(17,17,16,0.96) 0%, rgba(17,17,16,0) 100%); }
+.nav-brand { font-size: 15px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; color: #fff; padding-right: 28px; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 24px; flex-shrink: 0; }
+.nav-brand .intel { color: rgba(255,255,255,0.4); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.45); text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.15s; }
+.nav-links a:hover { color: #fff; background: rgba(255,255,255,0.07); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.btn-login { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.5); text-decoration: none; padding: 7px 16px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.15s; }
+.btn-login:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.btn-cta { font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: none; padding: 7px 18px; border-radius: 5px; background: var(--signal); transition: all 0.15s; }
+.btn-cta:hover { background: #b02e24; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 120px 48px 80px; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; pointer-events: none; }
+.hero-bg-letter { position: absolute; right: -4%; top: 50%; transform: translateY(-50%); font-size: clamp(380px, 48vw, 680px); font-weight: 900; letter-spacing: -0.05em; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.035); line-height: 1; user-select: none; animation: letterDrift 12s ease-in-out infinite alternate; }
+@keyframes letterDrift { from { transform: translateY(-50%); } to { transform: translateY(-52%) translateX(-12px); } }
+.hero-bg-glow { position: absolute; top: -20%; left: -10%; width: 70vw; height: 70vw; border-radius: 50%; background: radial-gradient(circle, rgba(201,53,42,0.07) 0%, transparent 65%); animation: glowPulse 8s ease-in-out infinite alternate; }
+@keyframes glowPulse { from { opacity: 0.6; transform: scale(1); } to { opacity: 1; transform: scale(1.08); } }
+.hero-bg-line { position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(to right, transparent, rgba(201,53,42,0.15) 50%, transparent); animation: scanLine 6s ease-in-out infinite alternate; }
+@keyframes scanLine { from { top: 36%; opacity: 0.6; } to { top: 40%; opacity: 1; } }
+.hero-bg-grain { position: absolute; inset: 0; opacity: 0.4; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"); }
+.hero-content { position: relative; z-index: 1; max-width: 860px; }
+@keyframes revealLine { to { opacity: 1; transform: translateY(0); } }
+@keyframes revealUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 28px; opacity: 0; animation: revealUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) forwards; }
+.hero-eyebrow::before { content: ''; display: block; width: 24px; height: 1px; background: var(--signal); }
+.hero-headline { font-size: clamp(48px, 7vw, 80px); font-weight: 800; letter-spacing: -0.04em; line-height: 1.0; color: #fff; margin-bottom: 8px; overflow: hidden; }
+.hero-headline .line { display: block; opacity: 0; transform: translateY(100%); }
+.hero-headline .line-1 { animation: revealLine 0.7s 0.25s cubic-bezier(0.16,1,0.3,1) forwards; }
+.hero-headline .line-2 { animation: revealLine 0.7s 0.38s cubic-bezier(0.16,1,0.3,1) forwards; }
+.hero-headline .line-3 { animation: revealLine 0.7s 0.51s cubic-bezier(0.16,1,0.3,1) forwards; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,0.3); }
+.hero-headline .accent { color: var(--signal); -webkit-text-stroke: 0; }
+.hero-sub { font-size: 17px; font-weight: 400; color: rgba(255,255,255,0.5); line-height: 1.65; max-width: 520px; margin: 28px 0 40px; opacity: 0; animation: revealUp 0.7s 0.65s cubic-bezier(0.16,1,0.3,1) forwards; }
+.hero-sub strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+.hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 72px; opacity: 0; animation: revealUp 0.7s 0.78s cubic-bezier(0.16,1,0.3,1) forwards; }
+.cta-primary { font-size: 14px; font-weight: 600; color: #fff; text-decoration: none; padding: 13px 28px; border-radius: 6px; background: var(--signal); display: flex; align-items: center; gap: 8px; transition: all 0.2s cubic-bezier(0.16,1,0.3,1); }
+.cta-primary:hover { background: #b02e24; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,53,42,0.35); }
+.cta-primary::after { content: '→'; transition: transform 0.15s; }
+.cta-primary:hover::after { transform: translateX(3px); }
+.cta-secondary { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.5); text-decoration: none; padding: 13px 20px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.15s; }
+.cta-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.cta-note { font-family: var(--mono); font-size: 10.5px; color: rgba(255,255,255,0.25); letter-spacing: 0.04em; }
+.hero-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); opacity: 0; animation: revealUp 0.7s 0.9s cubic-bezier(0.16,1,0.3,1) forwards; }
+.step { background: rgba(255,255,255,0.03); padding: 24px 28px; position: relative; transition: background 0.2s; }
+.step:hover { background: rgba(255,255,255,0.06); }
+.step-num { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--signal); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.step-num::after { content: ''; flex: 1; height: 1px; background: rgba(201,53,42,0.2); }
+.step-title { font-size: 15px; font-weight: 700; letter-spacing: -0.025em; color: #fff; margin-bottom: 8px; }
+.step-desc { font-size: 12.5px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+.step-desc strong { color: rgba(255,255,255,0.65); font-weight: 500; }
+.step:not(:last-child)::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.15); z-index: 2; }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.rd1 { transition-delay: 0.1s; } .rd2 { transition-delay: 0.2s; } .rd3 { transition-delay: 0.3s; }
+.s-intro { margin-bottom: 56px; }
+.s-intro-copy { display: flex; flex-direction: column; justify-content: center; }
+.s-intro-tag { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.s-intro-tag::before { content: ''; width: 20px; height: 1px; background: var(--signal); flex-shrink: 0; }
+.s-intro-headline { font-size: clamp(32px, 4.5vw, 52px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.06; margin-bottom: 14px; }
+.s-intro-sub { font-size: 15px; font-weight: 400; line-height: 1.6; max-width: 520px; }
+.s-pad { padding: 96px 64px; } .s-inner { max-width: 1000px; margin: 0 auto; }
+.s { position: relative; }
+.s-light { background: var(--warm-white); color: var(--ink); } .s-light .s-intro-tag { color: var(--signal); } .s-light .s-intro-headline { color: var(--ink); } .s-light .s-intro-sub { color: var(--muted); }
+.s-cream { background: var(--cream); color: var(--ink); } .s-cream .s-intro-tag { color: var(--signal); } .s-cream .s-intro-headline { color: var(--ink); } .s-cream .s-intro-sub { color: var(--muted); }
+.s-white { background: var(--surface); color: var(--ink); } .s-white .s-intro-tag { color: var(--signal); } .s-white .s-intro-headline { color: var(--ink); } .s-white .s-intro-sub { color: var(--muted); }
+.s-dark { background: var(--ink); color: #fff; } .s-dark .s-intro-tag { color: var(--signal); } .s-dark .s-intro-headline { color: #fff; } .s-dark .s-intro-sub { color: rgba(255,255,255,0.45); }
+.diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-med); }
+.diff-col { padding: 36px 32px; background: var(--surface); } .diff-col.rawintel { background: var(--ink); }
+.diff-col-tag { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-med); color: var(--muted); }
+.diff-col.rawintel .diff-col-tag { color: var(--signal); border-bottom-color: rgba(255,255,255,0.08); }
+.diff-col-title { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 28px; line-height: 1.15; color: var(--ink); } .diff-col.rawintel .diff-col-title { color: #fff; }
+.diff-items { display: flex; flex-direction: column; gap: 16px; }
+.diff-item { display: flex; align-items: flex-start; gap: 11px; }
+.diff-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.diff-icon.bad { background: rgba(17,17,16,0.06); color: var(--muted); } .diff-icon.good { background: var(--signal); color: #fff; }
+.diff-text { font-size: 13.5px; line-height: 1.55; color: var(--muted); } .diff-col.rawintel .diff-text { color: rgba(255,255,255,0.65); } .diff-col.rawintel .diff-text strong { color: #fff; }
+.preview-card { background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-md); position: relative; border: 1px solid rgba(17,17,16,0.06); }
+.preview-chrome { background: var(--ink); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.preview-chrome-left { display: flex; align-items: center; gap: 10px; }
+.preview-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); }
+.preview-chrome-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+.preview-chrome-signal { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--signal); }
+.preview-matchup-row { padding: 28px 32px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.preview-matchup { font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: var(--ink); line-height: 1.1; }
+.preview-matchup .at { font-size: 17px; font-weight: 400; color: var(--muted); margin: 0 8px; }
+.preview-time { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.preview-steps { padding: 24px 32px; display: flex; flex-direction: column; }
+.preview-step { display: grid; grid-template-columns: 32px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--border); }
+.preview-step:last-child { border-bottom: none; }
+.preview-step-num { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--muted-light); letter-spacing: 0.08em; padding-top: 3px; }
+.preview-step-title { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--signal); margin-bottom: 7px; }
+.preview-step-text { font-size: 14px; color: var(--ink-2); line-height: 1.62; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; margin-left: 6px; }
+.tag-green { background: rgba(26,122,72,0.1); color: #1A7A48; } .tag-amber { background: rgba(181,106,18,0.1); color: #B56A12; }
+.preview-blur { position: absolute; bottom: 0; left: 0; right: 0; height: 260px; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.98) 100%); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 36px; }
+.preview-blur-cta { text-align: center; }
+.preview-blur-cta p { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+.preview-blur-btn { font-size: 14px; font-weight: 600; color: #fff; text-decoration: none; padding: 13px 32px; border-radius: 6px; background: var(--ink); display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+.preview-blur-btn:hover { background: var(--signal); transform: translateY(-1px); }
+.preview-blur-btn::after { content: '→'; }
+.teaser-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--border-med); }
+.teaser-date { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); }
+.teaser-tabs { display: flex; gap: 4px; }
+.teaser-tab { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 14px; border-radius: 3px; cursor: pointer; border: 1px solid var(--border-med); background: transparent; color: var(--muted); transition: all 0.12s; }
+.teaser-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.teaser-games { display: flex; flex-direction: column; gap: 2px; }
+.teaser-game { display: grid; grid-template-columns: 1fr auto auto; gap: 20px; align-items: center; padding: 15px 16px; border-radius: 6px; background: transparent; transition: background 0.12s; text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+.teaser-game:hover { background: var(--cream); border-color: var(--border); }
+.teaser-game-matchup { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+.teaser-game-matchup .at { font-size: 12px; font-weight: 400; color: var(--muted); margin: 0 5px; }
+.teaser-game-time { font-family: var(--mono); font-size: 11px; color: var(--muted-light); white-space: nowrap; }
+.teaser-game-cta { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--signal); opacity: 0; transition: opacity 0.12s; white-space: nowrap; }
+.teaser-game:hover .teaser-game-cta { opacity: 1; }
+.teaser-footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.teaser-footer-text { font-size: 13px; color: var(--muted); } .teaser-footer-text strong { color: var(--ink); font-weight: 600; }
+.teaser-btn { font-size: 13.5px; font-weight: 600; color: #fff; text-decoration: none; padding: 11px 24px; border-radius: 6px; background: var(--signal); display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; }
+.teaser-btn:hover { background: #b02e24; transform: translateY(-1px); } .teaser-btn::after { content: '→'; }
+.manifesto-inner { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+.manifesto-bg-glow { position: absolute; bottom: -30%; right: -10%; width: 60vw; height: 60vw; border-radius: 50%; background: radial-gradient(circle, rgba(201,53,42,0.06) 0%, transparent 65%); pointer-events: none; }
+.manifesto-tag { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--signal); display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
+.manifesto-tag::before { content: ''; width: 24px; height: 1px; background: var(--signal); }
+.manifesto-body { font-size: clamp(22px, 3.5vw, 36px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.35; }
+.manifesto-body em { font-style: normal; color: #fff; } .manifesto-body .dim { color: rgba(255,255,255,0.32); font-weight: 400; } .manifesto-body .signal { color: var(--signal); }
+.manifesto-rule { width: 40px; height: 2px; background: var(--signal); margin: 52px 0; opacity: 0.6; }
+.manifesto-close { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: rgba(255,255,255,0.22); line-height: 1.7; }
+.manifesto-close strong { color: rgba(255,255,255,0.45); font-weight: 500; }
+footer { background: #0C0C0B; padding: 32px 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.footer-brand { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,0.2); } .footer-brand .dot { color: var(--signal); opacity: 0.5; }
+.footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.footer-links a { font-size: 11.5px; color: rgba(255,255,255,0.25); text-decoration: none; transition: color 0.12s; }
+.footer-links a:hover { color: rgba(255,255,255,0.55); }
+.footer-legal { font-size: 10.5px; color: rgba(255,255,255,0.15); text-align: right; line-height: 1.6; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Learn</a></li>
+    <li><a href="#">Tools</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="btn-login">Log in</a>
+    <a href="#" class="btn-cta">Start free</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-bg-glow"></div>
+    <div class="hero-bg-line"></div>
+    <div class="hero-bg-letter">R</div>
+    <div class="hero-bg-grain"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Sports betting decision support</div>
+    <h1 class="hero-headline">
+      <span class="line line-1">Raw data.</span>
+      <span class="line line-2">Clear read.</span>
+      <span class="line line-3"><span class="accent">Your</span> call.</span>
+    </h1>
+    <p class="hero-sub">RawIntel turns game data into straight talk — <strong>simple enough for a rookie, deep enough for a pro.</strong> Never picks. Just everything you need to decide for yourself.</p>
+    <div class="hero-ctas">
+      <a href="#" class="cta-primary">See today's slate</a>
+      <a href="#" class="cta-secondary">How it works</a>
+      <span class="cta-note">No account needed to start</span>
+    </div>
+    <div class="hero-steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Pick a game</div>
+        <div class="step-desc">Every game on today's slate. Analyzed. Ready. <strong>Choose what you're watching tonight.</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Get the breakdown</div>
+        <div class="step-desc">No noise. <strong>Game shape, key drivers, market read</strong> — everything that actually matters, nothing that doesn't.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Your decision</div>
+        <div class="step-desc">Armed with the full picture, the call is yours. <strong>That's not a disclaimer — that's the product.</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s s-light s-pad">
+  <div class="s-inner">
+    <div class="s-intro reveal">
+      <div class="s-intro-copy">
+        <div class="s-intro-tag">What makes it different</div>
+        <div class="s-intro-headline">Built for the bettor<br>who wants to think.</div>
+        <div class="s-intro-sub">Most tools either tell you what to bet or dump raw numbers on you. RawIntel does neither.</div>
+      </div>
+    </div>
+    <div class="diff-grid reveal rd1">
+      <div class="diff-col">
+        <div class="diff-col-tag">Picks services</div>
+        <div class="diff-col-title">They decide.<br>You trust blindly.</div>
+        <div class="diff-items">
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">Tells you what to bet with no explanation</div></div>
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">You never learn how to read the board</div></div>
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">When they're wrong, you have no idea why</div></div>
+        </div>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-tag">Raw data tools</div>
+        <div class="diff-col-title">All signal.<br>No translation.</div>
+        <div class="diff-items">
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">Dumps numbers without context</div></div>
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">Requires you to already know what matters</div></div>
+          <div class="diff-item"><div class="diff-icon bad">✕</div><div class="diff-text">Overwhelming before the game even starts</div></div>
+        </div>
+      </div>
+      <div class="diff-col rawintel">
+        <div class="diff-col-tag">RawIntel</div>
+        <div class="diff-col-title" style="color:#fff;">Clear read.<br>Your call.</div>
+        <div class="diff-items">
+          <div class="diff-item"><div class="diff-icon good">✓</div><div class="diff-text"><strong>Explains what the data means</strong> — not just what it says</div></div>
+          <div class="diff-item"><div class="diff-icon good">✓</div><div class="diff-text"><strong>Teaches you to think</strong> about the board over time</div></div>
+          <div class="diff-item"><div class="diff-icon good">✓</div><div class="diff-text"><strong>You walk away informed.</strong> Confident. Ready to decide.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s s-cream s-pad">
+  <div class="s-inner">
+    <div class="s-intro reveal">
+      <div class="s-intro-copy">
+        <div class="s-intro-tag">What a breakdown looks like</div>
+        <div class="s-intro-headline">The breakdown,<br>step by step.</div>
+        <div class="s-intro-sub">Every breakdown follows the same structure — so you always know where you are and what it means.</div>
+      </div>
+    </div>
+    <div class="preview-card reveal rd1">
+      <div class="preview-chrome">
+        <div class="preview-chrome-left">
+          <div class="preview-dot"></div>
+          <div class="preview-chrome-label">Sample Breakdown · NBA</div>
+        </div>
+        <div class="preview-chrome-signal">SIGNAL B+</div>
+      </div>
+      <div class="preview-matchup-row">
+        <div class="preview-matchup">Denver Nuggets <span class="at">at</span> Minnesota Timberwolves</div>
+        <div class="preview-time">8:30 PM ET</div>
+      </div>
+      <div class="preview-steps">
+        <div class="preview-step">
+          <div class="preview-step-num">01</div>
+          <div>
+            <div class="preview-step-title">Game Shape</div>
+            <div class="preview-step-text">This is a pace control game. Denver wants structure — slow possessions, Jokić's gravity, half-court sets. Minnesota wants chaos — push pace, create transition, keep it unpredictable. <span class="tag tag-green">Tempo is everything.</span></div>
+          </div>
+        </div>
+        <div class="preview-step">
+          <div class="preview-step-num">02</div>
+          <div>
+            <div class="preview-step-title">Key Drivers</div>
+            <div class="preview-step-text">Denver's half-court execution rate is elite when they control pace. Minnesota's defense leaks points in set situations but is top-5 in transition. <span class="tag tag-green">Favors Denver if slow.</span> <span class="tag tag-amber">Gobert availability unconfirmed.</span></div>
+          </div>
+        </div>
+        <div class="preview-step">
+          <div class="preview-step-num">03</div>
+          <div>
+            <div class="preview-step-title">Base Script</div>
+            <div class="preview-step-text">If nothing unexpected happens — Denver controls pace, Jokić operates in space, Minnesota can't generate easy transition buckets — this plays out tight and under the total.</div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-blur">
+        <div class="preview-blur-cta">
+          <p>Fragility Check · Market Read · What This Means — sign in to read</p>
+          <a href="#" class="preview-blur-btn">Read the full breakdown</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s s-white s-pad">
+  <div class="s-inner">
+    <div class="s-intro reveal">
+      <div class="s-intro-copy">
+        <div class="s-intro-tag">Today's slate</div>
+        <div class="s-intro-headline">Tonight's games.<br>All of them.</div>
+        <div class="s-intro-sub">Every game on today's slate has a breakdown ready. Start with one, free — or go through the whole board.</div>
+      </div>
+    </div>
+    <div class="reveal rd1">
+      <div class="teaser-header">
+        <div class="teaser-date">Saturday, April 25</div>
+        <div class="teaser-tabs">
+          <button class="teaser-tab active">NBA</button>
+          <button class="teaser-tab">MLB</button>
+        </div>
+      </div>
+      <div class="teaser-games">
+        <a href="#" class="teaser-game"><div class="teaser-game-matchup">Denver Nuggets <span class="at">at</span> Minnesota Timberwolves</div><div class="teaser-game-time">8:30 PM ET</div><div class="teaser-game-cta">Read →</div></a>
+        <a href="#" class="teaser-game"><div class="teaser-game-matchup">New York Knicks <span class="at">at</span> Atlanta Hawks</div><div class="teaser-game-time">6:00 PM ET</div><div class="teaser-game-cta">Read →</div></a>
+        <a href="#" class="teaser-game"><div class="teaser-game-matchup">Detroit Pistons <span class="at">at</span> Orlando Magic</div><div class="teaser-game-time">1:00 PM ET</div><div class="teaser-game-cta">Read →</div></a>
+        <a href="#" class="teaser-game"><div class="teaser-game-matchup">Oklahoma City Thunder <span class="at">at</span> Phoenix Suns</div><div class="teaser-game-time">3:30 PM ET</div><div class="teaser-game-cta">Read →</div></a>
+      </div>
+      <div class="teaser-footer">
+        <div class="teaser-footer-text"><strong>Start with one read, free.</strong> Upgrade anytime for the full slate.</div>
+        <a href="#" class="teaser-btn">Sign in to read</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s s-dark s-pad" style="position:relative; overflow:hidden;">
+  <div class="manifesto-bg-glow"></div>
+  <div class="manifesto-inner">
+    <div class="manifesto-tag reveal">The RawIntel standard</div>
+    <div class="manifesto-body reveal rd1">
+      <em>Most betting tools talk at you.</em>
+      <span class="dim"> They give you a pick, a number, a signal — and expect you to follow.</span>
+      <br><br>
+      <em>RawIntel works differently.</em>
+      <span class="dim"> We do the homework — the data, the matchup, the market — and hand you the read.</span>
+      <br><br>
+      <span class="signal">You walk away knowing exactly why you bet — or why you didn't.</span>
+    </div>
+    <div class="manifesto-rule reveal rd2"></div>
+    <div class="manifesto-close reveal rd2">
+      The decision is always yours.<br>
+      <strong>RawIntel.</strong>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">RawIntel<span class="dot">.</span></div>
+  <div class="footer-links">
+    <a href="#">How It Works</a><a href="#">Learn</a><a href="#">Tools</a>
+    <a href="#">Terms of Service</a><a href="#">Privacy Policy</a>
+  </div>
+  <div class="footer-legal">For informational purposes only. Not financial or betting advice.<br>Bet responsibly · <a href="#" style="color:rgba(255,255,255,0.25);text-decoration:none;">ncpgambling.org</a> · © RawIntel LLC</div>
+</footer>
+
+<script>
+  document.querySelectorAll('.teaser-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.teaser-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

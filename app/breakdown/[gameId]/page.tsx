@@ -2,29 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import BreakdownView, { type GatedReason } from "@/components/BreakdownView";
+import Link from "next/link";
 import Nav from "@/components/Nav";
+import BreakdownView, { type GatedReason } from "@/components/BreakdownView";
 import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 import { lookupTeam, parseGameId } from "@/lib/team-names";
 
-// Placeholder content that sits under the blur when a free user hits the
-// daily cap or opens an MLB game. The blur hides the text — readers just
-// see shapes — but having real-looking prose makes the overlay read as
-// "here's what you'd see" rather than "empty space."
 const PLACEHOLDER_BREAKDOWN: BreakdownResult = {
   gameShape: "A tightly contested environment driven by complementary rotations and familiar pacing. The script holds until star usage patterns shift mid-game, at which point volatility enters.",
   keyDrivers: [
-    { factor: "Home-court rhythm against a travel-fatigued opponent.",           weight: "primary",   direction: "positive" },
-    { factor: "Top scorer questionable — availability sets the range.",          weight: "primary",   direction: "negative" },
-    { factor: "Tempo compression has held through the last ten meetings.",       weight: "secondary", direction: "neutral"  },
-    { factor: "Bench depth supports the script if rotations shorten.",           weight: "secondary", direction: "positive" },
+    { factor: "Home-court rhythm against a travel-fatigued opponent.", weight: "primary", direction: "positive" },
+    { factor: "Top scorer questionable — availability sets the range.", weight: "primary", direction: "negative" },
+    { factor: "Tempo compression has held through the last ten meetings.", weight: "secondary", direction: "neutral" },
+    { factor: "Bench depth supports the script if rotations shorten.", weight: "secondary", direction: "positive" },
   ],
   baseScript: "Expect the home team to dictate early pace, with the second quarter setting the tone. Adjustments likely come in the third, and the fourth becomes a matchup of closers.",
   fragilityCheck: [
     { item: "Two lineup dependencies remain unverified pre-tipoff — watch the inactives report.", color: "amber" },
-    { item: "Third game in four nights for one side introduces fatigue risk.",                     color: "red" },
+    { item: "Third game in four nights for one side introduces fatigue risk.", color: "red" },
   ],
   marketRead: "The line sits closer to the recent baseline than the opening number implied. Value depends on which matchup you prioritize and how the lineup news lands.",
   edge: [
@@ -41,6 +38,14 @@ const PLACEHOLDER_BREAKDOWN: BreakdownResult = {
   glossaryDefinition: "The number of possessions a team uses per 48 minutes — a core tempo measure.",
 };
 
+const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
+const CONF_COLORS: Record<string, { color: string; label: string }> = {
+  "CLEAR SPOT": { color: "var(--clear)", label: "Clear Spot" },
+  "LEAN":       { color: "var(--lean)",  label: "Lean" },
+  "FRAGILE":    { color: "var(--fragile)", label: "Fragile" },
+  "PASS":       { color: "var(--pass)",  label: "Pass" },
+};
+
 type Status = "idle" | "loading" | "done" | "error";
 
 const LOADING_MESSAGES = [
@@ -55,13 +60,9 @@ const LOADING_MESSAGES = [
   "Building your breakdown. Not picking your bet.",
   "The data is talking. We're listening.",
   "Checking who's actually suiting up tonight.",
-  "Running the numbers one more time.",
   "Sorting signal from noise.",
-  "This is the part where the picture gets clear.",
-  "Pulling the latest injury report.",
   "No hot takes. Just data.",
   "Almost ready. Worth the wait.",
-  "Asking better questions about tonight's game.",
   "The market has opinions. So does the data.",
   "One moment. Making sure this is right.",
 ];
@@ -69,7 +70,6 @@ const LOADING_MESSAGES = [
 function useRotatingMessage(active: boolean) {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * LOADING_MESSAGES.length));
   const [visible, setVisible] = useState(true);
-
   useEffect(() => {
     if (!active) return;
     const interval = setInterval(() => {
@@ -81,8 +81,17 @@ function useRotatingMessage(active: boolean) {
     }, 6000);
     return () => clearInterval(interval);
   }, [active]);
-
   return { message: LOADING_MESSAGES[index], visible };
+}
+
+function formatML(ml: number | null | undefined): string {
+  if (ml == null) return "—";
+  return ml > 0 ? `+${ml}` : `${ml}`;
+}
+
+function formatSpread(spread: number | null | undefined, abv: string): string {
+  if (spread == null) return "—";
+  return `${abv} ${spread > 0 ? "+" : ""}${spread}`;
 }
 
 export default function BreakdownPage() {
@@ -90,7 +99,7 @@ export default function BreakdownPage() {
   const gameId = decodeURIComponent(rawGameId ?? "");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sport: Sport = (searchParams.get("sport")?.toUpperCase() === "MLB" ? "MLB" : "NBA");
+  const sport: Sport = searchParams.get("sport")?.toUpperCase() === "MLB" ? "MLB" : "NBA";
 
   const [status, setStatus] = useState<Status>("idle");
   const [breakdown, setBreakdown] = useState<BreakdownResult | null>(null);
@@ -125,8 +134,6 @@ export default function BreakdownPage() {
         return body;
       })
       .then((data) => {
-        // Soft gate — API returned 200 with game context + `gated` reason.
-        // We render the real header/odds and a blurred body + upsell overlay.
         if (data.gated) {
           setBreakdown(PLACEHOLDER_BREAKDOWN);
           setGame(data.game);
@@ -155,41 +162,28 @@ export default function BreakdownPage() {
     fetchBreakdown();
   }, [gameId]);
 
-  // Resolve full team names. Fresh breakdowns already have them. Legacy cached
-  // rows (generated before the game_snapshot column existed) come back with
-  // teamName === teamAbv — for those, look up the full name from the
-  // abbreviation, and fall back to parsing the game_id if game isn't loaded.
   const resolvedNames = ((): { away: string; home: string } => {
     if (game) {
-      const sport = game.sport as "NBA" | "MLB";
+      const sp = game.sport as "NBA" | "MLB";
       const awayIsAbv = !game.awayTeam.teamName || game.awayTeam.teamName === game.awayTeam.teamAbv;
       const homeIsAbv = !game.homeTeam.teamName || game.homeTeam.teamName === game.homeTeam.teamAbv;
-      const awayLookup = awayIsAbv ? lookupTeam(game.awayTeam.teamAbv, sport) : null;
-      const homeLookup = homeIsAbv ? lookupTeam(game.homeTeam.teamAbv, sport) : null;
       return {
-        away: awayIsAbv ? (awayLookup?.full ?? game.awayTeam.teamAbv) : game.awayTeam.teamName,
-        home: homeIsAbv ? (homeLookup?.full ?? game.homeTeam.teamAbv) : game.homeTeam.teamName,
+        away: awayIsAbv ? (lookupTeam(game.awayTeam.teamAbv, sp)?.full ?? game.awayTeam.teamAbv) : game.awayTeam.teamName,
+        home: homeIsAbv ? (lookupTeam(game.homeTeam.teamAbv, sp)?.full ?? game.homeTeam.teamAbv) : game.homeTeam.teamName,
       };
     }
-    // No game loaded yet — parse game_id so the hero still shows something readable
     const parsed = parseGameId(gameId);
     if (!parsed) return { away: "", home: "" };
-    const away = lookupTeam(parsed.awayAbv, sport)?.full ?? parsed.awayAbv;
-    const home = lookupTeam(parsed.homeAbv, sport)?.full ?? parsed.homeAbv;
-    return { away, home };
+    return {
+      away: lookupTeam(parsed.awayAbv, sport)?.full ?? parsed.awayAbv,
+      home: lookupTeam(parsed.homeAbv, sport)?.full ?? parsed.homeAbv,
+    };
   })();
-  const heroMatchup = resolvedNames.away && resolvedNames.home
-    ? `${resolvedNames.away} @ ${resolvedNames.home}`
-    : "Breakdown";
 
-  // Regenerate is only meaningful before tip-off/first-pitch. Once the game is
-  // live or final, regeneration can't improve the pre-game read, so hide it.
   const effectiveStatus: "scheduled" | "live" | "final" = (() => {
     if (!game) return "scheduled";
     if (game.gameStatus === "final") return "final";
     if (game.gameStatus === "live") return "live";
-
-    // Try parseable gameTime first
     const m = game.gameTime?.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
     if (m) {
       let gh = parseInt(m[1], 10);
@@ -204,188 +198,245 @@ export default function BreakdownPage() {
       if (past > 180) return "final";
       return "live";
     }
-
-    // Legacy cached rows: no parseable gameTime. Fall back to comparing
-    // gameDate against today (ET). If same day, assume live to hide Regenerate
-    // — safer default than assuming scheduled.
     if (game.gameDate && /^\d{8}$/.test(game.gameDate)) {
-      const todayEt = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/New_York",
-        year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(new Date()).replace(/-/g, "");
+      const todayEt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).replace(/-/g, "");
       if (game.gameDate < todayEt) return "final";
       if (game.gameDate > todayEt) return "scheduled";
-      return "live"; // same day, unknown time — default to live
+      return "live";
     }
-    return "live"; // anything else: hide Regenerate
+    return "live";
   })();
+
   const canRegenerate = effectiveStatus === "scheduled";
 
-  // game.gameDate is a YYYYMMDD string (e.g., "20260420"). Parse into a local
-  // Date and let the browser format the weekday + month name — works for any date.
   const formatGameDate = (yyyymmdd: string): string | null => {
     if (!/^\d{8}$/.test(yyyymmdd)) return null;
-    const year = parseInt(yyyymmdd.slice(0, 4), 10);
-    const month = parseInt(yyyymmdd.slice(4, 6), 10) - 1;
-    const day = parseInt(yyyymmdd.slice(6, 8), 10);
-    const d = new Date(year, month, day);
+    const d = new Date(
+      parseInt(yyyymmdd.slice(0, 4), 10),
+      parseInt(yyyymmdd.slice(4, 6), 10) - 1,
+      parseInt(yyyymmdd.slice(6, 8), 10),
+    );
     return d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   };
 
   const formattedDate = game?.gameDate ? formatGameDate(game.gameDate) : null;
-  const heroSub = formattedDate
-    ? `${sport} · ${formattedDate}${game?.gameTime ? ` · ${game.gameTime}` : ""}`
-    : `${sport} breakdown`;
+  const heroMetaLine = [
+    sport,
+    formattedDate,
+    game?.gameTime,
+  ].filter(Boolean).join(" · ");
+
+  const odds = game?.odds;
+  const spread = odds && "spread" in odds ? formatSpread(odds.spread as number | null, game?.homeTeam.teamAbv ?? "") : "—";
+  const runLine = odds && "runLine" in odds ? formatSpread(odds.runLine as number | null, game?.homeTeam.teamAbv ?? "") : null;
+  const total = odds?.total != null ? `${odds.total}` : "—";
+  const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
+  const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
+
+  const confColor = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.color ?? "var(--clear)") : "var(--clear)";
+  const confLabel = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.label ?? "") : "";
+  const signalGrade = breakdown ? (SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B") : "—";
 
   return (
-    <div style={{ background: "var(--canvas, #FAFAFA)", minHeight: "100vh", paddingBottom: "5rem" }}>
-      <Nav backHref="/" sportTag={sport} />
+    <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
+      <Nav backHref="/" backLabel="Today's Intel" />
 
-      {/* Dark hero — standardized */}
-      <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
+      {/* Dark hero band */}
+      <div className="f2" style={{
+        background: "var(--ink)", padding: "28px 20px",
+        position: "relative", overflow: "hidden",
+      }}>
         <span aria-hidden="true" style={{
-          position: "absolute", right: "-60px", top: "-80px",
-          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
-          color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
-        }}>R.</span>
-        <div style={{ maxWidth: "720px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
-          <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
-            Breakdown
-          </p>
-          <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
-            {heroMatchup}
-          </h1>
-          <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
-            {heroSub}
-          </p>
+          content: "R", position: "absolute", right: "-5%", top: "50%", transform: "translateY(-50%)",
+          fontSize: "clamp(120px, 30vw, 220px)", fontWeight: 900,
+          color: "transparent", WebkitTextStroke: "1px rgba(255,255,255,0.03)",
+          lineHeight: 1, pointerEvents: "none", userSelect: "none",
+        }}>R</span>
+
+        <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{
+            fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.35)", marginBottom: "10px",
+            display: "flex", alignItems: "center", gap: "10px",
+          }}>
+            <span style={{ width: "16px", height: "1px", background: "var(--signal)", display: "block" }} />
+            {heroMetaLine || "Breakdown"}
+          </div>
+
+          <div style={{
+            fontSize: "clamp(22px, 6vw, 32px)", fontWeight: 800,
+            letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.1, marginBottom: "20px",
+          }}>
+            {resolvedNames.away && resolvedNames.home ? (
+              <>
+                {resolvedNames.away}
+                <span style={{ fontSize: "0.55em", fontWeight: 400, color: "rgba(255,255,255,0.4)", margin: "0 8px" }}>at</span>
+                {resolvedNames.home}
+              </>
+            ) : (
+              "Breakdown"
+            )}
+          </div>
+
+          {/* Signal grade block — shown once breakdown loads */}
+          {status === "done" && breakdown && !gated && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "12px",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "8px", padding: "12px 16px",
+            }}>
+              <div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
+                  Signal Grade
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "26px", fontWeight: 600, color: "var(--signal)", letterSpacing: "-0.02em" }}>
+                  {signalGrade}
+                </div>
+              </div>
+              <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.08)" }} />
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: confColor }}>
+                  <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: confColor, display: "block" }} />
+                  {confLabel}
+                </div>
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
+                  One of the cleaner reads tonight
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "1.5rem 1.5rem 0" }}>
-        {/* Loading state */}
+      {/* Stats bar — shown when game data available */}
+      {game && odds && (
+        <div className="f2" style={{
+          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+          background: "var(--surface)", borderBottom: "1px solid var(--border-med)",
+          boxShadow: "var(--shadow-sm)",
+        }}>
+          {[
+            { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread },
+            { label: "Total", value: total },
+            { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
+            { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
+          ].map((s, i) => (
+            <div key={s.label} style={{
+              padding: "14px 16px", textAlign: "center",
+              borderRight: i < 3 ? "1px solid var(--border)" : "none",
+            }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Content area */}
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "32px 20px 80px" }}>
+
+        {/* Loading */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {/* Pulsing game header */}
-            <div style={{ background: "var(--paper, #F7F5F0)", borderRadius: "6px", padding: "22px", border: "0.5px solid var(--border, #E0DED8)" }} className="animate-pulse">
-              <div style={{ height: "11px", background: "#EDEAE3", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
-              <div style={{ display: "flex", gap: "14px", marginBottom: "16px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ height: "8px", background: "#EDEAE3", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
-                  <div style={{ height: "26px", background: "#EDEAE3", borderRadius: "4px", width: "120px" }} />
-                </div>
-                <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-                  <div>
-                    <div style={{ height: "8px", background: "#EDEAE3", borderRadius: "4px", width: "60px", marginBottom: "6px" }} />
-                    <div style={{ height: "26px", background: "#EDEAE3", borderRadius: "4px", width: "120px" }} />
-                  </div>
-                </div>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} style={{
+                background: "var(--surface)", borderRadius: "10px",
+                border: "1px solid rgba(17,17,16,0.06)", padding: "20px",
+                boxShadow: "var(--shadow-sm)",
+              }} className="animate-pulse">
+                <div style={{ height: "10px", background: "var(--cream)", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
+                {[1, 2, 3].map((j) => (
+                  <div key={j} style={{ height: "14px", background: "var(--cream)", borderRadius: "4px", width: j === 3 ? "60%" : "100%", marginBottom: "8px" }} />
+                ))}
               </div>
-              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-                {[1,2,3,4].map(j => <div key={j} style={{ flex: 1, height: "40px", background: "#EDEAE3", borderRadius: "6px" }} />)}
-              </div>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <div style={{ height: "24px", background: "#EDEAE3", borderRadius: "999px", width: "72px" }} />
-                <div style={{ height: "24px", background: "#EDEAE3", borderRadius: "4px", width: "160px" }} />
-              </div>
-            </div>
-
-            {/* Loading message card */}
-            <div style={{ background: "var(--paper, #F7F5F0)", borderRadius: "6px", padding: "32px 22px", textAlign: "center", border: "0.5px solid var(--border, #E0DED8)" }}>
-              <p style={{ fontSize: "17px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "12px" }}>Building your breakdown</p>
-              <p
-                style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted, #8A8A86)", minHeight: "1.4rem", transition: "opacity 0.4s ease", opacity: visible ? 1 : 0 }}
-              >
+            ))}
+            <div style={{
+              background: "var(--surface)", borderRadius: "10px",
+              border: "1px solid rgba(17,17,16,0.06)", padding: "28px 20px",
+              textAlign: "center", boxShadow: "var(--shadow-sm)",
+            }}>
+              <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Building your breakdown</p>
+              <p style={{
+                fontSize: "13px", color: "var(--muted)",
+                transition: "opacity 0.4s ease", opacity: visible ? 1 : 0, minHeight: "1.4rem",
+              }}>
                 {message}
               </p>
             </div>
-
-            {/* Pulsing section skeletons */}
-            {[1, 2, 3].map((i) => (
-              <div key={i} style={{ background: "var(--paper, #F7F5F0)", borderRadius: "6px", padding: "20px 22px", border: "0.5px solid var(--border, #E0DED8)" }} className="animate-pulse">
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-                  <div style={{ height: "10px", background: "#EDEAE3", borderRadius: "4px", width: "20px" }} />
-                  <div style={{ height: "10px", background: "#EDEAE3", borderRadius: "4px", width: "80px" }} />
-                  <div style={{ flex: 1, height: "1px", background: "#EDEAE3" }} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ height: "14px", background: "#EDEAE3", borderRadius: "4px", width: "100%" }} />
-                  <div style={{ height: "14px", background: "#EDEAE3", borderRadius: "4px", width: "85%" }} />
-                  <div style={{ height: "14px", background: "#EDEAE3", borderRadius: "4px", width: "70%" }} />
-                </div>
-              </div>
-            ))}
           </div>
         )}
 
-        {/* Error state */}
+        {/* Error */}
         {status === "error" && (
-          <div style={{ background: "var(--paper, #F7F5F0)", border: "0.5px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "32px", textAlign: "center" }}>
-            <p style={{ fontSize: "17px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "8px" }}>Something went wrong</p>
-            <p style={{ fontSize: "13px", color: "var(--signal, #D93B3A)", marginBottom: "20px" }}>{error}</p>
+          <div style={{
+            background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)",
+            borderRadius: "10px", padding: "32px", textAlign: "center",
+            boxShadow: "var(--shadow-sm)",
+          }}>
+            <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Something went wrong</p>
+            <p style={{ fontSize: "13px", color: "var(--signal)", marginBottom: "20px" }}>{error}</p>
             <button
               onClick={() => router.push("/")}
-              style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", background: "none", border: "none", cursor: "pointer" }}
+              style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}
             >
               ← Back to slate
             </button>
           </div>
         )}
 
-        {/* Done state */}
+        {/* Done */}
         {status === "done" && breakdown && game && (
           <>
-            {/* Generation banner — skipped when gated (no breakdown was generated) */}
+            {/* Cache/generation banner */}
             {!gated && fromCache && generatedAt && (
-              /* Cached breakdown banner */
-              <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <div style={{
+                background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
+                borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                color: "var(--ink-2)", marginBottom: "16px", lineHeight: 1.5,
+                display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
+              }}>
                 <span>
                   Breakdown generated at {new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })}
                 </span>
                 {canRegenerate && tier === "pro" && (
-                  <button
-                    onClick={() => fetchBreakdown(true)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
-                  >
+                  <button onClick={() => fetchBreakdown(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap", padding: 0 }}>
                     Regenerate for latest data →
                   </button>
                 )}
               </div>
             )}
             {!gated && !(fromCache && generatedAt) && (
-              /* Fresh generation banner — also offers Regenerate so users can re-run if data moved */
-              <div style={{ background: "#FEF3F3", border: "0.5px solid rgba(217,59,58,0.2)", borderLeft: "3px solid var(--signal, #D93B3A)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "var(--ink, #0E0E0E)", marginBottom: "16px", lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <div style={{
+                background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
+                borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                color: "var(--ink-2)", marginBottom: "16px", lineHeight: 1.5,
+                display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
+              }}>
                 <span>
                   {generatedAt
-                    ? `Generated at ${new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })} using live pre-game data. Injury or lineup changes after generation are not reflected.`
-                    : `Generated before ${game.sport === "MLB" ? "first pitch" : "tip-off"} using live pre-game data. Injury or lineup changes after generation are not reflected.`}
+                    ? `Generated at ${new Date(generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" })} using live pre-game data.`
+                    : `Generated using live pre-game data. Lineup changes after generation are not reflected.`}
                 </span>
                 {canRegenerate && tier === "pro" && (
-                  <button
-                    onClick={() => fetchBreakdown(true)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal, #D93B3A)", whiteSpace: "nowrap", padding: 0 }}
-                  >
+                  <button onClick={() => fetchBreakdown(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap", padding: 0 }}>
                     Regenerate →
                   </button>
                 )}
               </div>
             )}
+
             <BreakdownView breakdown={breakdown} game={game} tier={tier ?? "free"} gated={gated ?? undefined} />
 
-            {/* Share button — Pro only, and never when gated */}
+            {/* Share — Pro only, not gated */}
             {!gated && tier === "pro" && (
               <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
                 <button
                   onClick={() => setShareOpen(true)}
                   style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    fontFamily: "var(--sans)",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    color: "var(--signal, #D93B3A)",
+                    background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
+                    letterSpacing: "0.04em", color: "var(--signal)",
                   }}
                 >
                   Share this read →
@@ -394,18 +445,16 @@ export default function BreakdownPage() {
             )}
           </>
         )}
-
-        {/* Tagline + timestamp */}
-        {status === "done" && (
-          <div style={{ textAlign: "center", padding: "1.5rem 0 0" }}>
-            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "12px", color: "var(--muted, #8A8A86)" }}>
-              What the data says. Your decision to make.
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Share modal */}
+      <footer style={{ textAlign: "center", padding: "20px", fontSize: "11.5px", color: "var(--muted-light)", lineHeight: 1.8 }}>
+        For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.{" "}
+        <a href="https://www.ncpgambling.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>ncpgambling.org</a>
+        {" · "}<Link href="/terms" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Terms of Service</Link>
+        {" · "}<Link href="/privacy" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Privacy Policy</Link>
+        {" · "}© RawIntel LLC
+      </footer>
+
       {status === "done" && breakdown && game && (
         <ShareCard
           game={game}

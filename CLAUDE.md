@@ -280,3 +280,20 @@ When I say "council gather" — invoke all three subagents in parallel on the id
 Agents: optimist-strategist, devils-advocate, neutral-analyst
 Trigger phrase: "council gather"
 Output: Individual reports + consensus + shared_reasoning.md updated
+
+## Design Reference Files
+All page designs live in /design-reference/. These HTML files are 
+the source of truth for layout, typography, spacing, and copy. 
+Do not deviate from them when building pages.
+
+Files:
+- rawintel-homepage-v2.html — Homepage
+- rawintel-slate-v11.html — Today's Intel
+- rawintel-breakdown.html — Breakdown page
+- rawintel-how-it-works.html — How It Works
+- rawintel-glossary.html — Glossary
+- rawintel-line-translator.html — Line Translator
+- rawintel-pricing.html — Pricing
+- rawintel-my-breakdowns.html — My Breakdowns
+- rawintel-login.html — Login / Sign Up
+- rawintel-404.html — 404

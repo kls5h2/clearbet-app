@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
-import ConfidenceBadge from "./ConfidenceBadge";
 import GlossaryCallout from "./GlossaryCallout";
 
 export type GatedReason = "cap" | "mlb";
@@ -16,14 +15,8 @@ interface Props {
 }
 
 const GATE_COPY: Record<GatedReason, { eyebrow: string; heading: string }> = {
-  cap: {
-    eyebrow: "Daily limit",
-    heading: "You've used your breakdown for today.",
-  },
-  mlb: {
-    eyebrow: "Pro coverage",
-    heading: "MLB is a Pro sport.",
-  },
+  cap: { eyebrow: "Daily limit", heading: "You've used your breakdown for today." },
+  mlb: { eyebrow: "Pro coverage", heading: "MLB is a Pro sport." },
 };
 
 const PRO_FEATURES = [
@@ -36,34 +29,15 @@ const PRO_FEATURES = [
   "Unlimited breakdowns",
 ];
 
-// Design tokens
-const INK = "#0E0E0E";
-const SIGNAL = "#D93B3A";
-const PAPER = "#F7F5F0";
-const CANVAS = "#FAFAFA";
-const MUTED = "#8A8A86";
-const BORDER = "rgba(14,14,14,0.10)";
-const BORDER_STRONG = "rgba(14,14,14,0.12)";
-const SERIF = "Georgia, serif";
-const SANS = "Helvetica Neue, Helvetica, Arial, sans-serif";
-
-// dot colors per mockup — functional, kept as-is
-const DOT_GREEN = "#16A34A";
-const DOT_RED   = "#DC2626";
-const DOT_BLUE  = "#3A5470";
-const DOT_AMBER = "#D97706";
-
-const fragilityDot: Record<FragilityColor, string> = {
-  red:   DOT_RED,
-  green: DOT_GREEN,
-  amber: DOT_AMBER,
+// Confidence colors
+const CONF_COLORS: Record<string, { color: string; label: string }> = {
+  "CLEAR SPOT": { color: "var(--clear)", label: "Clear Spot" },
+  "LEAN":       { color: "var(--lean)",  label: "Lean" },
+  "FRAGILE":    { color: "var(--fragile)", label: "Fragile" },
+  "PASS":       { color: "var(--pass)",  label: "Pass" },
 };
 
-const fragilityBg: Record<FragilityColor, { bg: string; border: string }> = {
-  red:   { bg: "#FEF2F2", border: "#FECACA" },
-  green: { bg: "#F0FDF4", border: "#BBF7D0" },
-  amber: { bg: "#FFFBEB", border: "#FDE68A" },
-};
+const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 
 function isPitcherUnknown(name: string | undefined | null): boolean {
   if (!name) return true;
@@ -71,112 +45,142 @@ function isPitcherUnknown(name: string | undefined | null): boolean {
   return n === "" || n === "tbd" || n.startsWith("unknown");
 }
 
-function isGeneratedEarly(gameTime: string): boolean {
-  const match = gameTime.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
-  if (!match) return false;
-  let gameHour = parseInt(match[1], 10);
-  const gameMins = parseInt(match[2], 10);
-  const ampm = match[3].toUpperCase();
-  if (ampm === "PM" && gameHour !== 12) gameHour += 12;
-  if (ampm === "AM" && gameHour === 12) gameHour = 0;
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(now);
-  const currentHour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-  const currentMin = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-  const minutesUntil = gameHour * 60 + gameMins - (currentHour * 60 + currentMin);
-  return minutesUntil > 240;
-}
-
-function getArchetype(
-  confidenceLabel: import("@/lib/types").ConfidenceLabel,
-  odds: AnyGame["odds"],
-  sport: "NBA" | "MLB"
-): string {
-  if (confidenceLabel === "PASS") return "Avoid";
-  if (confidenceLabel === "FRAGILE") return "Handle with care";
-  if (confidenceLabel === "LEAN") return "Lean";
-  if (confidenceLabel === "CLEAR SPOT") return "Clear spot";
-  const total = odds?.total ?? null;
-  if (sport === "MLB") {
-    if (total !== null && total >= 9.5) return "High-run environment";
-    if (total !== null && total <= 7.5) return "Pitching showcase";
-    return "Standard game";
-  }
-  const spread = odds && "spread" in odds ? odds.spread : null;
-  const absSpread = spread !== null ? Math.abs(spread) : null;
-  const highTotal = total !== null && total >= 220;
-  const lowTotal = total !== null && total <= 212;
-  if (absSpread !== null && absSpread > 7) return "Blowout risk";
-  if (absSpread !== null && absSpread >= 3) {
-    if (highTotal) return "Scoring showcase";
-    return "Controlled game";
-  }
-  if (highTotal) return "Open game";
-  if (lowTotal) return "Grind";
-  return "Open game";
-}
-
-// Section header: number + title + extending line
-function SectionHeader({ number, title }: { number: string; title: string }) {
+// Step block wrapper
+function StepBlock({ stepLabel, children, dark }: { stepLabel: string; children: React.ReactNode; dark?: boolean }) {
   return (
-    <div className="flex items-center gap-2 mb-[14px]">
-      <span style={{ fontSize: "10px", fontWeight: 800, color: SIGNAL, letterSpacing: "0.1em", fontFamily: SANS }}>{number}</span>
-      <span style={{ fontSize: "11px", fontWeight: 800, color: INK, letterSpacing: "0.1em", textTransform: "uppercase" as const, fontFamily: SANS }}>{title}</span>
-      <div style={{ flex: 1, height: "1px", background: BORDER }} />
+    <div style={{
+      marginBottom: "8px",
+      background: dark ? "var(--ink)" : "var(--surface)",
+      borderRadius: "10px",
+      border: dark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(17,17,16,0.06)",
+      overflow: "hidden",
+      boxShadow: "var(--shadow-sm)",
+    }}>
+      <div style={{
+        padding: "16px 20px 0",
+        display: "flex", alignItems: "center", gap: "10px",
+      }}>
+        <span style={{
+          fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "var(--signal)",
+        }}>
+          {stepLabel}
+        </span>
+        <div style={{ flex: 1, height: "1px", background: dark ? "rgba(255,255,255,0.08)" : "var(--border)" }} />
+      </div>
+      <div style={{ padding: "12px 20px 20px" }}>
+        {children}
+      </div>
     </div>
   );
 }
 
-// Prose card — paper bg, thin border, no shadow
-function ProseCard({ children }: { children: React.ReactNode }) {
+// Step text (body prose)
+function StepText({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
   return (
     <div style={{
-      background: PAPER, borderRadius: "6px", padding: "20px 22px",
-      marginBottom: "10px", border: `0.5px solid ${BORDER}`,
+      fontSize: "15px", lineHeight: 1.7,
+      color: dark ? "rgba(255,255,255,0.75)" : "var(--ink-2)",
     }}>
       {children}
     </div>
   );
 }
 
-// Bullet card — paper bg, slightly stronger border, no shadow
-function BulletCard({ children }: { children: React.ReactNode }) {
+// Inline tip block
+function StepTip({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
   return (
     <div style={{
-      background: PAPER, borderRadius: "6px", padding: "20px 22px",
-      marginBottom: "10px",
-      border: `0.5px solid ${BORDER_STRONG}`,
+      display: "flex", alignItems: "flex-start", gap: "8px",
+      marginTop: "14px", padding: "12px 14px",
+      background: dark ? "rgba(255,255,255,0.05)" : "rgba(17,17,16,0.03)",
+      borderRadius: "6px",
+      fontSize: "13px", lineHeight: 1.5,
+      color: dark ? "rgba(255,255,255,0.45)" : "var(--muted)",
+    }}>
+      <span style={{ flexShrink: 0, marginTop: "1px" }}>💡</span>
+      <span>{children}</span>
+    </div>
+  );
+}
+
+// Driver item (Key Drivers)
+function DriverItem({ direction, factor }: { direction: string; factor: string }) {
+  const color = direction === "positive" ? "var(--clear)" : direction === "negative" ? "var(--signal)" : direction === "neutral" ? "var(--lean)" : "var(--fragile)";
+  const label = direction === "positive" ? "Supports the script" : direction === "negative" ? "Works against" : direction === "neutral" ? "Neutral context" : "Injury / uncertainty";
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: "12px",
+      padding: "12px 14px", background: "var(--cream)", borderRadius: "7px",
+    }}>
+      <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: color }} />
+      <div>
+        <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "3px", color }}>{label}</div>
+        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{factor}</div>
+      </div>
+    </div>
+  );
+}
+
+// Fragility item
+function FragilityItem({ item, color: fc }: { item: string; color: FragilityColor }) {
+  const bg = fc === "red" ? "var(--fragile-bg)" : fc === "green" ? "var(--clear-bg)" : "var(--fragile-bg)";
+  const border = fc === "red" ? "var(--fragile)" : fc === "green" ? "var(--clear)" : "var(--fragile)";
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: "10px",
+      padding: "12px 14px", background: bg, borderRadius: "7px",
+      borderLeft: `2px solid ${border}`,
+    }}>
+      <span style={{ fontSize: "14px", flexShrink: 0 }}>⚠️</span>
+      <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{item}</div>
+    </div>
+  );
+}
+
+// Market Read block
+function MarketLine({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      marginTop: "14px", padding: "16px 18px",
+      background: "var(--cream)", borderRadius: "7px",
+      borderLeft: "3px solid var(--signal)",
+      fontSize: "15px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
     }}>
       {children}
     </div>
   );
 }
 
-const proseBodyStyle: React.CSSProperties = {
-  fontSize: "15px", fontWeight: 400, color: INK, lineHeight: 1.75, fontFamily: SANS,
-};
-const bulletStyle: React.CSSProperties = {
-  display: "flex", alignItems: "flex-start", gap: "10px",
-  fontSize: "15px", fontWeight: 400, color: INK, lineHeight: 1.65, fontFamily: SANS,
-};
-const legendStyle: React.CSSProperties = {
-  display: "flex", flexWrap: "wrap" as const, gap: "12px",
-  marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${BORDER}`,
-};
-const legendItemStyle: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: "5px",
-  fontSize: "10px", fontWeight: 600, color: MUTED, fontFamily: SANS,
-};
+// Prop item for "Where the data points"
+function PropItem({ type, text }: { type: string; text: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: "10px",
+      padding: "11px 14px", background: "rgba(255,255,255,0.05)",
+      borderRadius: "6px", borderLeft: "2px solid rgba(255,255,255,0.1)",
+    }}>
+      <div style={{
+        fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+        letterSpacing: "0.1em", textTransform: "uppercase",
+        color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap",
+        paddingTop: "2px", minWidth: "52px",
+      }}>
+        {type}
+      </div>
+      <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{text}</div>
+    </div>
+  );
+}
 
 export default function BreakdownView({ breakdown, game, tier = "free", gated }: Props) {
   const { homeTeam, awayTeam, gameStatus } = game;
   const odds = game.odds;
   const isMLB = game.sport === "MLB";
+  const confColor = CONF_COLORS[breakdown.confidenceLabel]?.color ?? "var(--clear)";
+  const confLabel = CONF_COLORS[breakdown.confidenceLabel]?.label ?? breakdown.confidenceLabel;
+  const signalGrade = SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B";
 
   const showMLBPitcherBanner = (() => {
     if (!isMLB || gameStatus === "final") return false;
@@ -187,250 +191,151 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
     );
   })();
 
-  const showNBAEarlyBanner = !isMLB && gameStatus === "scheduled" && isGeneratedEarly(game.gameTime);
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* Status banners */}
       {gameStatus === "final" && (
-        <div style={{ background: PAPER, border: `0.5px solid ${BORDER}`, borderRadius: "6px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, fontFamily: SANS }}>Final</span>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
+        <div style={{
+          background: "var(--warm-white)", border: "1px solid var(--border-med)",
+          borderRadius: "6px", padding: "10px 14px", marginBottom: "16px",
+          display: "flex", alignItems: "center", gap: "10px",
+        }}>
+          <span style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>Final</span>
+          <span style={{ fontSize: "13px", color: "var(--muted)" }}>
             This game has ended. Breakdown was generated before {isMLB ? "first pitch" : "tip-off"}.
           </span>
         </div>
       )}
       {gameStatus === "live" && (
-        <div style={{ background: "#FEF3F3", border: `0.5px solid rgba(217,59,58,0.2)`, borderLeft: `3px solid ${SIGNAL}`, borderRadius: "6px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: SIGNAL, display: "block" }} className="animate-pulse" />
-            <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: SIGNAL, fontFamily: SANS }}>Live</span>
-          </div>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>Game in progress. Breakdowns only generated before start of game.</span>
+        <div style={{
+          background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
+          borderRadius: "6px", padding: "10px 14px", marginBottom: "16px",
+          display: "flex", alignItems: "center", gap: "10px",
+        }}>
+          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--signal)", display: "block", flexShrink: 0 }} className="animate-pulse" />
+          <span style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--signal)", flexShrink: 0 }}>Live</span>
+          <span style={{ fontSize: "13px", color: "var(--muted)" }}>Game in progress. Breakdowns only generated before start of game.</span>
+        </div>
+      )}
+      {showMLBPitcherBanner && (
+        <div style={{
+          background: "var(--fragile-bg)", borderLeft: "3px solid var(--fragile)",
+          borderRadius: "6px", padding: "10px 14px", marginBottom: "8px",
+          display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: "var(--ink-2)",
+        }}>
+          <span style={{ flexShrink: 0 }}>🟡</span>
+          Starting pitcher(s) not yet confirmed. Market read may shift when lineups are posted.
         </div>
       )}
 
-      {/* Game header card */}
-      <div style={{
-        background: PAPER, borderRadius: "6px", padding: "22px 22px 20px",
-        marginBottom: "10px",
-        border: `0.5px solid ${BORDER}`,
-      }}>
-        {/* Sport · Time eyebrow — matchup now lives in the dark hero above.
-            Drop the "Time TBD" fallback entirely when gameTime is unknown
-            (legacy cached rows) so the eyebrow shows just the sport. */}
-        <p style={{ fontSize: "11px", fontWeight: 700, color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px", fontFamily: SANS }}>
-          {isMLB ? "MLB" : "NBA"}{game.gameTime ? ` · ${game.gameTime}` : ""}
-        </p>
-
-        {/* MLB probable starters */}
-        {isMLB && (() => {
-          const g = game as MLBGame;
-          const fmtHand = (hand: "L" | "R" | null) => hand ? (hand === "L" ? "LHP" : "RHP") : null;
-          const awayName = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? g.awayPitcher.name : "Starter TBD";
-          const awayHand = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) ? fmtHand(g.awayPitcher.hand) : null;
-          const awayERA = g.awayPitcher && !isPitcherUnknown(g.awayPitcher.name) && g.awayPitcher.seasonERA != null ? g.awayPitcher.seasonERA.toFixed(2) : null;
-          const homeName = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? g.homePitcher.name : "Starter TBD";
-          const homeHand = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) ? fmtHand(g.homePitcher.hand) : null;
-          const homeERA = g.homePitcher && !isPitcherUnknown(g.homePitcher.name) && g.homePitcher.seasonERA != null ? g.homePitcher.seasonERA.toFixed(2) : null;
-          return (
-            <div style={{ display: "flex", marginBottom: "16px", gap: "8px" }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Away Starter</p>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: INK, letterSpacing: "-0.01em", marginBottom: "2px", fontFamily: SANS }}>{awayName}</p>
-                {(awayHand || awayERA) && (
-                  <p style={{ fontSize: "12px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
-                    {[awayHand, awayERA ? `${awayERA} ERA` : null].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </div>
-              <div style={{ flex: 1, textAlign: "right" }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Home Starter</p>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: INK, letterSpacing: "-0.01em", marginBottom: "2px", fontFamily: SANS }}>{homeName}</p>
-                {(homeHand || homeERA) && (
-                  <p style={{ fontSize: "12px", fontWeight: 500, color: MUTED, fontFamily: SANS }}>
-                    {[homeERA ? `${homeERA} ERA` : null, homeHand].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Odds row */}
-        {odds && (
-          <div style={{ display: "flex", background: "#EDEAE3", borderRadius: "6px", padding: "10px 12px", marginBottom: "16px" }}>
-            {!isMLB && "spread" in odds && (
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Spread</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
-                  {odds.spread !== null ? `${homeTeam.teamAbv} ${odds.spread > 0 ? `+${odds.spread}` : odds.spread}` : "—"}
-                </p>
-              </div>
-            )}
-            {isMLB && "runLine" in odds && (
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Run Line</p>
-                <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
-                  {odds.runLine !== null ? `${homeTeam.teamAbv} ${odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine}` : "—"}
-                </p>
-              </div>
-            )}
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>Total</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>{odds.total !== null ? `O/U ${odds.total}` : "—"}</p>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>{awayTeam.teamAbv} ML</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
-                {odds.awayMoneyline !== null ? (odds.awayMoneyline > 0 ? `+${odds.awayMoneyline}` : `${odds.awayMoneyline}`) : "—"}
-              </p>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED, marginBottom: "4px", fontFamily: SANS }}>{homeTeam.teamAbv} ML</p>
-              <p style={{ fontSize: "14px", fontWeight: 800, color: INK, letterSpacing: "-0.01em", fontFamily: SANS }}>
-                {odds.homeMoneyline !== null ? (odds.homeMoneyline > 0 ? `+${odds.homeMoneyline}` : `${odds.homeMoneyline}`) : "—"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Confidence row — hidden when gated (no real breakdown) */}
-        {!gated && (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <ConfidenceBadge level={breakdown.confidenceLevel} label={breakdown.confidenceLabel} compact={tier !== "pro"} />
-          </div>
-        )}
-
-        {/* Banners handled by the breakdown page wrapper — not duplicated here */}
-      </div>
-
-      {/* Body — six sections. Wrapped in a relative container so the gated
-          overlay can sit on top of the blurred content. */}
+      {/* Body — six sections, gated-blurrable */}
       <div style={{ position: "relative" }}>
-      <div style={gated ? { filter: "blur(6px)", userSelect: "none", pointerEvents: "none" } : undefined}>
+        <div style={gated ? { filter: "blur(6px)", userSelect: "none", pointerEvents: "none" } : undefined}>
 
-      {/* 01 — Game Shape (prose) */}
-      <ProseCard>
-        <SectionHeader number="01" title="Game Shape" />
-        <p style={proseBodyStyle}>{breakdown.gameShape}</p>
-      </ProseCard>
+          {/* 01 — Game Shape */}
+          <StepBlock stepLabel="Game Shape">
+            <StepText>{breakdown.gameShape}</StepText>
+            <StepTip>Game shape tells you what kind of game this is before anything else. It sets the context for every other factor.</StepTip>
+          </StepBlock>
 
-      {/* 02 — Key Drivers (bullet) */}
-      <BulletCard>
-        <SectionHeader number="02" title="Key Drivers" />
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {breakdown.keyDrivers.map((driver, i) => (
-            <div key={i} style={bulletStyle}>
-              <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: driver.direction === "positive" ? DOT_GREEN : driver.direction === "negative" ? DOT_RED : DOT_BLUE }} />
-              <div>{driver.factor}</div>
+          {/* 02 — Key Drivers */}
+          <StepBlock stepLabel="Key Drivers">
+            <StepText>Two to three factors will actually decide this game. Not everything — just what materially matters tonight.</StepText>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "14px" }}>
+              {breakdown.keyDrivers.map((d, i) => (
+                <DriverItem key={i} direction={d.direction} factor={d.factor} />
+              ))}
             </div>
-          ))}
-        </div>
-        <div style={legendStyle}>
-          {[
-            { color: DOT_GREEN, label: "Supports script" },
-            { color: DOT_RED,   label: "Works against" },
-            { color: DOT_BLUE,  label: "Neutral context" },
-            { color: DOT_AMBER, label: "Injury / uncertainty" },
-          ].map((item) => (
-            <div key={item.label} style={legendItemStyle}>
-              <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
-              {item.label}
+            <StepTip>Key drivers are color-coded. Green supports the expected outcome. Red works against it. Amber means injury or uncertainty — check back before game time.</StepTip>
+          </StepBlock>
+
+          {/* 03 — Base Script */}
+          <StepBlock stepLabel="Base Script">
+            <StepText>{breakdown.baseScript}</StepText>
+            <StepTip>The base script is not a prediction. It&apos;s the most probable game shape given the data — the foundation everything else is built on.</StepTip>
+          </StepBlock>
+
+          {/* 04 — Fragility Check */}
+          <StepBlock stepLabel="Fragility Check">
+            <StepText>What breaks the base script? These are the specific things that would flip the expected outcome.</StepText>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "14px" }}>
+              {breakdown.fragilityCheck.map((item, i) => (
+                <FragilityItem key={i} item={item.item} color={item.color} />
+              ))}
             </div>
-          ))}
-        </div>
-      </BulletCard>
+            <StepTip>Read the fragility check before deciding anything. If one of these is already true at game time, the base script changes.</StepTip>
+          </StepBlock>
 
-      {/* 03 — Base Script (prose) */}
-      <ProseCard>
-        <SectionHeader number="03" title="Base Script" />
-        <p style={proseBodyStyle}>{breakdown.baseScript}</p>
-      </ProseCard>
+          {/* 05 — Market Read */}
+          <StepBlock stepLabel="Market Read">
+            <StepText>What the betting market is saying — in plain English.</StepText>
+            <MarketLine>
+              {odds
+                ? breakdown.marketRead
+                : `Lines haven't posted yet — check back closer to ${isMLB ? "first pitch" : "tip-off"} for the full market picture.`}
+            </MarketLine>
+            <StepTip>Line movement matters. When a line moves toward the underdog, informed money is usually driving it.</StepTip>
+          </StepBlock>
 
-      {/* 04 — Fragility Check (bullet) */}
-      <BulletCard>
-        <SectionHeader number="04" title="Fragility Check" />
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {breakdown.fragilityCheck.map((item, i) => {
-            const bg = fragilityBg[item.color];
-            return (
-              <div key={i} style={{ ...bulletStyle, border: `1px solid ${bg.border}`, background: bg.bg, borderRadius: "6px", padding: "10px 12px" }}>
-                <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: fragilityDot[item.color] }} />
-                <div>{item.item}</div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={legendStyle}>
-          {[
-            { color: DOT_RED,   label: "Works against" },
-            { color: DOT_GREEN, label: "Reinforces" },
-            { color: DOT_AMBER, label: "Injury / uncertainty" },
-          ].map((item) => (
-            <div key={item.label} style={legendItemStyle}>
-              <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
-              {item.label}
-            </div>
-          ))}
-        </div>
-      </BulletCard>
+          {/* 06 — What This Means (dark step) */}
+          <StepBlock stepLabel="What This Means" dark>
+            <StepText dark>{breakdown.decisionLens}</StepText>
+            <StepTip dark>
+              Signal Grade {signalGrade} means the data is clear but not perfect. There&apos;s a defined lean with real logic — and real fragility worth knowing before you decide anything.
+            </StepTip>
 
-      {/* 05 — Market Read (prose) */}
-      <ProseCard>
-        <SectionHeader number="05" title="Market Read" />
-        <p style={proseBodyStyle}>
-          {odds
-            ? breakdown.marketRead
-            : `Lines haven't posted yet — check back closer to ${isMLB ? "first pitch" : "tip-off"} for the full market picture.`}
-        </p>
-      </ProseCard>
-
-      {/* 06 — The Edge (bullet) — always rendered to keep 01–07 sequential */}
-      <BulletCard>
-        <div style={{ borderLeft: `3px solid ${SIGNAL}`, paddingLeft: "18px" }}>
-          <SectionHeader number="06" title="The Edge" />
-          {breakdown.edge && breakdown.edge.length > 0 ? (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {breakdown.edge.map((item, i) => (
-                  <div key={i} style={bulletStyle}>
-                    <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: DOT_BLUE }} />
-                    <div>{item}</div>
-                  </div>
-                ))}
-              </div>
-              {breakdown.edgeClosingLine && (
-                <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${BORDER}`, fontSize: "13px", fontWeight: 400, color: MUTED, fontStyle: "italic", fontFamily: SANS }}>
-                  {breakdown.edgeClosingLine}
+            {/* Where the data points */}
+            {breakdown.edge && breakdown.edge.length > 0 && (
+              <div style={{ marginTop: "20px", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "20px" }}>
+                <div style={{
+                  fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)", marginBottom: "12px",
+                  display: "flex", alignItems: "center", gap: "8px",
+                }}>
+                  <span style={{ width: "14px", height: "1px", background: "var(--signal)", display: "block" }} />
+                  Where the data points
                 </div>
-              )}
-            </>
-          ) : (
-            <p style={proseBodyStyle}>No specific market edge identified — the line appears to price this game fairly based on available data.</p>
-          )}
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.28)", fontStyle: "italic", marginBottom: "14px", lineHeight: 1.5 }}>
+                  Not picks — these are the areas the data creates an edge environment around. You decide.
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {breakdown.edge.map((item, i) => (
+                    <PropItem key={i} type={i === 0 ? "Spread" : i === 1 ? "Total" : "Props"} text={item} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Glossary callout */}
+            <div style={{ marginTop: "20px", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "20px" }}>
+              <GlossaryCallout term={breakdown.glossaryTerm} definition={breakdown.glossaryDefinition} dark />
+            </div>
+          </StepBlock>
+
         </div>
-      </BulletCard>
-
-      {/* 07 — What This Means (prose) */}
-      <ProseCard>
-        <SectionHeader number="07" title="What This Means" />
-        <p style={proseBodyStyle}>{breakdown.decisionLens}</p>
-        <GlossaryCallout term={breakdown.glossaryTerm} definition={breakdown.glossaryDefinition} />
-      </ProseCard>
-
+        {gated && <GatedBodyOverlay reason={gated} />}
       </div>
-      {gated && <GatedBodyOverlay reason={gated} />}
+
+      {/* Closing line */}
+      <div style={{
+        marginTop: "32px", padding: "24px 20px",
+        textAlign: "center", borderTop: "1px solid var(--border-med)",
+      }}>
+        <div style={{
+          fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.04em",
+          color: "var(--muted)", lineHeight: 1.7,
+        }}>
+          This is not a pick. This is what the data says.{" "}
+          <strong style={{ color: "var(--ink)", fontWeight: 600, display: "block", marginTop: "4px" }}>
+            Your decision is always yours.
+          </strong>
+        </div>
       </div>
     </div>
   );
 }
 
-/**
- * Overlay panel that sits on top of the blurred body for free users who hit
- * the daily cap or clicked an MLB game. Rendered inline (not as a full-page
- * modal) so the game header card and odds row remain visible above it.
- */
 function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
   const copy = GATE_COPY[reason];
   return (
@@ -438,70 +343,64 @@ function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
       position: "absolute", inset: 0,
       display: "flex", alignItems: "flex-start", justifyContent: "center",
       paddingTop: "40px",
-      background: "linear-gradient(to bottom, rgba(250,250,250,0.35) 0%, rgba(250,250,250,0.92) 18%, rgba(250,250,250,0.96) 100%)",
+      background: "linear-gradient(to bottom, rgba(248,246,242,0.35) 0%, rgba(248,246,242,0.94) 18%, rgba(248,246,242,0.98) 100%)",
     }}>
       <div style={{
-        background: INK, borderRadius: "8px",
+        background: "var(--ink)", borderRadius: "8px",
         padding: "40px 32px",
         maxWidth: "480px", width: "calc(100% - 32px)",
         textAlign: "center",
-        boxShadow: "0 8px 32px rgba(14,14,14,0.18)",
+        boxShadow: "var(--shadow-lg)",
         position: "relative", overflow: "hidden",
       }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-30px", top: "-50px",
-          fontFamily: SERIF, fontSize: "280px", fontStyle: "italic",
-          color: "rgba(217,59,58,0.08)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
-        }}>R.</span>
+          fontSize: "280px", fontWeight: 900,
+          color: "rgba(201,53,42,0.06)", pointerEvents: "none", lineHeight: 1,
+        }}>R</span>
 
         <div style={{ position: "relative", zIndex: 1 }}>
           <p style={{
-            fontFamily: SANS, fontSize: "11px", fontWeight: 500,
-            letterSpacing: "0.22em", textTransform: "uppercase",
-            color: SIGNAL, margin: 0, marginBottom: "12px",
+            fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 500,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "var(--signal)", margin: 0, marginBottom: "12px",
           }}>
             {copy.eyebrow}
           </p>
           <h2 style={{
-            fontFamily: SERIF, fontSize: "clamp(22px, 3vw, 28px)",
-            fontWeight: 500, color: "#FAFAFA",
-            letterSpacing: "-0.02em", lineHeight: 1.2,
-            margin: 0, marginBottom: "20px",
+            fontSize: "clamp(22px, 3vw, 28px)", fontWeight: 800,
+            letterSpacing: "-0.03em", color: "#fff",
+            lineHeight: 1.2, margin: 0, marginBottom: "20px",
           }}>
             {copy.heading}
           </h2>
 
           <ul style={{
             listStyle: "none", padding: 0, margin: 0, marginBottom: "24px",
-            display: "flex", flexDirection: "column", gap: "8px",
-            textAlign: "left",
+            display: "flex", flexDirection: "column", gap: "8px", textAlign: "left",
           }}>
             {PRO_FEATURES.map((feature) => (
               <li key={feature} style={{
-                fontFamily: SANS, fontSize: "13px",
-                color: "#C9C9C4", lineHeight: 1.5,
-                paddingLeft: "18px", position: "relative",
+                fontSize: "13px", color: "rgba(255,255,255,0.65)",
+                lineHeight: 1.5, paddingLeft: "18px", position: "relative",
               }}>
                 <span style={{
                   position: "absolute", left: 0, top: "7px",
-                  width: "6px", height: "6px", borderRadius: "999px",
-                  background: SIGNAL,
+                  width: "6px", height: "6px", borderRadius: "999px", background: "var(--signal)",
                 }} />
                 {feature}
               </li>
             ))}
           </ul>
 
-          <Link
-            href="/pricing"
-            style={{
-              display: "inline-block",
-              background: SIGNAL, color: "#FAFAFA",
-              fontFamily: SANS, fontSize: "13px", fontWeight: 500,
-              letterSpacing: "0.04em", textDecoration: "none",
-              padding: "12px 26px", borderRadius: "4px",
-            }}
-          >
+          <Link href="/pricing" style={{
+            display: "inline-block",
+            background: "var(--signal)", color: "#fff",
+            fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
+            textDecoration: "none", padding: "12px 28px", borderRadius: "6px",
+            boxShadow: "0 2px 8px rgba(201,53,42,0.3)",
+            transition: "all 0.15s",
+          }}>
             Upgrade to Pro →
           </Link>
         </div>

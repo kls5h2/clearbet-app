@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Line Translator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 16px 32px rgba(17,17,16,0.05),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-lg:
+    0 4px 8px rgba(17,17,16,0.05),
+    0 12px 24px rgba(17,17,16,0.08),
+    0 28px 48px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px; line-height: 1.65;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes resultIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+  padding-right: 24px; border-right: 1px solid var(--border-med);
+  margin-right: 20px; flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--cream); }
+.nav-links a.active { color: var(--ink); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.nav-user { font-family: var(--mono); font-size: 10px; color: var(--muted-light); }
+.nav-logout { font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; }
+.nav-logout:hover { color: var(--ink); }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 32px 40px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(140px, 22vw, 260px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+.hero-headline {
+  font-size: clamp(22px, 4vw, 34px); font-weight: 800;
+  letter-spacing: -0.035em; color: #fff; line-height: 1.15; margin-bottom: 8px;
+}
+.hero-sub { font-size: 14px; color: rgba(255,255,255,0.42); line-height: 1.6; max-width: 480px; }
+
+/* ━━━ PAGE ━━━ */
+.page { max-width: 720px; margin: 0 auto; padding: 40px 40px 80px; }
+
+/* ━━━ INPUT CARD ━━━ */
+.input-card {
+  background: var(--surface); border-radius: 12px;
+  border: 1px solid var(--border-med); overflow: hidden;
+  box-shadow: var(--shadow-sm); margin-bottom: 16px;
+}
+
+.input-card-header {
+  padding: 20px 22px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.input-card-label {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+.input-mode-tabs { display: flex; gap: 0; border: 1px solid var(--border-med); border-radius: 6px; overflow: hidden; }
+.mode-tab {
+  font-size: 12.5px; font-weight: 500; color: var(--muted);
+  background: transparent; border: none; border-right: 1px solid var(--border-med);
+  padding: 6px 14px; cursor: pointer;
+  transition: all 0.12s; font-family: var(--sans);
+  display: flex; align-items: center; gap: 6px;
+}
+.mode-tab:last-child { border-right: none; }
+.mode-tab.active {
+  background: var(--ink); color: #fff;
+}
+.mode-tab:hover:not(.active) { background: var(--cream); color: var(--ink); }
+.mode-tab-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--signal);
+  opacity: 0; transition: opacity 0.12s; flex-shrink: 0;
+}
+.mode-tab.active .mode-tab-dot { opacity: 1; }
+
+/* text input */
+.text-input-wrap { padding: 14px 22px 20px; }
+.line-input {
+  width: 100%; min-height: 80px; resize: none;
+  font-family: var(--mono); font-size: 15px; font-weight: 500;
+  color: var(--ink); background: transparent;
+  border: none; outline: none; line-height: 1.5;
+  placeholder-color: var(--muted-light);
+}
+.line-input::placeholder { color: var(--muted-light); font-weight: 400; }
+
+/* image input */
+.image-input-wrap {
+  padding: 14px 22px 20px; display: none;
+}
+.image-input-wrap.active { display: block; }
+.drop-zone {
+  border: 2px dashed var(--border-med); border-radius: 8px;
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  transition: all 0.15s; background: var(--warm-white);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--signal); background: rgba(201,53,42,0.03);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-zone-icon { font-size: 24px; margin-bottom: 8px; }
+.drop-zone-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.drop-zone-text strong { color: var(--ink); font-weight: 600; }
+.drop-zone-sub { font-family: var(--mono); font-size: 10px; color: var(--muted-light); margin-top: 4px; letter-spacing: 0.04em; }
+.image-preview { display: none; position: relative; }
+.image-preview img { width: 100%; border-radius: 6px; max-height: 200px; object-fit: cover; }
+.image-preview-clear {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--ink); color: #fff; border: none; border-radius: 4px;
+  font-size: 11px; font-weight: 600; padding: 4px 10px; cursor: pointer;
+}
+
+.input-footer {
+  padding: 12px 22px 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.input-hint { font-size: 12px; color: var(--muted-light); font-style: italic; }
+.translate-btn {
+  font-size: 13.5px; font-weight: 700; color: #fff;
+  background: var(--signal); border: none; border-radius: 6px;
+  padding: 10px 24px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 8px rgba(201,53,42,0.25);
+  font-family: var(--sans);
+}
+.translate-btn:hover { background: #b02e24; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,53,42,0.35); }
+.translate-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+.translate-btn .spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: none;
+}
+.translate-btn.loading .spinner { display: block; }
+.translate-btn.loading .btn-text { display: none; }
+
+/* ━━━ EXAMPLES ━━━ */
+.examples { margin-bottom: 32px; }
+.examples-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-light);
+  margin-bottom: 10px;
+}
+.examples-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.example-pill {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border-med);
+  padding: 5px 12px; border-radius: 4px; cursor: pointer;
+  transition: all 0.12s; white-space: nowrap;
+}
+.example-pill:hover { color: var(--ink); border-color: var(--border-strong); background: var(--cream); }
+
+/* ━━━ RESULT ━━━ */
+#result { display: none; }
+#result.visible {
+  display: block;
+  animation: resultIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.result-card {
+  background: var(--surface); border-radius: 12px;
+  border: 1px solid rgba(17,17,16,0.06); overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+/* result header */
+.result-header {
+  background: var(--ink); padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.result-header-left { display: flex; align-items: center; gap: 10px; }
+.result-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); }
+.result-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em;
+  text-transform: uppercase; color: rgba(255,255,255,0.5);
+}
+.result-line-display {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.35); max-width: 280px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* translation — the main read */
+.result-translation {
+  padding: 22px 24px;
+  font-size: 16px; line-height: 1.7; color: var(--ink-2);
+  border-bottom: 1px solid var(--border);
+}
+.result-translation strong { font-weight: 600; color: var(--ink); }
+
+/* implied probability */
+.result-prob {
+  padding: 16px 24px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--border); background: var(--warm-white);
+}
+.prob-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  flex-shrink: 0;
+}
+.prob-bar-wrap { flex: 1; height: 6px; background: var(--cream); border-radius: 3px; overflow: hidden; }
+.prob-bar { height: 100%; background: var(--signal); border-radius: 3px; transition: width 1s cubic-bezier(0.16,1,0.3,1); width: 0; }
+.prob-value {
+  font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--ink);
+  flex-shrink: 0; min-width: 40px; text-align: right;
+}
+
+/* mini breakdown sections */
+.mini-section { padding: 18px 24px; border-bottom: 1px solid var(--border); }
+.mini-section:last-child { border-bottom: none; }
+.mini-section-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--signal);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.mini-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.mini-section-text {
+  font-size: 14px; line-height: 1.65; color: var(--ink-2);
+}
+.mini-section-text strong { font-weight: 600; color: var(--ink); }
+
+/* watch items */
+.watch-list { display: flex; flex-direction: column; gap: 8px; }
+.watch-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; color: var(--ink-2); line-height: 1.5;
+}
+.watch-item::before {
+  content: '→'; color: var(--signal); font-size: 13px; flex-shrink: 0; margin-top: 2px;
+}
+
+/* try again */
+.result-footer {
+  padding: 14px 24px; background: var(--warm-white); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.try-again {
+  font-size: 12.5px; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer; font-family: var(--sans);
+  transition: color 0.12s; padding: 0;
+}
+.try-again:hover { color: var(--ink); }
+.result-note { font-family: var(--mono); font-size: 10px; color: var(--muted-light); letter-spacing: 0.04em; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 24px 40px; font-size: 12px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="f1">
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Today's Intel</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Glossary</a></li>
+    <li><a href="#" class="active">Line Translator</a></li>
+    <li><a href="#">My Breakdowns</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-user">kimlynnsharp@gmail.com</span>
+    <a href="#" class="nav-logout">Log out</a>
+  </div>
+</nav>
+
+<!-- HERO BAND -->
+<div class="page-hero f2">
+  <div class="hero-eyebrow">Line Translator</div>
+  <div class="hero-headline">What does that line<br>actually mean?</div>
+  <div class="hero-sub">Paste any betting line — spread, moneyline, total, or prop. Get a plain-English translation, implied probability, and context read back.</div>
+</div>
+
+<div class="page">
+
+  <!-- INPUT CARD -->
+  <div class="input-card f3">
+    <div class="input-card-header">
+      <div class="input-card-label">Paste a line or upload a slip</div>
+      <div class="input-mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('text', this)"><span class="mode-tab-dot"></span>Type</button>
+        <button class="mode-tab" onclick="switchMode('image', this)"><span class="mode-tab-dot"></span>Image</button>
+      </div>
+    </div>
+
+    <!-- TEXT MODE -->
+    <div class="text-input-wrap" id="text-mode">
+      <textarea
+        class="line-input"
+        id="line-input"
+        placeholder="e.g. Denver Nuggets -3.5, Jokić over 28.5 pts, Lakers +130..."
+        rows="3"
+      ></textarea>
+    </div>
+
+    <!-- IMAGE MODE -->
+    <div class="image-input-wrap" id="image-mode">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*">
+        <div class="drop-zone-icon">📸</div>
+        <div class="drop-zone-text"><strong>Drop your bet slip here</strong> or click to upload</div>
+        <div class="drop-zone-sub">PNG · JPEG · WebP · 4MB max</div>
+      </div>
+      <div class="image-preview" id="image-preview">
+        <img id="preview-img" src="" alt="Bet slip preview">
+        <button class="image-preview-clear" onclick="clearImage()">✕ Remove</button>
+      </div>
+    </div>
+
+    <div class="input-footer">
+      <div class="input-hint">Works with spreads, moneylines, totals, and props.</div>
+      <button class="translate-btn" id="translate-btn" onclick="translate()">
+        <span class="btn-text">Translate it →</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="examples f3">
+    <div class="examples-label">Try an example</div>
+    <div class="examples-row">
+      <div class="example-pill" onclick="setExample('Denver Nuggets -3.5 (-110)')">Denver -3.5 (-110)</div>
+      <div class="example-pill" onclick="setExample('Jokić over 28.5 points (-115)')">Jokić o28.5 pts</div>
+      <div class="example-pill" onclick="setExample('Lakers +130 moneyline')">Lakers +130 ML</div>
+      <div class="example-pill" onclick="setExample('Celtics vs Hawks over 214.5 (-108)')">Over 214.5 (-108)</div>
+      <div class="example-pill" onclick="setExample('San Antonio Spurs +9.5 run line')">Spurs +9.5 RL</div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div class="result-card">
+      <div class="result-header">
+        <div class="result-header-left">
+          <div class="result-pulse"></div>
+          <div class="result-label">Translation</div>
+        </div>
+        <div class="result-line-display" id="result-line-display"></div>
+      </div>
+
+      <!-- Translation -->
+      <div class="result-translation" id="result-translation"></div>
+
+      <!-- Implied Probability -->
+      <div class="result-prob">
+        <div class="prob-label">Implied Probability</div>
+        <div class="prob-bar-wrap"><div class="prob-bar" id="prob-bar"></div></div>
+        <div class="prob-value" id="prob-value">—</div>
+      </div>
+
+      <!-- Context Read -->
+      <div class="mini-section">
+        <div class="mini-section-label">What the market is saying</div>
+        <div class="mini-section-text" id="result-context"></div>
+      </div>
+
+      <!-- What to Watch -->
+      <div class="mini-section">
+        <div class="mini-section-label">What to watch</div>
+        <div class="watch-list" id="result-watch"></div>
+      </div>
+
+      <div class="result-footer">
+        <button class="try-again" onclick="resetTool()">← Translate another line</button>
+        <div class="result-note">Not a pick · Your decision is always yours</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+<script>
+let currentMode = 'text';
+let uploadedImageData = null;
+
+function switchMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('text-mode').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('image-mode').classList.toggle('active', mode === 'image');
+}
+
+function setExample(text) {
+  if (currentMode !== 'text') {
+    currentMode = 'text';
+    const tabs = document.querySelectorAll('.mode-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+    tabs[0].classList.add('active');
+    document.getElementById('text-mode').style.display = 'block';
+    document.getElementById('image-mode').classList.remove('active');
+  }
+  document.getElementById('line-input').value = text;
+  document.getElementById('result').classList.remove('visible');
+}
+
+// image handling
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    uploadedImageData = e.target.result;
+    document.getElementById('preview-img').src = uploadedImageData;
+    document.getElementById('drop-zone').style.display = 'none';
+    document.getElementById('image-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage() {
+  uploadedImageData = null;
+  document.getElementById('preview-img').src = '';
+  document.getElementById('drop-zone').style.display = 'block';
+  document.getElementById('image-preview').style.display = 'none';
+  fileInput.value = '';
+}
+
+function resetTool() {
+  document.getElementById('result').classList.remove('visible');
+  document.getElementById('line-input').value = '';
+  clearImage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function translate() {
+  const btn = document.getElementById('translate-btn');
+  const lineText = document.getElementById('line-input').value.trim();
+
+  if (currentMode === 'text' && !lineText) return;
+  if (currentMode === 'image' && !uploadedImageData) return;
+
+  // loading state
+  btn.disabled = true;
+  btn.classList.add('loading');
+  document.getElementById('result').classList.remove('visible');
+
+  const inputDescription = currentMode === 'image'
+    ? 'The user has uploaded an image of a betting slip. Extract and translate the betting lines visible in it.'
+    : `The user wants to translate this betting line: "${lineText}"`;
+
+  const prompt = `You are RawIntel's Line Translator. A user has submitted a betting line and needs a plain-English explanation.
+
+${inputDescription}
+
+Respond ONLY with a JSON object (no markdown, no backticks) in exactly this format:
+{
+  "line": "the exact line as submitted or extracted from image",
+  "translation": "2-3 sentence plain-English explanation of what this line means. Be clear, educational, and conversational. Explain what the bettor wins and loses, what the numbers mean.",
+  "impliedProbability": 52,
+  "context": "1-2 sentences on what the market is saying with this line. What does it imply about the expected outcome? Is this line typical or unusual?",
+  "watch": [
+    "First thing to monitor that could affect this line",
+    "Second thing to monitor"
+  ]
+}
+
+Rules:
+- impliedProbability is an integer (0-100) representing the implied win probability from the odds
+- For spread bets, calculate based on the juice (e.g. -110 = ~52%)
+- For moneylines, calculate the true implied probability
+- watch items should be specific and actionable, 1 sentence each
+- Never suggest what to bet. Never say "bet on" or "I recommend"
+- Keep translation clear enough for a complete beginner`;
+
+  try {
+    const messages = currentMode === 'image' && uploadedImageData ? [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: uploadedImageData.split(';')[0].split(':')[1],
+              data: uploadedImageData.split(',')[1]
+            }
+          },
+          { type: 'text', text: prompt }
+        ]
+      }
+    ] : [
+      { role: 'user', content: prompt }
+    ];
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content.map(c => c.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    renderResult(parsed);
+
+  } catch (err) {
+    console.error(err);
+    renderError();
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+function renderResult(data) {
+  // line display in header
+  document.getElementById('result-line-display').textContent = data.line || '';
+
+  // translation
+  document.getElementById('result-translation').innerHTML = data.translation || '';
+
+  // implied probability
+  const prob = Math.round(data.impliedProbability) || 0;
+  document.getElementById('prob-value').textContent = prob + '%';
+  setTimeout(() => {
+    document.getElementById('prob-bar').style.width = prob + '%';
+  }, 100);
+
+  // context
+  document.getElementById('result-context').innerHTML = data.context || '';
+
+  // watch items
+  const watchEl = document.getElementById('result-watch');
+  watchEl.innerHTML = '';
+  (data.watch || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'watch-item';
+    div.textContent = item;
+    watchEl.appendChild(div);
+  });
+
+  // show result
+  const resultEl = document.getElementById('result');
+  resultEl.classList.add('visible');
+  setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function renderError() {
+  document.getElementById('result-line-display').textContent = 'Error';
+  document.getElementById('result-translation').innerHTML = 'Something went wrong translating that line. Try again or paste the line as text.';
+  document.getElementById('prob-value').textContent = '—';
+  document.getElementById('result-context').textContent = '';
+  document.getElementById('result-watch').innerHTML = '';
+  document.getElementById('result').classList.add('visible');
+}
+
+// pre-load mock result so design is visible
+renderResult({
+  line: 'Denver Nuggets -3.5 (-110)',
+  translation: 'Denver is favored to win by more than 3.5 points. If you bet on Denver, they need to win by <strong>4 or more</strong> for your bet to pay. The (-110) means you bet $110 to win $100 — that\'s standard juice on most spread bets.',
+  impliedProbability: 52,
+  context: 'A 3.5-point spread is relatively tight — the market sees this as a competitive game, not a blowout. At -110, the line hasn\'t moved significantly, suggesting the market is fairly split.',
+  watch: [
+    'Nikola Jokić\'s status — any limitation changes Denver\'s offensive ceiling dramatically.',
+    'Minnesota\'s pace in the first quarter — if they push tempo early, Denver\'s spread advantage narrows.'
+  ]
+});
+
+// enter key to translate
+document.getElementById('line-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); translate(); }
+});
+</script>
+
+</body>
+</html>

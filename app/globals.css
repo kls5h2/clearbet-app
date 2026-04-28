@@ -1,39 +1,200 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #0E0E0E;
-  --signal: #D93B3A;
-  --paper: #F7F5F0;
-  --canvas: #FAFAFA;
-  --muted: #8A8A86;
-  --border: rgba(14,14,14,0.10);
-  --serif: var(--font-serif), Georgia, serif;
-  --sans: var(--font-sans), 'Helvetica Neue', Arial, sans-serif;
+  /* Core palette — design reference exact values */
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --cream-dark: #E4E0D8;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+
+  /* Borders */
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+
+  /* Font stacks */
+  --sans: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: var(--font-mono), 'JetBrains Mono', 'Courier New', monospace;
+  --serif: var(--font-serif), Georgia, 'Times New Roman', serif;
+
+  /* Shadows */
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 16px 32px rgba(17,17,16,0.05),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-lg:
+    0 4px 8px rgba(17,17,16,0.05),
+    0 12px 24px rgba(17,17,16,0.08),
+    0 28px 48px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+
+  /* Confidence level colors */
+  --clear: #1A7A48; --clear-bg: #E4F3EC;
+  --lean: #1852A8;  --lean-bg: #E4EDFA;
+  --fragile: #B56A12; --fragile-bg: #FAF0E2;
+  --pass: #6E6B66;  --pass-bg: #EDECEA;
+
+  /* Outcome colors (My Breakdowns) */
+  --won: #1A7A48;   --won-bg: #E4F3EC;
+  --lost: #C9352A;  --lost-bg: #FAEAEA;
+  --push: #1852A8;  --push-bg: #E4EDFA;
+
+  /* Backward-compat aliases for legacy inline styles */
+  --paper: #F8F6F2;
+  --canvas: #F8F6F2;
 }
 
 @theme inline {
-  --font-sans: var(--font-sans), 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: var(--font-serif), Georgia, serif;
-  --font-mono: var(--font-sans), 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
 }
+
+html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--sans);
-  background: var(--canvas);
+  background: var(--warm-white);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.65;
 }
 
-/* /learn index card hover — matches GameCard/ArchiveCard interaction language */
+/* ━━━ Staggered fade-up entry animations ━━━ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+.f4 { animation: fadeUp 0.5s 0.24s cubic-bezier(0.16,1,0.3,1) both; }
+.f5 { animation: fadeUp 0.5s 0.32s cubic-bezier(0.16,1,0.3,1) both; }
+.f6 { animation: fadeUp 0.5s 0.40s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.rd1 { transition-delay: 0.1s; }
+.rd2 { transition-delay: 0.2s; }
+.rd3 { transition-delay: 0.3s; }
+
+/* ━━━ Headliner pulse dot ━━━ */
+@keyframes hl-ripple {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  55%       { transform: scale(1.7); opacity: 0; }
+}
+.hl-pulse {
+  position: relative;
+}
+.hl-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--signal);
+  opacity: 0.45;
+  animation: hl-ripple 2.2s ease infinite;
+}
+
+/* ━━━ DNA tags with hover tooltips ━━━ */
+.dna-tag {
+  position: relative;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--cream);
+  border: 1px solid var(--border-med);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: default;
+  white-space: nowrap;
+}
+.dna-tag:hover { border-color: var(--border-strong); color: var(--ink); }
+.dna-tag .tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: rgba(255,255,255,0.85);
+  font-size: 11.5px;
+  font-weight: 400;
+  font-family: var(--sans);
+  line-height: 1.45;
+  letter-spacing: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 4px 12px rgba(17,17,16,0.2);
+  z-index: 50;
+}
+.dna-tag .tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+}
+.dna-tag:hover .tooltip { opacity: 1; }
+
+/* ━━━ Confidence badges ━━━ */
+.conf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.conf-badge .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.cb-clear   { background: var(--clear-bg);   color: var(--clear);   } .cb-clear .dot   { background: var(--clear); }
+.cb-lean    { background: var(--lean-bg);    color: var(--lean);    } .cb-lean .dot    { background: var(--lean); }
+.cb-fragile { background: var(--fragile-bg); color: var(--fragile); } .cb-fragile .dot { background: var(--fragile); }
+.cb-pass    { background: var(--pass-bg);    color: var(--pass);    } .cb-pass .dot    { background: var(--pass); }
+
+/* ━━━ Inline color tags (within step text) ━━━ */
+.it-green { background: rgba(26,122,72,0.1);  color: var(--clear);   }
+.it-red   { background: rgba(201,53,42,0.1);  color: var(--signal);  }
+.it-amber { background: rgba(181,106,18,0.1); color: var(--fragile); }
+.it-blue  { background: rgba(24,82,168,0.1);  color: var(--lean);    }
+
+/* ━━━ Learn card hover ━━━ */
 .learn-card {
   transition: background 150ms ease, border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
 }
 .learn-card:hover {
-  background: #EFEDE7;
-  border-color: rgba(14,14,14,0.18);
+  background: var(--cream);
+  border-color: var(--border-med);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(14,14,14,0.08), 0 1px 2px rgba(14,14,14,0.04);
+  box-shadow: 0 6px 18px rgba(17,17,16,0.08), 0 1px 2px rgba(17,17,16,0.04);
 }

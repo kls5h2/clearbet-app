@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Page Not Found</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #111110; --signal: #C9352A;
+  --warm-white: #F8F6F2; --surface: #FFFFFF; --cream: #F0EDE6;
+  --muted: #6E6B66; --muted-light: #9B9790;
+  --border-med: rgba(17,17,16,0.15);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+html, body { height: 100%; }
+body {
+  font-family: var(--sans); background: var(--ink); color: var(--warm-white);
+  -webkit-font-smoothing: antialiased;
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.6s 0.22s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.6s 0.34s cubic-bezier(0.16,1,0.3,1) both; }
+.f4 { animation: fadeUp 0.6s 0.46s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* NAV */
+nav {
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: #fff;
+}
+.nav-brand .intel { color: rgba(255,255,255,0.35); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+
+/* MAIN */
+main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 40px; text-align: center;
+  position: relative; overflow: hidden;
+}
+/* ghost 404 */
+main::before {
+  content: '404';
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: clamp(180px, 30vw, 320px); font-weight: 900; letter-spacing: -0.06em;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none; white-space: nowrap;
+}
+/* signal glow */
+main::after {
+  content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%);
+  width: 60vw; height: 60vw; border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,53,42,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--signal);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.eyebrow::before, .eyebrow::after { content: ''; width: 20px; height: 1px; background: var(--signal); }
+
+.headline {
+  font-size: clamp(28px, 5vw, 48px); font-weight: 800;
+  letter-spacing: -0.04em; line-height: 1.05; color: #fff; margin-bottom: 14px;
+}
+.sub {
+  font-size: 15px; color: rgba(255,255,255,0.4); line-height: 1.65;
+  max-width: 380px; margin: 0 auto 36px;
+}
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.btn-primary {
+  font-size: 13.5px; font-weight: 700; color: #fff; text-decoration: none;
+  padding: 12px 28px; border-radius: 6px; background: var(--signal);
+  display: flex; align-items: center; gap: 7px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 8px rgba(201,53,42,0.3);
+}
+.btn-primary:hover { background: #b02e24; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(201,53,42,0.4); }
+.btn-primary::after { content: '→'; }
+.btn-secondary {
+  font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.5); text-decoration: none;
+  padding: 12px 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.15s;
+}
+.btn-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+.closer {
+  margin-top: 52px; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.06em; color: rgba(255,255,255,0.15);
+}
+.closer span { color: var(--signal); opacity: 0.5; }
+
+/* FOOTER */
+footer {
+  text-align: center; padding: 20px 40px; flex-shrink: 0;
+  font-size: 11.5px; color: rgba(255,255,255,0.18); line-height: 1.8;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+footer a { color: rgba(255,255,255,0.25); text-decoration: underline; text-underline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+</nav>
+
+<main>
+  <div class="eyebrow f1">Page Not Found</div>
+  <h1 class="headline f2">This page doesn't exist.<br>The board does.</h1>
+  <p class="sub f3">Whatever you were looking for isn't here. Tonight's slate is live — that's a good place to start.</p>
+  <div class="actions f3">
+    <a href="#" class="btn-primary">See today's intel</a>
+    <a href="#" class="btn-secondary">Go home</a>
+  </div>
+  <div class="closer f4">
+    The data doesn't lie<span> ·</span> It just needs translating<span> ·</span> RawIntel<span>.</span>
+  </div>
+</main>
+
+<footer>
+  <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+</body>
+</html>

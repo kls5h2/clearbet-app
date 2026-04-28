@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Nuggets at Timberwolves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --clear: #1A7A48; --clear-bg: #E4F3EC;
+  --lean: #1852A8;  --lean-bg: #E4EDFA;
+  --fragile: #B56A12; --fragile-bg: #FAF0E2;
+  --pass: #6E6B66;  --pass-bg: #EDECEA;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 20px; height: 52px;
+  display: flex; align-items: center; gap: 0;
+}
+.nav-back {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 6px 10px 6px 4px;
+  border-right: 1px solid var(--border-med); margin-right: 16px;
+  transition: color 0.12s; flex-shrink: 0;
+}
+.nav-back:hover { color: var(--ink); }
+.nav-back::before { content: '←'; font-size: 14px; }
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink); flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.nav-user { font-family: var(--mono); font-size: 10px; color: var(--muted-light); display: none; }
+@media (min-width: 600px) { .nav-user { display: block; } }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 28px 20px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -5%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(120px, 30vw, 220px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--signal); }
+.hero-matchup {
+  font-size: clamp(22px, 6vw, 32px); font-weight: 800;
+  letter-spacing: -0.035em; color: #fff; line-height: 1.1; margin-bottom: 6px;
+}
+.hero-matchup .at { font-size: 0.55em; font-weight: 400; color: rgba(255,255,255,0.4); margin: 0 8px; letter-spacing: 0; }
+.hero-meta-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 12px; color: rgba(255,255,255,0.4);
+  margin-bottom: 20px;
+}
+.hero-meta-sep { opacity: 0.3; }
+
+/* Signal Grade */
+.signal-grade-block {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 0;
+}
+.sg-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.sg-grade { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--signal); letter-spacing: -0.02em; }
+.sg-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.08); }
+.sg-conf { display: flex; flex-direction: column; gap: 2px; }
+.sg-conf-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.sg-conf-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-clear { background: var(--clear); }
+.sg-conf-desc { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+/* ━━━ STATS BAR ━━━ */
+.stats-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--surface); border-bottom: 1px solid var(--border-med);
+  box-shadow: var(--shadow-sm);
+}
+.stat-cell {
+  padding: 14px 16px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-cell:last-child { border-right: none; }
+.stat-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.stat-val { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--ink); }
+.stat-val.sig { color: var(--signal); }
+
+/* ━━━ PAGE ━━━ */
+.page {
+  max-width: 680px; margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+@media (min-width: 720px) { .page { padding: 40px 40px 80px; } }
+
+/* ━━━ STEP BLOCKS ━━━ */
+.step {
+  margin-bottom: 8px;
+  background: var(--surface); border-radius: 10px;
+  border: 1px solid rgba(17,17,16,0.06);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.step-header {
+  padding: 16px 20px 0;
+  display: flex; align-items: center; gap: 10px;
+}
+.step-label {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--signal);
+}
+
+/* props block */
+.props-block {
+  margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;
+}
+.props-block-label {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.props-block-label::before { content: ''; width: 14px; height: 1px; background: var(--signal); }
+.props-disclaimer {
+  font-size: 12px; color: rgba(255,255,255,0.28); font-style: italic;
+  margin-bottom: 14px; line-height: 1.5;
+}
+.props-list { display: flex; flex-direction: column; gap: 8px; }
+.prop-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; background: rgba(255,255,255,0.05);
+  border-radius: 6px; border-left: 2px solid rgba(255,255,255,0.1);
+}
+.prop-type {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); white-space: nowrap; padding-top: 2px; min-width: 52px;
+}
+.prop-text { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+.prop-text strong { color: rgba(255,255,255,0.9); font-weight: 600; }
+.step-header-line {
+  flex: 1; height: 1px; background: var(--border);
+}
+
+.step-body { padding: 12px 20px 20px; }
+
+.step-text {
+  font-size: 15px; line-height: 1.7; color: var(--ink-2);
+}
+.step-text p { margin-bottom: 12px; }
+.step-text p:last-child { margin-bottom: 0; }
+.step-text strong { font-weight: 600; color: var(--ink); }
+
+/* inline tags within step text */
+.inline-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 3px; margin: 0 2px;
+  vertical-align: middle; white-space: nowrap;
+}
+.it-green { background: rgba(26,122,72,0.1); color: var(--clear); }
+.it-red   { background: rgba(201,53,42,0.1); color: var(--signal); }
+.it-amber { background: rgba(181,106,18,0.1); color: var(--fragile); }
+.it-blue  { background: rgba(24,82,168,0.1); color: var(--lean); }
+
+/* tip within step */
+.step-tip {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin-top: 14px; padding: 12px 14px;
+  background: rgba(17,17,16,0.03); border-radius: 6px;
+  font-size: 13px; color: var(--muted); line-height: 1.5;
+}
+.step-tip-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* key drivers list */
+.drivers-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.driver {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; background: var(--cream); border-radius: 7px;
+}
+.driver-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.driver-body {}
+.driver-label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 3px; }
+.driver-text { font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+
+/* fragility items */
+.fragility-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.fragility-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; background: var(--fragile-bg);
+  border-radius: 7px; border-left: 2px solid var(--fragile);
+}
+.fragility-icon { font-size: 14px; flex-shrink: 0; }
+.fragility-text { font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+
+/* market read line */
+.market-line {
+  margin-top: 14px; padding: 16px 18px;
+  background: var(--cream); border-radius: 7px;
+  border-left: 3px solid var(--signal);
+  font-size: 15px; line-height: 1.65; color: var(--ink-2); font-style: italic;
+}
+.market-line strong { font-style: normal; font-weight: 600; color: var(--ink); }
+
+/* what this means — final step, different treatment */
+.step.final {
+  background: var(--ink);
+  border-color: rgba(255,255,255,0.05);
+}
+.step.final .step-label { color: var(--signal); }
+.step.final .step-header-line { background: rgba(255,255,255,0.08); }
+.step.final .step-text { color: rgba(255,255,255,0.75); }
+.step.final .step-text strong { color: #fff; }
+.step.final .step-tip { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.45); }
+
+/* ━━━ CLOSING LINE ━━━ */
+.closing-line {
+  margin-top: 32px; padding: 24px 20px;
+  text-align: center;
+  border-top: 1px solid var(--border-med);
+}
+.closing-line-text {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em;
+  color: var(--muted); line-height: 1.7;
+}
+.closing-line-text strong { color: var(--ink); font-weight: 600; display: block; margin-top: 4px; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 20px; font-size: 11.5px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="f1">
+  <a href="#" class="nav-back">Today's Intel</a>
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <div class="nav-right">
+    <span class="nav-user">kimlynnsharp@gmail.com</span>
+  </div>
+</nav>
+
+<!-- HERO BAND -->
+<div class="page-hero f2">
+  <div class="hero-eyebrow">NBA · Saturday, April 25 · 8:30 PM ET</div>
+  <div class="hero-matchup">Denver Nuggets <span class="at">at</span> Minnesota Timberwolves</div>
+  <div class="hero-meta-row">
+    <span>Target Center, Minneapolis</span>
+    <span class="hero-meta-sep">·</span>
+    <span>Playoff Seeding Game</span>
+  </div>
+  <div class="signal-grade-block">
+    <div>
+      <div class="sg-label">Signal Grade</div>
+      <div class="sg-grade">B+</div>
+    </div>
+    <div class="sg-divider"></div>
+    <div class="sg-conf">
+      <div class="sg-conf-badge" style="color:var(--clear)"><span class="dot dot-clear"></span>Clear Spot</div>
+      <div class="sg-conf-desc">One of the cleaner reads tonight</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar f2">
+  <div class="stat-cell">
+    <div class="stat-lbl">Spread</div>
+    <div class="stat-val">MIN +1.5</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-lbl">Total</div>
+    <div class="stat-val">229.5</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-lbl">DEN ML</div>
+    <div class="stat-val">−122</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-lbl">MIN ML</div>
+    <div class="stat-val">+102</div>
+  </div>
+</div>
+
+<!-- BREAKDOWN STEPS -->
+<div class="page">
+
+  <!-- GAME SHAPE -->
+  <div class="step f3">
+    <div class="step-header">
+      <div class="step-label">Game Shape</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>This is a <strong>pace control game</strong>. Denver wants to slow things down — run half-court sets, let Jokić operate in space, grind possessions. Minnesota wants the opposite — push the pace, create chaos in transition, make this a track meet.</p>
+        <p>The game shape is defined by whoever wins that battle. <strong>If Denver controls tempo, this is a low-scoring, tight execution game.</strong> If Minnesota gets out in transition, the total climbs and variance spikes.</p>
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        Game shape tells you what kind of game this is before anything else. It sets the context for every other factor.
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY DRIVERS -->
+  <div class="step f3">
+    <div class="step-header">
+      <div class="step-label">Key Drivers</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>Two to three factors will actually decide this game. Not everything — just what materially matters tonight.</p>
+      </div>
+      <div class="drivers-list">
+        <div class="driver">
+          <div class="driver-dot" style="background:var(--clear);"></div>
+          <div class="driver-body">
+            <div class="driver-label" style="color:var(--clear);">Supports the script</div>
+            <div class="driver-text"><strong>Denver's half-court execution rate is elite.</strong> When they control pace, their offensive efficiency jumps significantly. This is their environment.</div>
+          </div>
+        </div>
+        <div class="driver">
+          <div class="driver-dot" style="background:var(--clear);"></div>
+          <div class="driver-body">
+            <div class="driver-label" style="color:var(--clear);">Supports the script</div>
+            <div class="driver-text"><strong>Minnesota's defense leaks points in half-court sets.</strong> They're elite in transition but struggle when teams run structure against them.</div>
+          </div>
+        </div>
+        <div class="driver">
+          <div class="driver-dot" style="background:var(--fragile);"></div>
+          <div class="driver-body">
+            <div class="driver-label" style="color:var(--fragile);">Injury / uncertainty</div>
+            <div class="driver-text"><strong>Gobert's availability is unconfirmed.</strong> He's the anchor of Minnesota's interior defense. If he's out or limited, Denver's paint offense becomes even more efficient.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        Key drivers are color-coded. Green supports the expected outcome. Red works against it. Amber means injury or uncertainty — check back before game time.
+      </div>
+    </div>
+  </div>
+
+  <!-- BASE SCRIPT -->
+  <div class="step f3">
+    <div class="step-header">
+      <div class="step-label">Base Script</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>If nothing unexpected happens — no major injury news, no line movement surprises — <strong>this is how the game most likely plays out.</strong></p>
+        <p>Denver controls pace from the opening tip. Jokić operates in the high post, drawing Minnesota's bigs out of the paint. Denver's shooters get open looks off his reads. The game stays in the low 220s, tight for three quarters, Denver pulls away in the fourth when their half-court execution wears Minnesota down.</p>
+        <p><strong>The base script favors Denver covering a small spread in a game that stays under the total.</strong></p>
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        The base script is not a prediction. It's the most probable game shape given the data — the foundation everything else is built on.
+      </div>
+    </div>
+  </div>
+
+  <!-- FRAGILITY CHECK -->
+  <div class="step f3">
+    <div class="step-header">
+      <div class="step-label">Fragility Check</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>What breaks the base script? These are the specific things that would flip the expected outcome.</p>
+      </div>
+      <div class="fragility-list">
+        <div class="fragility-item">
+          <span class="fragility-icon">⚠️</span>
+          <div class="fragility-text"><strong>Gobert plays and is healthy.</strong> His presence changes Minnesota's interior defense entirely. If he's at full strength, Denver's paint efficiency drops and the game tightens significantly.</div>
+        </div>
+        <div class="fragility-item">
+          <span class="fragility-icon">⚠️</span>
+          <div class="fragility-text"><strong>Minnesota gets early transition buckets.</strong> If they score three or four fast-break baskets in the first quarter, they force Denver out of their pace — and this becomes a different game entirely.</div>
+        </div>
+        <div class="fragility-item">
+          <span class="fragility-icon">⚠️</span>
+          <div class="fragility-text"><strong>Jokić foul trouble.</strong> He's the engine. If he picks up two fouls in the first half, Denver's entire offensive system has to adjust.</div>
+        </div>
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        Read the fragility check before deciding anything. If one of these is already true at game time, the base script changes.
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKET READ -->
+  <div class="step f3">
+    <div class="step-header">
+      <div class="step-label">Market Read</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>What the betting market is saying — in plain English.</p>
+      </div>
+      <div class="market-line">
+        "Denver opened as a −3 favorite and has been bet down to −1.5. <strong>The line movement toward Minnesota suggests sharp money on the underdog</strong> — either on Gobert's health improving or Minnesota's home court advantage being undervalued. The total has stayed flat at 229.5, which suggests the market agrees on game pace even if it disagrees on the winner."
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        Line movement matters. When a line moves toward the underdog, informed money is usually driving it. It doesn't mean bet the underdog — it means the market knows something worth factoring in.
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT THIS MEANS -->
+  <div class="step final f3">
+    <div class="step-header">
+      <div class="step-label">What This Means</div>
+      <div class="step-header-line"></div>
+    </div>
+    <div class="step-body">
+      <div class="step-text">
+        <p>The data points toward Denver. <strong>They control the pace, they have the execution advantage in a half-court game, and the game shape suits their system.</strong></p>
+        <p>The one variable that changes everything is Gobert. Check his status before game time. If he's out or limited, the Denver case gets stronger. If he's healthy and playing his normal minutes, this tightens considerably.</p>
+        <p><strong>The total staying flat while the spread moved toward Minnesota suggests sharp money sees a closer game than Denver's efficiency implies.</strong> That's worth weighing.</p>
+        <p>This is a <strong>Clear Spot</strong> — one of the cleaner reads on tonight's board. The logic is sound, the data aligns, and the fragility points are specific and checkable.</p>
+      </div>
+      <div class="step-tip">
+        <span class="step-tip-icon">💡</span>
+        Signal Grade B+ means the data is clear but not perfect. There's a defined lean with real logic behind it — and real fragility worth knowing before you decide anything.
+      </div>
+      <div class="props-block">
+        <div class="props-block-label">Where the data points</div>
+        <div class="props-disclaimer">Not picks — these are the areas the data creates an edge environment around. You decide.</div>
+        <div class="props-list">
+          <div class="prop-item">
+            <div class="prop-type">Spread</div>
+            <div class="prop-text"><strong>Denver −1.5</strong> — logic supports it if pace holds and Gobert is limited.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-type">Total</div>
+            <div class="prop-text"><strong>Under 229.5</strong> — base script keeps this game tight and controlled. Pace favors the under.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-type">Props</div>
+            <div class="prop-text"><strong>Jokić points + assists</strong> — if Gobert is out or limited, Jokić's paint access opens up significantly. Worth watching his line.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-type">Props</div>
+            <div class="prop-text"><strong>Game total under team props</strong> — slower pace means fewer possessions for both teams. Individual scoring totals likely sit lower than usual.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOSING LINE -->
+  <div class="closing-line f3">
+    <div class="closing-line-text">
+      This is not a pick. This is what the data says.
+      <strong>Your decision is always yours.</strong>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+</body>
+</html>

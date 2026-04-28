@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 16px 32px rgba(17,17,16,0.05),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-lg:
+    0 4px 8px rgba(17,17,16,0.05),
+    0 12px 24px rgba(17,17,16,0.08),
+    0 28px 48px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+.f4 { animation: fadeUp 0.5s 0.24s cubic-bezier(0.16,1,0.3,1) both; }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.rd1 { transition-delay: 0.1s; }
+.rd2 { transition-delay: 0.2s; }
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+  padding-right: 24px; border-right: 1px solid var(--border-med);
+  margin-right: 20px; flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--cream); }
+.nav-links a.active { color: var(--ink); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.btn-login {
+  font-size: 12.5px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 7px 16px; border-radius: 5px;
+  border: 1px solid var(--border-med); transition: all 0.15s;
+}
+.btn-login:hover { color: var(--ink); border-color: var(--border-strong); }
+.btn-cta {
+  font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: none;
+  padding: 7px 18px; border-radius: 5px; background: var(--signal); transition: all 0.15s;
+}
+.btn-cta:hover { background: #b02e24; }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 40px 40px 44px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(140px, 22vw, 260px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+.hero-headline {
+  font-size: clamp(26px, 5vw, 44px); font-weight: 800;
+  letter-spacing: -0.04em; color: #fff; line-height: 1.05; margin-bottom: 12px;
+}
+.hero-headline .signal { color: var(--signal); }
+.hero-sub { font-size: 15px; color: rgba(255,255,255,0.42); line-height: 1.6; max-width: 480px; }
+
+/* ━━━ PAGE ━━━ */
+.page { max-width: 900px; margin: 0 auto; padding: 56px 40px 80px; }
+
+/* ━━━ THE PITCH ━━━ */
+.pitch {
+  text-align: center; margin-bottom: 60px;
+}
+.pitch-headline {
+  font-size: clamp(28px, 5vw, 48px); font-weight: 800;
+  letter-spacing: -0.04em; line-height: 1.05; color: var(--ink);
+  margin-bottom: 8px;
+}
+.pitch-headline .line { display: block; }
+.pitch-headline .dim { color: var(--muted-light); font-weight: 300; font-style: italic; }
+.pitch-sub {
+  font-size: 15px; color: var(--muted); line-height: 1.65; max-width: 440px; margin: 16px auto 0;
+}
+
+/* ━━━ PRICING CARDS ━━━ */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 640px) {
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+
+/* FREE CARD */
+.plan-card {
+  background: var(--surface); border-radius: 12px;
+  border: 1px solid var(--border-med); overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.plan-card.pro {
+  background: var(--ink); border-color: rgba(255,255,255,0.06);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+/* pro card glow */
+.plan-card.pro::before {
+  content: '';
+  position: absolute; top: -40%; left: -20%; width: 80%; height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,53,42,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.plan-header {
+  padding: 28px 28px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.plan-card.pro .plan-header { border-bottom-color: rgba(255,255,255,0.07); }
+
+.plan-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+}
+.plan-card.pro .plan-label { color: var(--signal); }
+
+.plan-price {
+  display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px;
+}
+.plan-amount {
+  font-size: 48px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--ink);
+}
+.plan-card.pro .plan-amount { color: #fff; }
+.plan-period {
+  font-size: 14px; font-weight: 500; color: var(--muted);
+}
+.plan-card.pro .plan-period { color: rgba(255,255,255,0.35); }
+
+.plan-desc {
+  font-size: 13.5px; color: var(--muted); line-height: 1.55;
+}
+.plan-card.pro .plan-desc { color: rgba(255,255,255,0.4); }
+
+.plan-cta {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.plan-card.pro .plan-cta { border-bottom-color: rgba(255,255,255,0.07); }
+
+.btn-free {
+  display: block; width: 100%; text-align: center;
+  font-size: 13.5px; font-weight: 600; color: var(--ink); text-decoration: none;
+  padding: 12px 20px; border-radius: 6px;
+  border: 1.5px solid var(--border-strong); transition: all 0.15s;
+}
+.btn-free:hover { background: var(--cream); }
+
+.btn-pro {
+  display: block; width: 100%; text-align: center;
+  font-size: 14px; font-weight: 700; color: #fff; text-decoration: none;
+  padding: 13px 20px; border-radius: 6px; background: var(--signal);
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 12px rgba(201,53,42,0.3);
+  position: relative; z-index: 1;
+}
+.btn-pro:hover { background: #b02e24; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,53,42,0.4); }
+
+.plan-note {
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted-light);
+  text-align: center; margin-top: 10px; letter-spacing: 0.03em;
+}
+.plan-card.pro .plan-note { color: rgba(255,255,255,0.22); }
+
+/* features list */
+.plan-features { padding: 24px 28px; }
+
+.features-label {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted-light); margin-bottom: 16px;
+}
+.plan-card.pro .features-label { color: rgba(255,255,255,0.25); }
+
+.feature-list { display: flex; flex-direction: column; gap: 11px; }
+
+.feature-item { display: flex; align-items: flex-start; gap: 10px; }
+.feature-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px; font-size: 10px; font-weight: 700;
+}
+.feature-check.yes { background: rgba(26,122,72,0.12); color: #1A7A48; }
+.feature-check.no  { background: rgba(17,17,16,0.05); color: var(--muted-light); }
+.plan-card.pro .feature-check.yes { background: rgba(201,53,42,0.15); color: var(--signal); }
+
+.feature-text { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+.feature-text.locked { color: var(--muted-light); }
+.plan-card.pro .feature-text { color: rgba(255,255,255,0.7); }
+.plan-card.pro .feature-text.locked { color: rgba(255,255,255,0.25); }
+.feature-text strong { font-weight: 600; color: var(--ink); }
+.plan-card.pro .feature-text strong { color: #fff; }
+
+/* per day callout on pro */
+.per-day {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(201,53,42,0.12); border: 1px solid rgba(201,53,42,0.2);
+  border-radius: 4px; padding: 4px 10px; margin-top: 12px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  color: var(--signal); letter-spacing: 0.04em;
+}
+
+/* ━━━ NFL COMING SOON ━━━ */
+.nfl-strip {
+  background: var(--surface); border-radius: 10px;
+  border: 1px solid var(--border-med); overflow: hidden;
+  box-shadow: var(--shadow-sm); margin-bottom: 48px;
+}
+.nfl-strip-inner {
+  padding: 20px 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.nfl-left { display: flex; align-items: center; gap: 14px; }
+.nfl-icon {
+  width: 36px; height: 36px; border-radius: 7px; background: var(--cream);
+  border: 1px solid var(--border-med);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.nfl-copy {}
+.nfl-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+}
+.nfl-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.nfl-date {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  color: var(--signal); letter-spacing: 0.04em;
+  background: rgba(201,53,42,0.08); border: 1px solid rgba(201,53,42,0.15);
+  padding: 6px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ━━━ CLOSING STRIP ━━━ */
+.closing {
+  background: var(--ink); border-radius: 10px; overflow: hidden;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.closing-left { padding: 32px 36px; border-right: 1px solid rgba(255,255,255,0.06); }
+.closing-right-col { padding: 32px 36px; }
+.closing-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--signal);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.closing-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--signal); }
+.closing-headline { font-size: 18px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1.35; margin-bottom: 8px; }
+.closing-sub { font-size: 13.5px; color: rgba(255,255,255,0.35); line-height: 1.6; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 24px 40px; font-size: 12px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="f1">
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Today's Intel</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Glossary</a></li>
+    <li><a href="#">Line Translator</a></li>
+    <li><a href="#">My Breakdowns</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="btn-login">Log in</a>
+    <a href="#" class="btn-cta">Start free</a>
+  </div>
+</nav>
+
+<!-- HERO BAND -->
+<div class="page-hero f2">
+  <div class="hero-eyebrow">Pricing</div>
+  <div class="hero-headline">Start free.<br>Go deeper <span class="signal">when you're ready.</span></div>
+  <div class="hero-sub">One free breakdown every day, no card required. Upgrade when one isn't enough.</div>
+</div>
+
+<div class="page">
+
+  <!-- THE PITCH -->
+  <div class="pitch f3">
+    <div class="pitch-headline">
+      <span class="line">Read every game.</span>
+      <span class="line">Understand every grade.</span>
+      <span class="line dim">See the full picture.</span>
+    </div>
+    <div class="pitch-sub">Start free. You'll know when you're ready.</div>
+  </div>
+
+  <!-- PRICING CARDS -->
+  <div class="pricing-grid f3">
+
+    <!-- FREE -->
+    <div class="plan-card">
+      <div class="plan-header">
+        <div class="plan-label">Free</div>
+        <div class="plan-price">
+          <div class="plan-amount">$0</div>
+        </div>
+        <div class="plan-desc">One breakdown a day. Enough to learn how this works and decide if you want more.</div>
+      </div>
+      <div class="plan-cta">
+        <a href="#" class="btn-free">Create free account</a>
+        <div class="plan-note">No card required · Always free</div>
+      </div>
+      <div class="plan-features">
+        <div class="features-label">What's included</div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text"><strong>1 breakdown per day</strong> — your pick, any game on the slate</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">Full six-step analysis — same quality, every time</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">Confidence level on every game</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">Glossary &amp; How It Works</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">Line Translator</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check no">—</div>
+            <div class="feature-text locked">Signal Grade detail (4-factor breakdown)</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check no">—</div>
+            <div class="feature-text locked">Full slate — every game, every night</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check no">—</div>
+            <div class="feature-text locked">My Breakdowns — your full history</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan-card pro">
+      <div class="plan-header">
+        <div class="plan-label">Pro</div>
+        <div class="plan-price">
+          <div class="plan-amount">$9.99</div>
+          <div class="plan-period">/ month</div>
+        </div>
+        <div class="plan-desc">The full product. Every game, every night, every breakdown you've ever run.</div>
+        <div class="per-day">Less than $0.34 a day</div>
+      </div>
+      <div class="plan-cta">
+        <a href="#" class="btn-pro">Upgrade to Pro</a>
+        <div class="plan-note">Cancel anytime · No contracts</div>
+      </div>
+      <div class="plan-features">
+        <div class="features-label">Everything in Free, plus</div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text"><strong>Unlimited breakdowns</strong> — the whole board, every night</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text"><strong>Signal Grade detail</strong> — see the four factors behind every grade, not just the letter</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text"><strong>My Breakdowns</strong> — every breakdown you've ever run, filterable by sport, date, and outcome</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">Full confidence level breakdown on every game</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-check yes">✓</div>
+            <div class="feature-text">NBA &amp; MLB covered every day of the season</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NFL STRIP -->
+  <div class="nfl-strip reveal">
+    <div class="nfl-strip-inner">
+      <div class="nfl-left">
+        <div class="nfl-icon">🏈</div>
+        <div class="nfl-copy">
+          <div class="nfl-label">Coming Soon</div>
+          <div class="nfl-text">NFL breakdowns — included with Pro at no extra cost</div>
+        </div>
+      </div>
+      <div class="nfl-date">Season begins Sept 9, 2025</div>
+    </div>
+  </div>
+
+  <div class="closing reveal rd1">
+    <div class="closing-left">
+      <div class="closing-eyebrow">Our standard</div>
+      <div class="closing-headline">No pressure.<br>No tricks.</div>
+      <div class="closing-sub">Cancel anytime — no questions, no hoops. This product only works if you trust it.</div>
+    </div>
+    <div class="closing-right-col">
+      <div class="closing-eyebrow">The breakdown</div>
+      <div class="closing-headline">Raw data.<br>Clear read.</div>
+      <div class="closing-sub">The same standard, every game, every night.</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

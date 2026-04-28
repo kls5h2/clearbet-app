@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Logo from "./Logo";
 import { createClient } from "@/lib/supabase/client";
 import type { Tier } from "@/lib/tier";
 
@@ -12,53 +11,42 @@ type ActivePage = "today" | "how-it-works" | "glossary" | "line-translator" | "m
 interface NavProps {
   backHref?: string;
   backLabel?: string;
-  sportTag?: string;
   activePage?: ActivePage;
 }
 
 const LINKS: { href: string; label: string; page: ActivePage; proOnly?: boolean }[] = [
-  { href: "/",                        label: "Today's Intel",   page: "today" },
-  { href: "/how-it-works",            label: "How It Works",    page: "how-it-works" },
-  { href: "/glossary",                label: "Glossary",        page: "glossary" },
-  { href: "/tools/line-translator",   label: "Line Translator", page: "line-translator" },
-  { href: "/my-breakdowns",           label: "My Breakdowns",   page: "my-breakdowns", proOnly: true },
+  { href: "/intel",                  label: "Today's Intel",   page: "today" },
+  { href: "/how-it-works",          label: "How It Works",    page: "how-it-works" },
+  { href: "/glossary",              label: "Glossary",        page: "glossary" },
+  { href: "/tools/line-translator", label: "Line Translator", page: "line-translator" },
+  { href: "/my-breakdowns",         label: "My Breakdowns",   page: "my-breakdowns", proOnly: true },
 ];
 
-export default function Nav({ backHref, backLabel = "Back", sportTag, activePage }: NavProps) {
+export default function Nav({ backHref, backLabel = "Today's Intel", activePage }: NavProps) {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [tier, setTier] = useState<Tier | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
-
     async function loadTier(userId: string) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("tier")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data } = await supabase.from("profiles").select("tier").eq("id", userId).maybeSingle();
       setTier((data?.tier as Tier | undefined) ?? "free");
     }
-
     supabase.auth.getUser().then(({ data }) => {
-      const user = data.user;
-      setEmail(user?.email ?? null);
+      setEmail(data.user?.email ?? null);
       setAuthReady(true);
-      if (user) loadTier(user.id);
+      if (data.user) loadTier(data.user.id);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setEmail(session?.user?.email ?? null);
+      setAuthReady(true);
+      if (session?.user) loadTier(session.user.id);
       else setTier(null);
     });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user;
-      setEmail(user?.email ?? null);
-      setAuthReady(true);
-      if (user) loadTier(user.id);
-      else setTier(null);
-    });
-    return () => { sub.subscription.unsubscribe(); };
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function handleLogout() {
@@ -68,186 +56,229 @@ export default function Nav({ backHref, backLabel = "Back", sportTag, activePage
     router.refresh();
   }
 
-  // Shorten long emails for display: "long-user@example.com" → "long-u…@example.com"
-  const displayEmail = email && email.length > 22
-    ? `${email.slice(0, email.indexOf("@") > 8 ? 8 : email.indexOf("@"))}…${email.slice(email.indexOf("@"))}`
+  const displayEmail = email && email.length > 24
+    ? `${email.slice(0, email.indexOf("@") > 9 ? 9 : email.indexOf("@"))}…${email.slice(email.indexOf("@"))}`
     : email;
 
-  const linkStyle = (page: ActivePage): React.CSSProperties => ({
-    fontSize: "13px", fontWeight: 400,
-    color: "var(--ink)", opacity: activePage === page ? 1 : 0.7,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
-  });
+  const isBackMode = !!backHref;
 
   return (
-    <header
-      style={{
-        position: "sticky", top: 0, zIndex: 10,
-        background: "var(--canvas)",
-        borderBottom: "0.5px solid var(--border)",
-        height: "60px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex", alignItems: "center",
-          height: "60px", padding: "0 1.5rem",
-          maxWidth: "1100px", margin: "0 auto",
-        }}
-      >
-        {/* Left: back link + logo — flex:1 so left/center/right share space evenly */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "1rem", minWidth: 0 }}>
-          {backHref && (
-            <>
-              <Link href={backHref} style={{ display: "flex", alignItems: "center", gap: "4px", textDecoration: "none" }}>
-                <span style={{ fontSize: "13px", color: "var(--muted)" }}>←</span>
-                <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>{backLabel}</span>
-              </Link>
-              <div style={{ width: "0.5px", height: "14px", background: "var(--border)" }} />
-            </>
-          )}
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo />
+    <nav style={{
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+      background: "rgba(248,246,242,0.96)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      borderBottom: "1px solid var(--border-med)",
+      padding: "0 40px",
+      height: "54px",
+      display: "flex",
+      alignItems: "center",
+    }}>
+      {/* Back mode — breakdown page */}
+      {isBackMode ? (
+        <>
+          <Link href={backHref!} style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "13px",
+            fontWeight: 500,
+            color: "var(--muted)",
+            textDecoration: "none",
+            padding: "6px 10px 6px 4px",
+            borderRight: "1px solid var(--border-med)",
+            marginRight: "16px",
+            transition: "color 0.12s",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+          >
+            ← {backLabel}
           </Link>
-        </div>
+          <Link href="/" style={{
+            fontSize: "15px",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            textDecoration: "none",
+            color: "var(--ink)",
+            flexShrink: 0,
+          }}>
+            Raw<span style={{ color: "var(--muted-light)", fontWeight: 500 }}>Intel</span><span style={{ color: "var(--signal)" }}>.</span>
+          </Link>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
+            {authReady && email && (
+              <span style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--muted-light)" }}>
+                {displayEmail}
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Standard nav */}
+          <Link href="/" style={{
+            fontSize: "15px",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            textDecoration: "none",
+            color: "var(--ink)",
+            paddingRight: "24px",
+            borderRight: "1px solid var(--border-med)",
+            marginRight: "20px",
+            flexShrink: 0,
+          }}>
+            Raw<span style={{ color: "var(--muted-light)", fontWeight: 500 }}>Intel</span><span style={{ color: "var(--signal)" }}>.</span>
+          </Link>
 
-        {/* Center: nav links — flex:1 with justify-content:center for true centering */}
-        <nav className="hidden md:flex" style={{ flex: 1, gap: "1.5rem", alignItems: "center", justifyContent: "center" }}>
-          {LINKS.filter((l) => !l.proOnly || tier === "pro").map((l) => (
-            <Link key={l.page} href={l.href} style={linkStyle(l.page)}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Right: sport tag + auth — flex:1 with justify-content:flex-end */}
-        <div className="hidden md:flex" style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", gap: "1.5rem" }}>
-          {sportTag && (
-            <Link
-              href={`/?sport=${sportTag.toLowerCase()}`}
-              style={{ textDecoration: "none" }}
-              aria-label={`View today's ${sportTag} slate`}
-            >
-              <span
-                style={{
-                  fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "var(--muted)",
-                  transition: "opacity 150ms ease, color 150ms ease",
-                  display: "inline-block",
+          {/* Nav links — desktop */}
+          <ul className="hidden md:flex" style={{ gap: "2px", listStyle: "none", flex: 1, margin: 0, padding: 0 }}>
+            {LINKS.filter((l) => !l.proOnly || tier === "pro").map((l) => (
+              <li key={l.page}>
+                <Link href={l.href} style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: activePage === l.page ? "var(--ink)" : "var(--muted)",
+                  textDecoration: "none",
+                  padding: "5px 12px",
+                  borderRadius: "5px",
+                  display: "block",
+                  transition: "all 0.12s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--ink)";
-                  e.currentTarget.style.textDecoration = "underline";
-                  e.currentTarget.style.textUnderlineOffset = "3px";
+                  if (activePage !== l.page) {
+                    (e.currentTarget as HTMLElement).style.color = "var(--ink)";
+                    (e.currentTarget as HTMLElement).style.background = "var(--cream)";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--muted)";
-                  e.currentTarget.style.textDecoration = "none";
+                  if (activePage !== l.page) {
+                    (e.currentTarget as HTMLElement).style.color = "var(--muted)";
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                  }
                 }}
-              >
-                {sportTag}
-              </span>
-            </Link>
-          )}
-          {authReady && (email ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Link href="/dashboard" style={{ fontSize: "12px", color: "var(--muted)", textDecoration: "none", whiteSpace: "nowrap" }}>
-                {displayEmail}
-              </Link>
-              <button
-                onClick={handleLogout}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "var(--ink)", opacity: 0.7, padding: 0 }}
-              >
-                Log Out
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Right side — desktop */}
+          <div className="hidden md:flex" style={{ marginLeft: "auto", alignItems: "center", gap: "16px" }}>
+            {authReady && (email ? (
+              <>
+                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
+                  {displayEmail}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: "12.5px", fontWeight: 500, color: "var(--muted)",
+                    transition: "color 0.12s", padding: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" style={{
+                  fontSize: "12.5px", fontWeight: 500, color: "var(--muted)",
+                  textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
+                  border: "1px solid var(--border-med)", transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "var(--ink)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "var(--muted)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border-med)";
+                }}
+                >
+                  Log in
+                </Link>
+                <Link href="/login?mode=signup" style={{
+                  fontSize: "12.5px", fontWeight: 600, color: "#fff",
+                  textDecoration: "none", padding: "7px 18px", borderRadius: "5px",
+                  background: "var(--signal)", transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#b02e24")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--signal)")}
+                >
+                  Start free
+                </Link>
+              </>
+            ))}
+          </div>
+
+          {/* Hamburger — mobile */}
+          <div className="md:hidden" style={{ marginLeft: "auto" }}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
               style={{
-                fontSize: "13px", fontWeight: 500,
-                color: "var(--signal)", textDecoration: "none", whiteSpace: "nowrap",
+                background: "none", border: "none", cursor: "pointer",
+                padding: "4px", display: "flex", flexDirection: "column",
+                gap: "5px", alignItems: "center",
               }}
             >
-              Log In
-            </Link>
-          ))}
-        </div>
+              {[0, 1, 2].map((i) => (
+                <span key={i} style={{
+                  display: "block", width: "20px", height: "2px",
+                  background: "var(--muted)", borderRadius: "2px",
+                }} />
+              ))}
+            </button>
+          </div>
+        </>
+      )}
 
-        {/* Hamburger button — mobile only, <768px.
-            Wrapper carries md:hidden so inline display:flex on the button doesn't override it. */}
-        <div className="md:hidden">
-          <button
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              padding: "4px", display: "flex", flexDirection: "column",
-              gap: "5px", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-            <span style={{ display: "block", width: "20px", height: "2px", background: menuOpen ? "var(--ink)" : "var(--muted)", borderRadius: "2px" }} />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile dropdown menu — <768px only */}
-      {menuOpen && (
-        <div
-          className="md:hidden"
-          style={{
-            background: "var(--canvas)", borderTop: "0.5px solid var(--border)",
-            padding: "0.75rem 1.5rem 1rem",
-            display: "flex", flexDirection: "column", gap: "0.75rem",
-          }}
-        >
+      {/* Mobile dropdown */}
+      {menuOpen && !isBackMode && (
+        <div className="md:hidden" style={{
+          position: "absolute", top: "54px", left: 0, right: 0,
+          background: "var(--warm-white)", borderTop: "1px solid var(--border-med)",
+          padding: "0.75rem 1.5rem 1rem",
+          display: "flex", flexDirection: "column", gap: "0.75rem",
+          boxShadow: "0 8px 24px rgba(17,17,16,0.08)",
+        }}>
           {LINKS.filter((l) => !l.proOnly || tier === "pro").map((l) => (
-            <Link
-              key={l.page}
-              href={l.href}
-              onClick={() => setMenuOpen(false)}
-              style={{
-                fontSize: "15px", fontWeight: 400,
-                color: activePage === l.page ? "var(--ink)" : "var(--muted)",
-                textDecoration: "none",
-              }}
-            >
+            <Link key={l.page} href={l.href} onClick={() => setMenuOpen(false)} style={{
+              fontSize: "15px", fontWeight: activePage === l.page ? 600 : 400,
+              color: activePage === l.page ? "var(--ink)" : "var(--muted)",
+              textDecoration: "none",
+            }}>
               {l.label}
             </Link>
           ))}
-          {sportTag && (
-            <Link href={`/?sport=${sportTag.toLowerCase()}`} onClick={() => setMenuOpen(false)}
-              style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted)", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              View today&#8217;s {sportTag} slate
-            </Link>
-          )}
-
-          {/* Auth action — mirrored from desktop nav */}
           {authReady && (email ? (
             <>
-              <Link href="/dashboard" onClick={() => setMenuOpen(false)}
-                style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none" }}>
+              <span style={{ fontSize: "12px", color: "var(--muted-light)", fontFamily: "var(--mono)" }}>
                 {displayEmail}
-              </Link>
+              </span>
               <button
                 onClick={() => { setMenuOpen(false); handleLogout(); }}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "var(--ink)", padding: 0, textAlign: "left" }}
               >
-                Log Out
+                Log out
               </button>
             </>
           ) : (
-            <Link href="/login" onClick={() => setMenuOpen(false)}
-              style={{ fontSize: "15px", fontWeight: 500, color: "var(--signal)", textDecoration: "none" }}>
-              Log In
+            <Link href="/login" onClick={() => setMenuOpen(false)} style={{
+              fontSize: "15px", fontWeight: 500, color: "var(--signal)", textDecoration: "none",
+            }}>
+              Log in
             </Link>
           ))}
         </div>
       )}
-    </header>
+    </nav>
   );
 }

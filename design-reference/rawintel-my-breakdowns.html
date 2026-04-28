@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawIntel. — My Breakdowns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #111110;
+  --ink-2: #2E2C2A;
+  --signal: #C9352A;
+  --warm-white: #F8F6F2;
+  --surface: #FFFFFF;
+  --cream: #F0EDE6;
+  --muted: #6E6B66;
+  --muted-light: #9B9790;
+  --border: rgba(17,17,16,0.09);
+  --border-med: rgba(17,17,16,0.15);
+  --border-strong: rgba(17,17,16,0.25);
+  --sans: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow-sm:
+    0 1px 2px rgba(17,17,16,0.04),
+    0 2px 6px rgba(17,17,16,0.04),
+    0 0 0 1px rgba(17,17,16,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  --shadow-md:
+    0 2px 4px rgba(17,17,16,0.04),
+    0 6px 16px rgba(17,17,16,0.07),
+    0 0 0 1px rgba(17,17,16,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  --clear: #1A7A48; --clear-bg: #E4F3EC;
+  --lean: #1852A8;  --lean-bg: #E4EDFA;
+  --fragile: #B56A12; --fragile-bg: #FAF0E2;
+  --pass: #6E6B66;  --pass-bg: #EDECEA;
+  --won: #1A7A48;   --won-bg: #E4F3EC;
+  --lost: #C9352A;  --lost-bg: #FAEAEA;
+  --push: #1852A8;  --push-bg: #E4EDFA;
+  --noaction: #6E6B66; --noaction-bg: #EDECEA;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--warm-white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px; line-height: 1.65;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.f1 { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.f2 { animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.f3 { animation: fadeUp 0.5s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ━━━ NAV ━━━ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,246,242,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-med);
+  padding: 0 40px; height: 54px; display: flex; align-items: center;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--ink);
+  padding-right: 24px; border-right: 1px solid var(--border-med); margin-right: 20px; flex-shrink: 0;
+}
+.nav-brand .intel { color: var(--muted-light); font-weight: 500; }
+.nav-brand .dot { color: var(--signal); }
+.nav-links { display: flex; gap: 2px; list-style: none; flex: 1; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--cream); }
+.nav-links a.active { color: var(--ink); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.nav-user { font-family: var(--mono); font-size: 10px; color: var(--muted-light); }
+.nav-logout { font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; }
+.nav-logout:hover { color: var(--ink); }
+
+/* ━━━ HERO BAND ━━━ */
+.page-hero {
+  background: var(--ink); padding: 32px 40px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: 'R'; position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  font-size: clamp(140px, 22vw, 260px); font-weight: 900;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.hero-left {}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--signal); }
+.hero-headline { font-size: clamp(22px, 4vw, 32px); font-weight: 800; letter-spacing: -0.035em; color: #fff; line-height: 1.15; }
+.hero-sub { font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 6px; }
+
+/* stats row */
+.hero-stats { display: flex; gap: 24px; flex-shrink: 0; position: relative; z-index: 1; }
+.hero-stat { text-align: right; }
+.hero-stat-val { font-family: var(--mono); font-size: 22px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
+.hero-stat-lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 2px; }
+.hero-stat-divider { width: 1px; background: rgba(255,255,255,0.07); }
+
+/* ━━━ FILTERS ━━━ */
+.filters-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border-med);
+  padding: 14px 40px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  position: sticky; top: 54px; z-index: 90;
+  box-shadow: 0 2px 8px rgba(17,17,16,0.03);
+}
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-label {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-light);
+  flex-shrink: 0;
+}
+.filter-pills { display: flex; gap: 4px; }
+.filter-pill {
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  background: transparent; border: 1px solid var(--border-med);
+  padding: 4px 12px; border-radius: 4px; cursor: pointer;
+  transition: all 0.12s; font-family: var(--sans);
+}
+.filter-pill.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.filter-pill:hover:not(.active) { color: var(--ink); border-color: var(--border-strong); }
+.filter-sep { width: 1px; height: 20px; background: var(--border-med); }
+
+/* ━━━ PAGE ━━━ */
+.page { max-width: 860px; margin: 0 auto; padding: 32px 40px 80px; }
+
+/* date group header */
+.date-group { margin-bottom: 6px; }
+.date-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-light);
+  padding: 16px 0 8px; display: flex; align-items: center; gap: 12px;
+}
+.date-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ━━━ BREAKDOWN CARD ━━━ */
+.breakdown-card {
+  background: var(--surface); border-radius: 10px;
+  border: 1px solid rgba(17,17,16,0.06); overflow: hidden;
+  margin-bottom: 8px; box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s cubic-bezier(0.16,1,0.3,1), transform 0.2s cubic-bezier(0.16,1,0.3,1);
+}
+.breakdown-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.bc-body {
+  padding: 16px 20px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 20px; align-items: start;
+}
+
+.bc-left {}
+.bc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.bc-matchup {
+  font-size: 17px; font-weight: 800; letter-spacing: -0.025em;
+  color: var(--ink); line-height: 1.2; margin-bottom: 3px;
+}
+.bc-matchup .at { font-size: 13px; font-weight: 400; color: var(--muted-light); margin: 0 5px; }
+.bc-meta {
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+  letter-spacing: 0.03em; margin-bottom: 12px;
+}
+.bc-preview {
+  font-size: 13.5px; color: var(--muted); line-height: 1.5; font-style: italic;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.bc-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0;
+}
+.bc-signal {
+  font-family: var(--mono); font-size: 22px; font-weight: 600;
+  color: var(--signal); letter-spacing: -0.02em; line-height: 1;
+}
+.bc-signal-lbl {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted-light); text-align: right; margin-top: 2px;
+}
+
+/* conf badge */
+.conf-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 3px;
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.conf-badge .dot { width: 5px; height: 5px; border-radius: 50%; }
+.cb-clear { background: var(--clear-bg); color: var(--clear); } .cb-clear .dot { background: var(--clear); }
+.cb-lean  { background: var(--lean-bg);  color: var(--lean); }  .cb-lean .dot  { background: var(--lean); }
+.cb-fragile { background: var(--fragile-bg); color: var(--fragile); } .cb-fragile .dot { background: var(--fragile); }
+.cb-pass { background: var(--pass-bg); color: var(--pass); } .cb-pass .dot { background: var(--pass); }
+
+/* read link */
+.bc-read {
+  font-size: 11px; font-weight: 700; color: var(--signal);
+  opacity: 0; transition: opacity 0.14s;
+  display: flex; align-items: center; gap: 4px;
+}
+.bc-read::after { content: '→'; }
+.breakdown-card:hover .bc-read { opacity: 1; }
+
+/* ━━━ OUTCOME TRACKER ━━━ */
+.bc-outcome {
+  padding: 11px 20px; border-top: 1px solid var(--border);
+  background: var(--warm-white);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.outcome-prompt { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.outcome-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.outcome-pill {
+  font-size: 11.5px; font-weight: 600;
+  padding: 4px 12px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--border-med); background: transparent;
+  color: var(--muted); transition: all 0.12s; font-family: var(--sans);
+}
+.outcome-pill:hover { border-color: var(--border-strong); color: var(--ink); }
+.outcome-pill.won.selected    { background: var(--won-bg);      color: var(--won);      border-color: rgba(26,122,72,0.25); }
+.outcome-pill.lost.selected   { background: var(--lost-bg);     color: var(--lost);     border-color: rgba(201,53,42,0.25); }
+.outcome-pill.push.selected   { background: var(--push-bg);     color: var(--push);     border-color: rgba(24,82,168,0.25); }
+.outcome-pill.no-action.selected { background: var(--noaction-bg); color: var(--noaction); border-color: rgba(110,107,102,0.25); }
+.outcome-pill.yes.selected    { background: var(--ink); color: #fff; border-color: var(--ink); }
+.outcome-pill.no-bet.selected { background: var(--ink); color: #fff; border-color: var(--ink); }
+.outcome-sep { width: 1px; height: 14px; background: var(--border-med); flex-shrink: 0; }
+.result-pills { display: flex; gap: 5px; }
+
+/* ━━━ EMPTY STATE ━━━ */
+.empty-state {
+  text-align: center; padding: 80px 40px;
+}
+.empty-icon {
+  font-size: 40px; margin-bottom: 20px; opacity: 0.4;
+}
+.empty-headline {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.025em;
+  color: var(--ink); margin-bottom: 8px;
+}
+.empty-sub { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 320px; margin: 0 auto 28px; }
+.empty-btn {
+  font-size: 13.5px; font-weight: 700; color: #fff; text-decoration: none;
+  padding: 12px 28px; border-radius: 6px; background: var(--signal);
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 2px 8px rgba(201,53,42,0.25);
+}
+.empty-btn:hover { background: #b02e24; transform: translateY(-1px); }
+.empty-btn::after { content: '→'; }
+
+/* ━━━ FOOTER ━━━ */
+footer { text-align: center; padding: 20px 40px; font-size: 11.5px; color: var(--muted-light); line-height: 1.8; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+</style>
+</head>
+<body>
+
+<nav class="f1">
+  <a href="#" class="nav-brand">Raw<span class="intel">Intel</span><span class="dot">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Today's Intel</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Glossary</a></li>
+    <li><a href="#">Line Translator</a></li>
+    <li><a href="#" class="active">My Breakdowns</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-user">kimlynnsharp@gmail.com</span>
+    <a href="#" class="nav-logout">Log out</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="page-hero f2">
+  <div class="hero-left">
+    <div class="hero-eyebrow">My Breakdowns</div>
+    <div class="hero-headline">Every breakdown<br>you've ever run.</div>
+    <div class="hero-sub">Your complete history. Filter by sport, date, or outcome.</div>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">9</div>
+      <div class="hero-stat-lbl">Total</div>
+    </div>
+    <div class="hero-stat-divider"></div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#4ade80;">3</div>
+      <div class="hero-stat-lbl">Won</div>
+    </div>
+    <div class="hero-stat-divider"></div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#f87171;">2</div>
+      <div class="hero-stat-lbl">Lost</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-bar f2">
+  <div class="filter-group">
+    <div class="filter-label">Sport</div>
+    <div class="filter-pills">
+      <button class="filter-pill active" onclick="setFilter(this,'sport','all')">All</button>
+      <button class="filter-pill" onclick="setFilter(this,'sport','nba')">NBA</button>
+      <button class="filter-pill" onclick="setFilter(this,'sport','mlb')">MLB</button>
+    </div>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group">
+    <div class="filter-label">Date</div>
+    <div class="filter-pills">
+      <button class="filter-pill active" onclick="setFilter(this,'date','all')">All time</button>
+      <button class="filter-pill" onclick="setFilter(this,'date','7')">7 days</button>
+      <button class="filter-pill" onclick="setFilter(this,'date','30')">30 days</button>
+    </div>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group">
+    <div class="filter-label">Outcome</div>
+    <div class="filter-pills">
+      <button class="filter-pill active" onclick="setFilter(this,'outcome','all')">All</button>
+      <button class="filter-pill" onclick="setFilter(this,'outcome','won')">Won</button>
+      <button class="filter-pill" onclick="setFilter(this,'outcome','lost')">Lost</button>
+      <button class="filter-pill" onclick="setFilter(this,'outcome','push')">Push</button>
+      <button class="filter-pill" onclick="setFilter(this,'outcome','no-action')">No action</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page f3">
+
+  <!-- DATE GROUP: April 24 -->
+  <div class="date-group">
+    <div class="date-label">April 24, 2026</div>
+
+    <div class="breakdown-card" data-sport="nba" data-outcome="won">
+      <div class="bc-body">
+        <div class="bc-left">
+          <div class="bc-matchup">Boston Celtics <span class="at">at</span> Philadelphia 76ers</div>
+          <div class="bc-meta">NBA · April 24, 2026</div>
+          <div class="bc-preview">"Boston's defensive structure has been the variable all series. If they hold Embiid under 28 points on under 22 attempts, the script holds cleanly..."</div>
+        </div>
+        <div class="bc-right">
+          <div>
+            <div class="bc-signal">B+</div>
+            <div class="bc-signal-lbl">Signal</div>
+          </div>
+          <div class="conf-badge cb-clear"><span class="dot"></span>Clear Spot</div>
+          <div class="bc-read">Read</div>
+        </div>
+      </div>
+      <div class="bc-outcome">
+        <div class="outcome-prompt">Did you bet it?</div>
+        <div class="outcome-pills">
+          <button class="outcome-pill yes selected" onclick="toggleBet(this, true)">Yes</button>
+          <button class="outcome-pill no-bet" onclick="toggleBet(this, false)">No</button>
+        </div>
+        <div class="outcome-sep"></div>
+        <div class="result-pills" id="result-1">
+          <button class="outcome-pill won selected" onclick="setOutcome(this)">Won</button>
+          <button class="outcome-pill lost" onclick="setOutcome(this)">Lost</button>
+          <button class="outcome-pill push" onclick="setOutcome(this)">Push</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="breakdown-card" data-sport="nba" data-outcome="lost">
+      <div class="bc-body">
+        <div class="bc-left">
+          <div class="bc-matchup">LA Lakers <span class="at">at</span> Houston Rockets</div>
+          <div class="bc-meta">NBA · April 24, 2026</div>
+          <div class="bc-preview">"Houston's pace advantage at home is real, but Lakers road defense has held in three straight. Total sits at a number that could break either way..."</div>
+        </div>
+        <div class="bc-right">
+          <div>
+            <div class="bc-signal">C+</div>
+            <div class="bc-signal-lbl">Signal</div>
+          </div>
+          <div class="conf-badge cb-lean"><span class="dot"></span>Lean</div>
+          <div class="bc-read">Read</div>
+        </div>
+      </div>
+      <div class="bc-outcome">
+        <div class="outcome-prompt">Did you bet it?</div>
+        <div class="outcome-pills">
+          <button class="outcome-pill yes selected" onclick="toggleBet(this, true)">Yes</button>
+          <button class="outcome-pill no-bet" onclick="toggleBet(this, false)">No</button>
+        </div>
+        <div class="outcome-sep"></div>
+        <div class="result-pills" id="result-2">
+          <button class="outcome-pill won" onclick="setOutcome(this)">Won</button>
+          <button class="outcome-pill lost selected" onclick="setOutcome(this)">Lost</button>
+          <button class="outcome-pill push" onclick="setOutcome(this)">Push</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DATE GROUP: April 23 -->
+  <div class="date-group">
+    <div class="date-label">April 23, 2026</div>
+
+    <div class="breakdown-card" data-sport="mlb" data-outcome="won">
+      <div class="bc-body">
+        <div class="bc-left">
+          <div class="bc-matchup">Atlanta Braves <span class="at">at</span> Washington Nationals</div>
+          <div class="bc-meta">MLB · April 23, 2026</div>
+          <div class="bc-preview">"Strider's WHIP over his last four starts tells you everything you need to know about the run environment tonight..."</div>
+        </div>
+        <div class="bc-right">
+          <div>
+            <div class="bc-signal">A−</div>
+            <div class="bc-signal-lbl">Signal</div>
+          </div>
+          <div class="conf-badge cb-clear"><span class="dot"></span>Clear Spot</div>
+          <div class="bc-read">Read</div>
+        </div>
+      </div>
+      <div class="bc-outcome">
+        <div class="outcome-prompt">Did you bet it?</div>
+        <div class="outcome-pills">
+          <button class="outcome-pill yes selected" onclick="toggleBet(this, true)">Yes</button>
+          <button class="outcome-pill no-bet" onclick="toggleBet(this, false)">No</button>
+        </div>
+        <div class="outcome-sep"></div>
+        <div class="result-pills" id="result-3">
+          <button class="outcome-pill won selected" onclick="setOutcome(this)">Won</button>
+          <button class="outcome-pill lost" onclick="setOutcome(this)">Lost</button>
+          <button class="outcome-pill push" onclick="setOutcome(this)">Push</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="breakdown-card" data-sport="nba" data-outcome="no-action">
+      <div class="bc-body">
+        <div class="bc-left">
+          <div class="bc-matchup">Denver Nuggets <span class="at">at</span> Minnesota Timberwolves</div>
+          <div class="bc-meta">NBA · April 23, 2026</div>
+          <div class="bc-preview">"This comes down to pace control. Denver wants structure, Minnesota wants chaos. Whoever controls tempo controls this game..."</div>
+        </div>
+        <div class="bc-right">
+          <div>
+            <div class="bc-signal">B</div>
+            <div class="bc-signal-lbl">Signal</div>
+          </div>
+          <div class="conf-badge cb-fragile"><span class="dot"></span>Fragile</div>
+          <div class="bc-read">Read</div>
+        </div>
+      </div>
+      <div class="bc-outcome">
+        <div class="outcome-prompt">Did you bet it?</div>
+        <div class="outcome-pills">
+          <button class="outcome-pill yes" onclick="toggleBet(this, true)">Yes</button>
+          <button class="outcome-pill no-bet selected" onclick="toggleBet(this, false)">No</button>
+        </div>
+        <div class="outcome-sep"></div>
+        <div class="result-pills" id="result-4" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="breakdown-card" data-sport="nba" data-outcome="none">
+      <div class="bc-body">
+        <div class="bc-left">
+          <div class="bc-matchup">Oklahoma City Thunder <span class="at">at</span> Phoenix Suns</div>
+          <div class="bc-meta">NBA · April 23, 2026</div>
+          <div class="bc-preview">"Too many moving parts to form a strong view. Blowout risk if OKC controls early but the market hasn't priced in..."</div>
+        </div>
+        <div class="bc-right">
+          <div>
+            <div class="bc-signal">C</div>
+            <div class="bc-signal-lbl">Signal</div>
+          </div>
+          <div class="conf-badge cb-pass"><span class="dot"></span>Pass</div>
+          <div class="bc-read">Read</div>
+        </div>
+      </div>
+      <div class="bc-outcome">
+        <div class="outcome-prompt">Did you bet it?</div>
+        <div class="outcome-pills">
+          <button class="outcome-pill yes" onclick="toggleBet(this, true)">Yes</button>
+          <button class="outcome-pill no-bet" onclick="toggleBet(this, false)">No</button>
+        </div>
+        <div class="outcome-sep"></div>
+        <div class="result-pills" id="result-5" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.<br>
+  <a href="#">ncpgambling.org</a> · <a href="#">Terms of Service</a> · <a href="#">Privacy Policy</a> · © RawIntel LLC
+</footer>
+
+<script>
+function toggleBet(btn, betPlaced) {
+  const wasSelected = btn.classList.contains('selected');
+  const pills = btn.closest('.outcome-pills').querySelectorAll('.outcome-pill');
+  pills.forEach(p => p.classList.remove('selected'));
+
+  const resultPills = btn.closest('.bc-outcome').querySelector('.result-pills');
+  const card = btn.closest('.breakdown-card');
+
+  if (wasSelected) {
+    // unclick — deselect everything
+    if (resultPills) resultPills.style.display = 'none';
+    card.dataset.outcome = 'none';
+    return;
+  }
+
+  btn.classList.add('selected');
+  if (resultPills) {
+    resultPills.style.display = betPlaced ? 'flex' : 'none';
+    if (betPlaced && resultPills.children.length === 0) {
+      ['Won','Lost','Push'].forEach(label => {
+        const b = document.createElement('button');
+        b.className = 'outcome-pill ' + label.toLowerCase();
+        b.textContent = label;
+        b.onclick = function() { setOutcome(this); };
+        resultPills.appendChild(b);
+      });
+    }
+  }
+  if (!betPlaced) card.dataset.outcome = 'no-action';
+}
+
+function setOutcome(btn) {
+  const wasSelected = btn.classList.contains('selected');
+  const pills = btn.closest('.result-pills').querySelectorAll('.outcome-pill');
+  pills.forEach(p => p.classList.remove('selected'));
+  if (!wasSelected) {
+    btn.classList.add('selected');
+    btn.closest('.breakdown-card').dataset.outcome = btn.textContent.toLowerCase().trim();
+  } else {
+    btn.closest('.breakdown-card').dataset.outcome = 'none';
+  }
+}
+
+const filters = { sport: 'all', date: 'all', outcome: 'all' };
+
+function setFilter(btn, type, value) {
+  filters[type] = value;
+  btn.closest('.filter-pills').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  document.querySelectorAll('.breakdown-card').forEach(card => {
+    const sportMatch = filters.sport === 'all' || card.dataset.sport === filters.sport;
+    const outcomeMatch = filters.outcome === 'all' || card.dataset.outcome === filters.outcome;
+    card.style.display = (sportMatch && outcomeMatch) ? '' : 'none';
+  });
+  document.querySelectorAll('.date-group').forEach(group => {
+    const visible = [...group.querySelectorAll('.breakdown-card')].some(c => c.style.display !== 'none');
+    group.style.display = visible ? '' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>

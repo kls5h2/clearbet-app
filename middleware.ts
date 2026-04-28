@@ -21,6 +21,13 @@ const PUBLIC_PREFIXES = [
   "/api/games",              // powers the public slate at "/"
   "/api/line-translator",
   "/api/stripe/webhook",
+  // Content pages — public for now; auth-gate selectively in-product when ready
+  "/how-it-works",
+  "/glossary",
+  "/breakdown",
+  "/archive",
+  "/my-breakdowns",
+  "/intel",
 ];
 const PUBLIC_EXACT = new Set(["/"]);
 
