@@ -461,6 +461,7 @@ function HomePageContent() {
   const [dailyUsed, setDailyUsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modal, setModal] = useState<"cap" | "loggedout" | null>(null);
 
   useEffect(() => {
     const client = createClient();
@@ -585,10 +586,8 @@ function HomePageContent() {
   });
 
   function handleRead(gameId: string) {
-    if (userId === null || (tier === "free" && dailyUsed)) {
-      router.push("/login?mode=signup");
-      return;
-    }
+    if (userId === null) { setModal("loggedout"); return; }
+    if (tier === "free" && dailyUsed) { setModal("cap"); return; }
     router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
   }
 
@@ -784,6 +783,81 @@ function HomePageContent() {
 
       <PageFooter />
     </div>
+
+    {/* Access modal */}
+    {modal && (
+      <div
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(14,14,14,0.55)", backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "24px",
+        }}
+        onClick={() => setModal(null)}
+      >
+        <div
+          style={{
+            background: "var(--warm-white)", borderRadius: "12px",
+            padding: "32px", maxWidth: "400px", width: "100%",
+            boxShadow: "0 20px 60px rgba(14,14,14,0.25)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {modal === "cap" ? (
+            <>
+              <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
+                You&apos;ve used today&apos;s breakdown.
+              </div>
+              <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
+                Free accounts get one breakdown per day. Come back tomorrow or upgrade to Pro for unlimited access.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <Link href="/login?mode=signup" style={{
+                  fontSize: "14px", fontWeight: 600, color: "#fff",
+                  background: "var(--signal)", padding: "12px 20px", borderRadius: "7px",
+                  textDecoration: "none", textAlign: "center", display: "block",
+                }}>
+                  Upgrade to Pro →
+                </Link>
+                <button
+                  onClick={() => setModal(null)}
+                  style={{
+                    fontSize: "13px", color: "var(--muted)", background: "none", border: "none",
+                    cursor: "pointer", padding: "8px",
+                  }}
+                >
+                  Come back tomorrow
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
+                Create a free account to read this.
+              </div>
+              <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
+                Free accounts get one breakdown a day. Go Pro for unlimited access to every game on the slate.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <Link href="/login?mode=signup" style={{
+                  fontSize: "14px", fontWeight: 600, color: "#fff",
+                  background: "var(--signal)", padding: "12px 20px", borderRadius: "7px",
+                  textDecoration: "none", textAlign: "center", display: "block",
+                }}>
+                  Start free →
+                </Link>
+                <Link href="/login" style={{
+                  fontSize: "13px", fontWeight: 500, color: "var(--muted)",
+                  textDecoration: "none", textAlign: "center", display: "block", padding: "8px",
+                }}>
+                  Log in
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
     </>
   );
 }

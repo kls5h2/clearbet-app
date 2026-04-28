@@ -39,7 +39,7 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
 
 const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 
-function isPitcherUnknown(name: string | undefined | null): boolean {
+export function isPitcherUnknown(name: string | undefined | null): boolean {
   if (!name) return true;
   const n = name.toLowerCase().trim();
   return n === "" || n === "tbd" || n.startsWith("unknown");
@@ -181,14 +181,6 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
   const confLabel = CONF_COLORS[breakdown.confidenceLabel]?.label ?? breakdown.confidenceLabel;
   const signalGrade = SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B";
 
-  const showMLBPitcherBanner = (() => {
-    if (!isMLB || gameStatus === "final") return false;
-    const g = game as MLBGame;
-    return (
-      g.homePitcher === null || g.awayPitcher === null ||
-      isPitcherUnknown(g.homePitcher?.name) || isPitcherUnknown(g.awayPitcher?.name)
-    );
-  })();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -216,17 +208,6 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
           <span style={{ fontSize: "13px", color: "var(--muted)" }}>Game in progress. Breakdowns only generated before start of game.</span>
         </div>
       )}
-      {showMLBPitcherBanner && (
-        <div style={{
-          background: "var(--fragile-bg)", borderLeft: "3px solid var(--fragile)",
-          borderRadius: "6px", padding: "10px 14px", marginBottom: "8px",
-          display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: "var(--ink-2)",
-        }}>
-          <span style={{ flexShrink: 0 }}>🟡</span>
-          Starting pitcher(s) not yet confirmed. Market read may shift when lineups are posted.
-        </div>
-      )}
-
       {/* Body — six sections, gated-blurrable */}
       <div style={{ position: "relative" }}>
         <div style={gated ? { filter: "blur(6px)", userSelect: "none", pointerEvents: "none" } : undefined}>

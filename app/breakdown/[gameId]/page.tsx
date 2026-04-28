@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import BreakdownView, { type GatedReason } from "@/components/BreakdownView";
+import BreakdownView, { type GatedReason, isPitcherUnknown } from "@/components/BreakdownView";
 import ShareCard from "@/components/ShareCard";
-import type { BreakdownResult, AnyGame, Sport } from "@/lib/types";
+import type { BreakdownResult, AnyGame, MLBGame, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 import { lookupTeam, parseGameId } from "@/lib/team-names";
 
@@ -244,6 +244,13 @@ export default function BreakdownPage() {
   const signalGrade = breakdown ? (SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B") : "—";
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 768px) {
+        .bd-away-ml { display: none !important; }
+        .bd-odds-grid { grid-template-columns: repeat(3, 1fr) !important; min-width: 0 !important; }
+      }
+    `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav backHref="/intel" backLabel="Today's Intel" />
 
@@ -318,16 +325,16 @@ export default function BreakdownPage() {
       {/* Stats bar — shown when game data available */}
       {game && odds && (
         <div className="f2" style={{ overflowX: "auto", background: "var(--surface)", borderBottom: "1px solid var(--border-med)", boxShadow: "var(--shadow-sm)" }}>
-          <div style={{
+          <div className="bd-odds-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "440px",
           }}>
             {[
-              { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread },
-              { label: "Total", value: total },
-              { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
-              { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
+              { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread, cls: "" },
+              { label: "Total", value: total, cls: "" },
+              { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "bd-away-ml" },
+              { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "" },
             ].map((s, i) => (
-              <div key={s.label} style={{
+              <div key={s.label} className={s.cls} style={{
                 padding: "14px 16px", textAlign: "center",
                 borderRight: i < 3 ? "1px solid var(--border)" : "none",
               }}>
@@ -417,6 +424,22 @@ export default function BreakdownPage() {
               </div>
             )}
 
+            {/* MLB pitcher warning — shown for all users when pitcher(s) unconfirmed */}
+            {game.sport === "MLB" && effectiveStatus !== "final" && (() => {
+              const mlb = game as MLBGame;
+              const homeUnknown = !mlb.homePitcher || mlb.homePitcher.confirmed !== true || isPitcherUnknown(mlb.homePitcher.name);
+              const awayUnknown = !mlb.awayPitcher || mlb.awayPitcher.confirmed !== true || isPitcherUnknown(mlb.awayPitcher.name);
+              return (homeUnknown || awayUnknown) ? (
+                <div style={{
+                  background: "rgba(217,163,58,0.08)", borderLeft: "3px solid #D9A33A",
+                  borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                  color: "var(--ink)", marginBottom: "16px", lineHeight: 1.5,
+                }}>
+                  🟡 Starting pitcher(s) not yet confirmed. Breakdown reflects available data — check the lineup closer to game time.
+                </div>
+              ) : null;
+            })()}
+
             <BreakdownView breakdown={breakdown} game={game} tier={tier ?? "free"} gated={gated ?? undefined} />
 
             {/* Share — Pro only, not gated */}
@@ -456,5 +479,6 @@ export default function BreakdownPage() {
         />
       )}
     </div>
+    </>
   );
 }
