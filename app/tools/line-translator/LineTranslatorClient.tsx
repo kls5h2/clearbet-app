@@ -346,14 +346,14 @@ export default function LineTranslatorClient() {
             <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", boxShadow: "0 2px 4px rgba(17,17,16,0.04), 0 6px 16px rgba(17,17,16,0.07), 0 16px 32px rgba(17,17,16,0.05), 0 0 0 1px rgba(17,17,16,0.04), inset 0 1px 0 rgba(255,255,255,0.6)" }}>
 
               {/* Header */}
-              <div style={{ background: "var(--ink)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ background: "var(--ink)", padding: "14px 24px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
                   <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--signal)", flexShrink: 0 }} />
                   <div style={{ fontFamily: "var(--mono)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
                     Translation
                   </div>
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", flex: "1", minWidth: "120px", textAlign: "right" }}>
                   {result.line}
                 </div>
               </div>

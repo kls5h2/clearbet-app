@@ -103,7 +103,11 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
   const away = game.awayTeam.teamName;
   const home = game.homeTeam.teamName;
   const odds = game.odds as Record<string, number | null> | null;
-  const spread = odds && "spread" in odds ? formatSpread(odds.spread as number | null, game.homeTeam.teamAbv) : "—";
+  const isMLB = game.sport === "MLB";
+  const spreadVal = isMLB
+    ? (odds && "runLine" in odds ? formatSpread(odds.runLine as number | null, game.homeTeam.teamAbv) : "—")
+    : (odds && "spread" in odds ? formatSpread(odds.spread as number | null, game.homeTeam.teamAbv) : "—");
+  const spreadLabel = isMLB ? "Run Line" : "Spread";
   const total = odds?.total != null ? `${odds.total}` : "—";
   const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
   const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
@@ -158,19 +162,19 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
           </div>
         </div>
 
-        {/* Stats grid — horizontally scrollable on mobile */}
+        {/* Stats grid — ML columns hidden on mobile */}
         <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: "7px" }}>
-          <div style={{
+          <div className="hl-stats-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(5, 1fr)", minWidth: "360px", overflow: "hidden",
           }}>
             {[
-              { label: "Spread", value: spread },
-              { label: "Total",  value: total },
-              { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
-              { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
-              { label: "Signal", value: grade, sig: true },
+              { label: spreadLabel, value: spreadVal, cls: "" },
+              { label: "Total",     value: total,     cls: "" },
+              { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "hl-ml-col" },
+              { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "hl-ml-col" },
+              { label: "Signal",    value: grade,     cls: "", sig: true },
             ].map((s, i) => (
-              <div key={s.label} style={{
+              <div key={s.label} className={s.cls} style={{
                 padding: "13px 14px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
                 background: "var(--warm-white)", textAlign: "center",
               }}>
@@ -198,7 +202,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
           padding: "10px 14px", background: "rgba(17,17,16,0.03)", borderRadius: "5px",
         }}>
           <span style={{ flexShrink: 0, marginTop: "1px" }}>💡</span>
-          <span>Start here tonight. This is the highest-signal game on the slate.</span>
+          <span>Highest signal game on tonight&apos;s slate.</span>
         </div>
       </div>
 
@@ -445,6 +449,7 @@ function HomePageContent() {
   const [games, setGames] = useState<AnyGame[]>([]);
   const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
   const [breakdowns, setBreakdowns] = useState<Map<string, SlateBreakdown>>(new Map());
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [tier, setTier] = useState<Tier | null>(null);
   const [dailyUsed, setDailyUsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -465,12 +470,12 @@ function HomePageContent() {
       setDailyUsed((bdRows?.length ?? 0) > 0);
     }
     client.auth.getUser().then(({ data }) => {
-      if (data.user) loadTier(data.user.id);
-      else setTier(null);
+      if (data.user) { setUserId(data.user.id); loadTier(data.user.id); }
+      else { setUserId(null); setTier(null); }
     });
     const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) loadTier(session.user.id);
-      else setTier(null);
+      if (session?.user) { setUserId(session.user.id); loadTier(session.user.id); }
+      else { setUserId(null); setTier(null); }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -573,10 +578,21 @@ function HomePageContent() {
   });
 
   function handleRead(gameId: string) {
+    if (userId === null) {
+      router.push("/login?mode=signup");
+      return;
+    }
     router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
   }
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 768px) {
+        .hl-ml-col { display: none !important; }
+        .hl-stats-grid { grid-template-columns: repeat(3, 1fr) !important; min-width: 0 !important; }
+      }
+    `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav activePage="today" />
 
@@ -761,5 +777,6 @@ function HomePageContent() {
 
       <PageFooter />
     </div>
+    </>
   );
 }
