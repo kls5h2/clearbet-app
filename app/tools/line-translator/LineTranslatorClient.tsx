@@ -186,7 +186,7 @@ export default function LineTranslatorClient() {
         <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>
 
           {/* Header */}
-          <div style={{ padding: "20px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "20px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
             <div style={{ fontFamily: "var(--mono)", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>
               Paste a line or upload a slip
             </div>

@@ -301,6 +301,16 @@ export default function GlossaryPage() {
   const noResults = q && filtered.length === 0;
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 768px) {
+        .glossary-term-row {
+          grid-template-columns: 1fr !important;
+          gap: 8px !important;
+          alignItems: start !important;
+        }
+      }
+    `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav activePage="glossary" />
 
@@ -533,6 +543,7 @@ export default function GlossaryPage() {
               {cat.terms.map((term) => (
                 <div
                   key={term.name}
+                  className="glossary-term-row"
                   style={{
                     background: "var(--surface)",
                     borderRadius: 7,
@@ -651,5 +662,6 @@ export default function GlossaryPage() {
         {" · "}© RawIntel LLC
       </footer>
     </div>
+    </>
   );
 }

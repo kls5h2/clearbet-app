@@ -96,7 +96,9 @@ export default function HomePage() {
           .hp-stats-bar { grid-template-columns: repeat(3, 1fr) !important; }
           .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+          .hp-preview-fade { padding-bottom: 48px !important; height: 300px !important; }
         }
+        .hp-preview-fade { z-index: 2; }
       `}</style>
 
       {/* ── Nav ─────────────────────────────────────────────────────── */}
@@ -488,7 +490,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div style={{
+            <div className="hp-preview-fade" style={{
               position: "absolute", bottom: 0, left: 0, right: 0, height: "260px",
               background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.98) 100%)",
               display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: "36px",

@@ -319,7 +319,7 @@ export default function BreakdownPage() {
       {game && odds && (
         <div className="f2" style={{ overflowX: "auto", background: "var(--surface)", borderBottom: "1px solid var(--border-med)", boxShadow: "var(--shadow-sm)" }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "320px",
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "440px",
           }}>
             {[
               { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread },

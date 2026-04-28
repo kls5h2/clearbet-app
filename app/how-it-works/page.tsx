@@ -311,6 +311,15 @@ export default function HowItWorksPage() {
   }, []);
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 768px) {
+        .hiw-step-row {
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
+        }
+      }
+    `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav activePage="how-it-works" />
 
@@ -458,8 +467,8 @@ export default function HowItWorksPage() {
           {STEPS.map((step) => (
             <div
               key={step.num}
-             
-              className="reveal"
+
+              className="reveal hiw-step-row"
               style={{
                 display: "grid",
                 gridTemplateColumns: "180px 1fr",
@@ -1034,5 +1043,6 @@ export default function HowItWorksPage() {
         {" · "}© RawIntel LLC
       </footer>
     </div>
+    </>
   );
 }
