@@ -97,9 +97,9 @@ export default function HomePage() {
           .hp-stats-bar > div:nth-child(n+3) { display: none !important; }
           .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
-          .hp-preview-fade { padding-bottom: 48px !important; height: 300px !important; }
+          .hp-preview-fade { height: 400px !important; padding-bottom: 56px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.85) 35%, rgba(240,237,230,0.98) 65%, rgba(240,237,230,1) 100%) !important; }
         }
-        .hp-preview-fade { z-index: 2; }
+        .hp-preview-fade { z-index: 10; }
       `}</style>
 
       {/* ── Nav ─────────────────────────────────────────────────────── */}
@@ -492,8 +492,9 @@ export default function HomePage() {
             </div>
 
             <div className="hp-preview-fade" style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: "260px",
-              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.98) 100%)",
+              position: "absolute", bottom: 0, left: 0, right: 0, height: "280px",
+              zIndex: 10,
+              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.85) 40%, rgba(240,237,230,0.98) 70%, rgba(240,237,230,1) 100%)",
               display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: "36px",
             }}>
               <div style={{ textAlign: "center" }}>
