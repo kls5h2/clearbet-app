@@ -125,12 +125,11 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
 
 // Fragility item
 function FragilityItem({ item, color: fc }: { item: string; color: FragilityColor }) {
-  const bg = fc === "red" ? "var(--fragile-bg)" : fc === "green" ? "var(--clear-bg)" : "var(--fragile-bg)";
-  const border = fc === "red" ? "var(--fragile)" : fc === "green" ? "var(--clear)" : "var(--fragile)";
+  const border = fc === "green" ? "var(--clear)" : fc === "red" ? "var(--fragile)" : "var(--fragile)";
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "10px",
-      padding: "12px 14px", background: bg, borderRadius: "7px",
+      padding: "12px 14px", background: "var(--cream)", borderRadius: "7px",
       borderLeft: `2px solid ${border}`,
     }}>
       <span style={{ fontSize: "14px", flexShrink: 0 }}>⚠️</span>
@@ -240,7 +239,7 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
 
           {/* 02 — Key Drivers */}
           <StepBlock stepLabel="Key Drivers">
-            <StepText>Two to three factors will actually decide this game. Not everything — just what materially matters tonight.</StepText>
+            <StepText>The factors that will actually decide this game. Not everything — just what materially matters tonight.</StepText>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "14px" }}>
               {breakdown.keyDrivers.map((d, i) => (
                 <DriverItem key={i} direction={d.direction} factor={d.factor} />

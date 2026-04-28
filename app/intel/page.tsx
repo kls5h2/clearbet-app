@@ -97,6 +97,8 @@ function SectionLabel({ icon, text }: { icon: "star" | "grid" | "calendar"; text
 function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown | null; onRead: () => void }) {
   const [hover, setHover] = useState(false);
   const conf = bd?.confidenceLabel ?? null;
+  const c = conf ? CONF[conf] : null;
+  const barColor = c?.bar ?? "var(--pass)";
   const grade = SIGNAL_GRADE[bd?.confidenceLevel ?? 2] ?? "B+";
   const away = game.awayTeam.teamName;
   const home = game.homeTeam.teamName;
@@ -125,6 +127,8 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         outline: "none",
       }}
     >
+      {/* Confidence accent bar */}
+      <div style={{ height: "3px", background: barColor }} />
       {/* Dark band */}
       <div style={{
         background: "var(--ink)", padding: "12px 24px",
@@ -144,36 +148,37 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
       {/* Body */}
       <div style={{ padding: "26px 26px 0" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", marginBottom: "8px" }}>
-          <div style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1.05 }}>
+          <div style={{ fontSize: "clamp(18px, 4vw, 28px)", fontWeight: 800, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1.1 }}>
             {away}
-            <span style={{ fontSize: "16px", fontWeight: 400, color: "var(--muted-light)", margin: "0 8px" }}>at</span>
+            <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
             {home}
           </div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: "13px", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
             {game.gameTime}
           </div>
         </div>
 
-        {/* Stats grid */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
-          margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: "7px", overflow: "hidden",
-        }}>
-          {[
-            { label: "Spread", value: spread },
-            { label: "Total",  value: total },
-            { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
-            { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
-            { label: "Signal", value: grade, sig: true },
-          ].map((s, i) => (
-            <div key={s.label} style={{
-              padding: "13px 14px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
-              background: "var(--warm-white)", textAlign: "center",
-            }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "7px" }}>{s.label}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 600, color: s.sig ? "var(--signal)" : "var(--ink)" }}>{s.value}</div>
-            </div>
-          ))}
+        {/* Stats grid — horizontally scrollable on mobile */}
+        <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: "7px" }}>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(5, 1fr)", minWidth: "360px", overflow: "hidden",
+          }}>
+            {[
+              { label: "Spread", value: spread },
+              { label: "Total",  value: total },
+              { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
+              { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
+              { label: "Signal", value: grade, sig: true },
+            ].map((s, i) => (
+              <div key={s.label} style={{
+                padding: "13px 14px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
+                background: "var(--warm-white)", textAlign: "center",
+              }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "7px" }}>{s.label}</div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 600, color: s.sig ? "var(--signal)" : "var(--ink)" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Insight */}
@@ -253,9 +258,9 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
           <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)" }}>{game.gameTime}</span>
         </div>
 
-        <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
+        <div style={{ fontSize: "clamp(16px, 3.5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
           {game.awayTeam.teamName}
-          <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
+          <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
           {game.homeTeam.teamName}
         </div>
         <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: "16px" }}>
@@ -310,9 +315,9 @@ function LockedGameCard({ game, bd, showUpgrade }: { game: AnyGame; bd: SlateBre
           <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)" }}>{game.gameTime}</span>
         </div>
 
-        <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
+        <div style={{ fontSize: "clamp(16px, 3.5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
           {game.awayTeam.teamName}
-          <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
+          <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
           {game.homeTeam.teamName}
         </div>
         <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: "12px" }}>
@@ -497,6 +502,21 @@ function HomePageContent() {
   }, []);
 
   useEffect(() => {
+    const todayStr = getTodayDateString();
+    const cacheKey = `ri_slate_${activeSport}_${todayStr}`;
+
+    // Restore from session cache — preserves slate state on back navigation
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setGames(parsed.games ?? []);
+        setTomorrowGames(parsed.tomorrow ?? []);
+        setLoading(false);
+        return;
+      }
+    } catch {}
+
     setLoading(true);
     setError(null);
     const sport = activeSport.toLowerCase();
@@ -505,8 +525,11 @@ function HomePageContent() {
       fetch(`/api/games?sport=${sport}&date=tomorrow`).then((r) => r.ok ? r.json() : { games: [] }).catch(() => ({ games: [] })),
     ])
       .then(([today, tomorrow]) => {
-        setGames(today.games ?? []);
-        setTomorrowGames(tomorrow.games ?? []);
+        const tg = today.games ?? [];
+        const tmg = tomorrow.games ?? [];
+        setGames(tg);
+        setTomorrowGames(tmg);
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ games: tg, tomorrow: tmg })); } catch {}
         setLoading(false);
       })
       .catch((e) => { setError(e.message); setLoading(false); });
@@ -517,6 +540,17 @@ function HomePageContent() {
 
   const headliner = (() => {
     if (sorted.length === 0) return null;
+
+    // Restore locked headliner — prevents re-ranking as data updates
+    const headlinerKey = `ri_headliner_${activeSport}_${getTodayDateString()}`;
+    try {
+      const lockedId = sessionStorage.getItem(headlinerKey);
+      if (lockedId) {
+        const locked = sorted.find((g) => g.gameId === lockedId);
+        if (locked) return locked;
+      }
+    } catch {}
+
     const withBd = sorted
       .filter((g) => breakdowns.has(g.gameId))
       .sort((a, b) => {
@@ -524,7 +558,11 @@ function HomePageContent() {
         const rb = CONF_RANK[breakdowns.get(b.gameId)?.confidenceLabel ?? "LEAN"] ?? 5;
         return ra !== rb ? ra - rb : parseGameTime(a.gameTime) - parseGameTime(b.gameTime);
       });
-    return withBd[0] ?? sorted[0];
+    const selection = withBd[0] ?? sorted[0];
+
+    // Lock this selection for the session/day
+    try { sessionStorage.setItem(`ri_headliner_${activeSport}_${getTodayDateString()}`, selection.gameId); } catch {}
+    return selection;
   })();
 
   const listGames = headliner ? sorted.filter((g) => g.gameId !== headliner.gameId) : sorted;
@@ -544,9 +582,9 @@ function HomePageContent() {
 
       {/* Page hero band */}
       <div className="f2" style={{
-        background: "var(--ink)", padding: "32px 40px",
+        background: "var(--ink)", padding: "clamp(20px,4vw,32px) clamp(20px,4vw,40px)",
         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-        gap: "32px", position: "relative", overflow: "hidden",
+        gap: "24px", flexWrap: "wrap", position: "relative", overflow: "hidden",
       }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
@@ -618,7 +656,7 @@ function HomePageContent() {
       </div>
 
       {/* Main content */}
-      <div style={{ maxWidth: "880px", margin: "0 auto", padding: "40px 40px 80px" }}>
+      <div style={{ maxWidth: "880px", margin: "0 auto", padding: "40px clamp(16px,4vw,40px) 80px" }}>
 
         {/* Error */}
         {error && (

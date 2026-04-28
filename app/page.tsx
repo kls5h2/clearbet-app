@@ -18,6 +18,7 @@ export default function HomePage() {
   const [teaserSport, setTeaserSport] = useState<Sport>("NBA");
   const [teaserGames, setTeaserGames] = useState<AnyGame[]>([]);
   const [teaserLoading, setTeaserLoading] = useState(true);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -38,7 +39,7 @@ export default function HomePage() {
       .catch(() => ({ games: [] }))
       .then((data: { games?: AnyGame[] }) => {
         const sorted = [...(data.games ?? [])].sort((a, b) => parseGameTime(a.gameTime) - parseGameTime(b.gameTime));
-        setTeaserGames(sorted.slice(0, 4));
+        setTeaserGames(sorted);
         setTeaserLoading(false);
       });
   }, [teaserSport]);
@@ -78,6 +79,24 @@ export default function HomePage() {
         .hp-preview-btn:hover { background: var(--signal) !important; transform: translateY(-1px); }
         .hp-teaser-btn:hover { background: #b02e24 !important; transform: translateY(-1px); }
         .hp-footer-link:hover { color: rgba(255,255,255,0.55) !important; }
+        @media (max-width: 768px) {
+          .hp-nav-links { display: none !important; }
+          .hp-nav-right { display: none !important; }
+          .hp-nav-ham { display: flex !important; }
+          .hp-nav-mob { display: flex !important; }
+          .hp-hero-wrap { padding: 90px 24px 60px !important; }
+          .hp-hero-content { max-width: 100% !important; }
+          .hp-step-grid { grid-template-columns: 1fr !important; }
+          .hp-step-arr { display: none !important; }
+          .hp-section-pad { padding: 64px 24px !important; }
+          .hp-compare-grid { grid-template-columns: 1fr !important; }
+          .hp-game-row { grid-template-columns: 1fr auto !important; gap: 12px !important; }
+          .hp-game-cta { display: none !important; }
+          .hp-preview-wrap { padding: 28px 20px 0 !important; }
+          .hp-stats-bar { grid-template-columns: repeat(3, 1fr) !important; }
+          .hp-stat-4,.hp-stat-5 { display: none !important; }
+          .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+        }
       `}</style>
 
       {/* ── Nav ─────────────────────────────────────────────────────── */}
@@ -94,7 +113,7 @@ export default function HomePage() {
         }}>
           Raw<span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>Intel</span><span style={{ color: "var(--signal)" }}>.</span>
         </Link>
-        <ul style={{ display: "flex", gap: "2px", listStyle: "none", flex: 1, margin: 0, padding: 0 }}>
+        <ul className="hp-nav-links" style={{ display: "flex", gap: "2px", listStyle: "none", flex: 1, margin: 0, padding: 0 }}>
           {[
             { href: "/intel", label: "Today's Intel" },
             { href: "/how-it-works", label: "How It Works" },
@@ -110,7 +129,7 @@ export default function HomePage() {
             </li>
           ))}
         </ul>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="hp-nav-right" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
           <Link href="/login" className="hp-btn-login" style={{
             fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
             textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
@@ -122,10 +141,58 @@ export default function HomePage() {
             background: "var(--signal)", transition: "all 0.15s",
           }}>Start free</Link>
         </div>
+        {/* Hamburger — mobile only */}
+        <button
+          className="hp-nav-ham"
+          onClick={() => setNavOpen(o => !o)}
+          aria-label="Toggle menu"
+          style={{
+            marginLeft: "auto", display: "none", flexDirection: "column", gap: "5px",
+            background: "none", border: "none", cursor: "pointer", padding: "4px",
+          }}
+        >
+          {[0,1,2].map(i => (
+            <span key={i} style={{ display: "block", width: "20px", height: "2px", background: "rgba(255,255,255,0.6)", borderRadius: "2px" }} />
+          ))}
+        </button>
+        {/* Mobile dropdown */}
+        {navOpen && (
+          <div className="hp-nav-mob" style={{
+            display: "none", position: "fixed", top: "56px", left: 0, right: 0,
+            background: "rgba(17,17,16,0.97)", backdropFilter: "blur(12px)",
+            flexDirection: "column", padding: "16px 24px 24px", gap: "2px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            {[
+              { href: "/intel", label: "Today's Intel" },
+              { href: "/how-it-works", label: "How It Works" },
+              { href: "/glossary", label: "Glossary" },
+              { href: "/tools/line-translator", label: "Line Translator" },
+            ].map(l => (
+              <Link key={l.href} href={l.href} onClick={() => setNavOpen(false)} style={{
+                fontSize: "16px", fontWeight: 500, color: "rgba(255,255,255,0.65)",
+                textDecoration: "none", padding: "12px 0",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>{l.label}</Link>
+            ))}
+            <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+              <Link href="/login" style={{
+                fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.6)",
+                textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                border: "1px solid rgba(255,255,255,0.12)", flex: 1, textAlign: "center",
+              }}>Log in</Link>
+              <Link href="/login?mode=signup" style={{
+                fontSize: "13px", fontWeight: 600, color: "#fff",
+                textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                background: "var(--signal)", flex: 1, textAlign: "center",
+              }}>Start free</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="hp-hero-wrap" style={{
         minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center",
         position: "relative", padding: "120px 48px 80px", overflow: "hidden",
       }}>
@@ -137,7 +204,7 @@ export default function HomePage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E")`,
         }} />
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "860px" }}>
+        <div className="hp-hero-content" style={{ position: "relative", zIndex: 1, maxWidth: "860px" }}>
           <div className="hp-hero-eyebrow" style={{
             display: "inline-flex", alignItems: "center", gap: "10px",
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 500,
@@ -191,7 +258,7 @@ export default function HomePage() {
           </div>
 
           {/* 3-step grid */}
-          <div className="hp-hero-steps" style={{
+          <div className="hp-hero-steps hp-step-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px",
             background: "rgba(255,255,255,0.07)", borderRadius: "10px", overflow: "hidden",
             border: "1px solid rgba(255,255,255,0.07)",
@@ -206,7 +273,7 @@ export default function HomePage() {
                 position: "relative", transition: "background 0.2s",
               }}>
                 {i < 2 && (
-                  <span aria-hidden style={{
+                  <span aria-hidden className="hp-step-arr" style={{
                     position: "absolute", right: "-10px", top: "50%", transform: "translateY(-50%)",
                     color: "rgba(255,255,255,0.15)", zIndex: 2,
                   }}>→</span>
@@ -233,7 +300,7 @@ export default function HomePage() {
       </section>
 
       {/* ── What makes it different ──────────────────────────────────── */}
-      <section style={{ background: "var(--warm-white)", color: "var(--ink)", padding: "96px 64px" }}>
+      <section className="hp-section-pad" style={{ background: "var(--warm-white)", color: "var(--ink)", padding: "96px 64px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: "56px" }}>
             <div style={{
@@ -252,7 +319,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="reveal rd1" style={{
+          <div className="reveal rd1 hp-compare-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px",
             borderRadius: "10px", overflow: "hidden", border: "1px solid var(--border-med)",
           }}>
@@ -324,7 +391,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Breakdown preview ────────────────────────────────────────── */}
-      <section style={{ background: "var(--cream)", color: "var(--ink)", padding: "96px 64px" }}>
+      <section className="hp-section-pad" style={{ background: "var(--cream)", color: "var(--ink)", padding: "96px 64px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: "56px" }}>
             <div style={{
@@ -444,7 +511,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Today's slate teaser ─────────────────────────────────────── */}
-      <section style={{ background: "var(--surface)", color: "var(--ink)", padding: "96px 64px" }}>
+      <section className="hp-section-pad" style={{ background: "var(--surface)", color: "var(--ink)", padding: "96px 64px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: "56px" }}>
             <div style={{
@@ -489,16 +556,16 @@ export default function HomePage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               {teaserLoading
-                ? [1, 2, 3, 4].map(i => (
+                ? [1, 2, 3].map(i => (
                     <div key={i} style={{ height: "52px", background: "var(--cream)", borderRadius: "6px" }} className="animate-pulse" />
                   ))
                 : teaserGames.length === 0
                 ? <div style={{ padding: "24px 16px", color: "var(--muted)", fontSize: "14px" }}>No {teaserSport} games today.</div>
-                : teaserGames.map(game => (
+                : teaserGames.slice(0, 5).map(game => (
                     <Link
                       key={game.gameId}
                       href="/intel"
-                      className="hp-teaser-game"
+                      className="hp-teaser-game hp-game-row"
                       style={{
                         display: "grid", gridTemplateColumns: "1fr auto auto", gap: "20px",
                         alignItems: "center", padding: "15px 16px", borderRadius: "6px",
@@ -507,21 +574,33 @@ export default function HomePage() {
                         border: "1px solid transparent",
                       }}
                     >
-                      <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.02em" }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, letterSpacing: "-0.02em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {game.awayTeam.teamName}{" "}
-                        <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--muted)", margin: "0 5px" }}>at</span>
-                        {game.homeTeam.teamName}
+                        <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--muted)", margin: "0 4px" }}>@</span>
+                        {" "}{game.homeTeam.teamName}
                       </div>
                       <div style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)", whiteSpace: "nowrap" }}>
                         {game.gameTime}
                       </div>
-                      <div className="hp-teaser-cta" style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, color: "var(--signal)", opacity: 0, transition: "opacity 0.12s", whiteSpace: "nowrap" }}>
+                      <div className="hp-teaser-cta hp-game-cta" style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, color: "var(--signal)", opacity: 0, transition: "opacity 0.12s", whiteSpace: "nowrap" }}>
                         Read →
                       </div>
                     </Link>
                   ))
               }
             </div>
+
+            {!teaserLoading && teaserGames.length > 5 && (
+              <Link href="/intel" style={{
+                display: "block", padding: "12px 16px",
+                fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+                letterSpacing: "0.06em", textTransform: "uppercase",
+                color: "var(--signal)", textDecoration: "none",
+                borderTop: "1px solid var(--border)",
+              }}>
+                + {teaserGames.length - 5} more on tonight&apos;s slate →
+              </Link>
+            )}
 
             <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
               <div style={{ fontSize: "13px", color: "var(--muted)" }}>
@@ -540,7 +619,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Manifesto ────────────────────────────────────────────────── */}
-      <section style={{ background: "var(--ink)", color: "#fff", padding: "96px 64px", position: "relative", overflow: "hidden" }}>
+      <section className="hp-section-pad" style={{ background: "var(--ink)", color: "#fff", padding: "96px 64px", position: "relative", overflow: "hidden" }}>
         <div style={{
           position: "absolute", bottom: "-30%", right: "-10%", width: "60vw", height: "60vw",
           borderRadius: "50%", background: "radial-gradient(circle, rgba(201,53,42,0.06) 0%, transparent 65%)",

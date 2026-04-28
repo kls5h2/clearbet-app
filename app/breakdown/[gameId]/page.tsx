@@ -39,6 +39,12 @@ const PLACEHOLDER_BREAKDOWN: BreakdownResult = {
 };
 
 const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
+const CONF_SUBTITLES: Record<string, string> = {
+  "CLEAR SPOT": "One of the cleaner reads tonight",
+  "LEAN":       "Directional but not clean",
+  "FRAGILE":    "Logic holds but conditional",
+  "PASS":       "Too many moving parts",
+};
 const CONF_COLORS: Record<string, { color: string; label: string }> = {
   "CLEAR SPOT": { color: "var(--clear)", label: "Clear Spot" },
   "LEAN":       { color: "var(--lean)",  label: "Lean" },
@@ -239,7 +245,7 @@ export default function BreakdownPage() {
 
   return (
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
-      <Nav backHref="/" backLabel="Today's Intel" />
+      <Nav backHref="/intel" backLabel="Today's Intel" />
 
       {/* Dark hero band */}
       <div className="f2" style={{
@@ -301,7 +307,7 @@ export default function BreakdownPage() {
                   {confLabel}
                 </div>
                 <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
-                  One of the cleaner reads tonight
+                  {CONF_SUBTITLES[breakdown.confidenceLabel] ?? "One of the cleaner reads tonight"}
                 </div>
               </div>
             </div>
@@ -311,25 +317,25 @@ export default function BreakdownPage() {
 
       {/* Stats bar — shown when game data available */}
       {game && odds && (
-        <div className="f2" style={{
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-          background: "var(--surface)", borderBottom: "1px solid var(--border-med)",
-          boxShadow: "var(--shadow-sm)",
-        }}>
-          {[
-            { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread },
-            { label: "Total", value: total },
-            { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
-            { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
-          ].map((s, i) => (
-            <div key={s.label} style={{
-              padding: "14px 16px", textAlign: "center",
-              borderRight: i < 3 ? "1px solid var(--border)" : "none",
-            }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
-            </div>
-          ))}
+        <div className="f2" style={{ overflowX: "auto", background: "var(--surface)", borderBottom: "1px solid var(--border-med)", boxShadow: "var(--shadow-sm)" }}>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "320px",
+          }}>
+            {[
+              { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread },
+              { label: "Total", value: total },
+              { label: `${game.awayTeam.teamAbv} ML`, value: awayML },
+              { label: `${game.homeTeam.teamAbv} ML`, value: homeML },
+            ].map((s, i) => (
+              <div key={s.label} style={{
+                padding: "14px 16px", textAlign: "center",
+                borderRight: i < 3 ? "1px solid var(--border)" : "none",
+              }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -338,32 +344,17 @@ export default function BreakdownPage() {
 
         {/* Loading */}
         {status === "loading" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} style={{
-                background: "var(--surface)", borderRadius: "10px",
-                border: "1px solid rgba(17,17,16,0.06)", padding: "20px",
-                boxShadow: "var(--shadow-sm)",
-              }} className="animate-pulse">
-                <div style={{ height: "10px", background: "var(--cream)", borderRadius: "4px", width: "80px", marginBottom: "14px" }} />
-                {[1, 2, 3].map((j) => (
-                  <div key={j} style={{ height: "14px", background: "var(--cream)", borderRadius: "4px", width: j === 3 ? "60%" : "100%", marginBottom: "8px" }} />
-                ))}
-              </div>
-            ))}
-            <div style={{
-              background: "var(--surface)", borderRadius: "10px",
-              border: "1px solid rgba(17,17,16,0.06)", padding: "28px 20px",
-              textAlign: "center", boxShadow: "var(--shadow-sm)",
+          <div style={{
+            minHeight: "55vh", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: "10px", textAlign: "center",
+          }}>
+            <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>Building your breakdown</p>
+            <p style={{
+              fontSize: "13px", color: "var(--muted)",
+              transition: "opacity 0.4s ease", opacity: visible ? 1 : 0, minHeight: "1.4rem",
             }}>
-              <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Building your breakdown</p>
-              <p style={{
-                fontSize: "13px", color: "var(--muted)",
-                transition: "opacity 0.4s ease", opacity: visible ? 1 : 0, minHeight: "1.4rem",
-              }}>
-                {message}
-              </p>
-            </div>
+              {message}
+            </p>
           </div>
         )}
 
