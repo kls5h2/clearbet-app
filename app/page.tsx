@@ -567,7 +567,7 @@ export default function HomePage() {
                 : teaserGames.slice(0, 5).map(game => (
                     <Link
                       key={game.gameId}
-                      href="/intel"
+                      href={`/intel?sport=${teaserSport}`}
                       className="hp-teaser-game hp-game-row"
                       style={{
                         display: "grid", gridTemplateColumns: "1fr auto auto", gap: "20px",
@@ -594,7 +594,7 @@ export default function HomePage() {
             </div>
 
             {!teaserLoading && teaserGames.length > 5 && (
-              <Link href="/intel" style={{
+              <Link href={`/intel?sport=${teaserSport}`} style={{
                 display: "block", padding: "12px 16px",
                 fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
                 letterSpacing: "0.06em", textTransform: "uppercase",
@@ -609,7 +609,7 @@ export default function HomePage() {
               <div style={{ fontSize: "13px", color: "var(--muted)" }}>
                 <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Start with one read, free.</strong> Upgrade anytime for the full slate.
               </div>
-              <Link href="/intel" className="hp-teaser-btn" style={{
+              <Link href={`/intel?sport=${teaserSport}`} className="hp-teaser-btn" style={{
                 fontSize: "13.5px", fontWeight: 600, color: "#fff", textDecoration: "none",
                 padding: "11px 24px", borderRadius: "6px", background: "var(--signal)",
                 display: "flex", alignItems: "center", gap: "6px", transition: "all 0.15s", whiteSpace: "nowrap",
