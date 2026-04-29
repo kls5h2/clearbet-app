@@ -370,8 +370,12 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     const allGames = await getGamesForDate(today);
     const rawGame = allGames.find((g) => g.gameId === gameId);
     if (!rawGame) {
-      console.error(`[breakdown:NBA] game not found: ${gameId}`);
-      return NextResponse.json({ error: "Game not found" }, { status: 404 });
+      console.error(`[breakdown:NBA] game not found in today's slate: ${gameId} — likely already played`);
+      return NextResponse.json({ error: "Game not found", gameStarted: true }, { status: 404 });
+    }
+    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final") {
+      console.warn(`[breakdown:NBA] game already started: ${gameId} status=${rawGame.gameStatus}`);
+      return NextResponse.json({ error: "Game already started", gameStarted: true }, { status: 409 });
     }
 
     // Tank01's home/away — may be wrong for Play-In / Playoff games
@@ -532,8 +536,12 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     const allGames = await getMLBGamesForDate(today);
     const rawGame = allGames.find((g) => g.gameId === gameId);
     if (!rawGame) {
-      console.error(`[breakdown:MLB] game not found: ${gameId}`);
-      return NextResponse.json({ error: "Game not found" }, { status: 404 });
+      console.error(`[breakdown:MLB] game not found in today's slate: ${gameId} — likely already played`);
+      return NextResponse.json({ error: "Game not found", gameStarted: true }, { status: 404 });
+    }
+    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final") {
+      console.warn(`[breakdown:MLB] game already started: ${gameId} status=${rawGame.gameStatus}`);
+      return NextResponse.json({ error: "Game already started", gameStarted: true }, { status: 409 });
     }
 
     const { homeTeam, awayTeam } = rawGame;

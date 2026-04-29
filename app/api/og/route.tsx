@@ -111,18 +111,10 @@ export async function GET(req: NextRequest) {
         >
           {/* Wordmark + sport / date */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div
-              style={{
-                fontFamily: "Inter",
-                fontWeight: 800,
-                fontSize: "22px",
-                color: "#0E0E0E",
-                letterSpacing: "-0.03em",
-                display: "flex",
-              }}
-            >
-              Raw
-              <span style={{ color: "#C9352A" }}>Intel</span>
+            <div style={{ display: "flex", alignItems: "baseline" }}>
+              <span style={{ fontFamily: "Inter", fontWeight: 800, fontSize: "22px", color: "#0E0E0E", letterSpacing: "-0.03em" }}>Raw</span>
+              <span style={{ fontFamily: "Inter", fontWeight: 400, fontSize: "22px", color: "#8A8A86", letterSpacing: "-0.03em" }}>Intel</span>
+              <span style={{ fontFamily: "Inter", fontWeight: 800, fontSize: "22px", color: "#C9352A", letterSpacing: "-0.03em" }}>.</span>
             </div>
             {(sport || date) && (
               <div

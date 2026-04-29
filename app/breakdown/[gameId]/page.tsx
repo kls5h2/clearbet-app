@@ -116,6 +116,7 @@ export default function BreakdownPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [tier, setTier] = useState<Tier | null>(null);
   const [gated, setGated] = useState<GatedReason | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const { message, visible } = useRotatingMessage(status === "loading");
 
@@ -124,6 +125,7 @@ export default function BreakdownPage() {
     setBreakdown(null);
     setGame(null);
     setGated(null);
+    setGameStarted(false);
 
     fetch("/api/breakdown", {
       method: "POST",
@@ -133,8 +135,9 @@ export default function BreakdownPage() {
       .then(async (r) => {
         const body = await r.json().catch(() => ({}));
         if (!r.ok) {
-          const err = new Error(body?.error ?? "Failed to generate breakdown") as Error & { status?: number };
+          const err = new Error(body?.error ?? "Failed to generate breakdown") as Error & { status?: number; gameStarted?: boolean };
           err.status = r.status;
+          err.gameStarted = body?.gameStarted === true;
           throw err;
         }
         return body;
@@ -157,7 +160,8 @@ export default function BreakdownPage() {
         setTier((data.tier as Tier | undefined) ?? "free");
         setStatus("done");
       })
-      .catch((e: Error & { status?: number }) => {
+      .catch((e: Error & { status?: number; gameStarted?: boolean }) => {
+        if (e.gameStarted) setGameStarted(true);
         setError(e.message);
         setStatus("error");
       });
@@ -372,14 +376,27 @@ export default function BreakdownPage() {
             borderRadius: "10px", padding: "32px", textAlign: "center",
             boxShadow: "var(--shadow-sm)",
           }}>
-            <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Something went wrong</p>
-            <p style={{ fontSize: "13px", color: "var(--signal)", marginBottom: "20px" }}>{error}</p>
-            <button
-              onClick={() => router.push("/")}
-              style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}
+            {gameStarted ? (
+              <>
+                <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "10px" }}>
+                  This game is already underway.
+                </p>
+                <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px" }}>
+                  Breakdowns are generated before tip-off. Check back tomorrow for a fresh slate.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Something went wrong</p>
+                <p style={{ fontSize: "13px", color: "var(--signal)", marginBottom: "20px" }}>{error}</p>
+              </>
+            )}
+            <Link
+              href="/intel"
+              style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", textDecoration: "none" }}
             >
               ← Back to slate
-            </button>
+            </Link>
           </div>
         )}
 

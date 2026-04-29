@@ -282,14 +282,14 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
         )}
 
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "flex-end",
-          paddingTop: "16px", borderTop: "1px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          paddingTop: "14px", borderTop: "1px solid var(--border)",
         }}>
-          <span style={{
-            fontSize: "13px", fontWeight: 700, color: "var(--signal)",
-            opacity: hover ? 1 : 0, transition: "opacity 0.14s", whiteSpace: "nowrap",
-          }}>
-            Read breakdown →
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
+            {insight ? "Analysis ready" : "Tap to generate"}
+          </span>
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
+            {insight ? "Read breakdown →" : "Build breakdown →"}
           </span>
         </div>
       </div>
@@ -299,11 +299,20 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
 
 // ─── Locked game card ─────────────────────────────────────────────────────────
 
-function LockedGameCard({ game, bd, showUpgrade, onRead }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; onRead: () => void }) {
+function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; userId: string | null | undefined; onRead: () => void }) {
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
   const barColor = c?.bar ?? "var(--pass)";
   const teaser = bd?.cardSummary ?? "There's a clear angle here — but it takes some digging to see it...";
+  const isLoggedOut = userId === null;
+  const ctaLabel = isLoggedOut ? "Sign up to read →"
+    : showUpgrade ? "Upgrade to Pro →"
+    : bd ? "Read breakdown →"
+    : "Build breakdown →";
+  const ctaSub = isLoggedOut ? "Free — one breakdown per day"
+    : showUpgrade ? "You've used today's free breakdown"
+    : bd ? "Analysis ready"
+    : "Tap to generate";
 
   return (
     <div
@@ -345,30 +354,17 @@ function LockedGameCard({ game, bd, showUpgrade, onRead }: { game: AnyGame; bd: 
         </div>
       </div>
 
-      {showUpgrade && (
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "13px 24px", borderTop: "1px solid var(--border)", background: "var(--warm-white)",
-        }}>
-          <span style={{ fontSize: "13px", color: "var(--muted)" }}>Upgrade to read this breakdown</span>
-          <Link href="/pricing" style={{
-            fontSize: "12.5px", fontWeight: 600, color: "var(--ink)", textDecoration: "none",
-            padding: "7px 16px", borderRadius: "4px",
-            border: "1px solid var(--border-strong)", transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--ink)";
-            (e.currentTarget as HTMLElement).style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-            (e.currentTarget as HTMLElement).style.color = "var(--ink)";
-          }}
-          >
-            Upgrade →
-          </Link>
-        </div>
-      )}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "13px 24px", borderTop: "1px solid var(--border)", background: "var(--warm-white)",
+      }}>
+        <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
+          {ctaSub}
+        </span>
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
+          {ctaLabel}
+        </span>
+      </div>
     </div>
   );
 }
@@ -718,7 +714,7 @@ function HomePageContent() {
                     const bd = breakdowns.get(game.gameId) ?? null;
                     return proUser
                       ? <OpenGameCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} />
-                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} onRead={() => handleRead(game.gameId)} />;
+                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} userId={userId} onRead={() => handleRead(game.gameId)} />;
                   })}
             </div>
           </div>

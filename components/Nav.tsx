@@ -110,9 +110,9 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
           </Link>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
             {authReady && email && (
-              <span style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--muted-light)" }}>
+              <Link href="/account" style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--muted-light)", textDecoration: "none" }}>
                 {displayEmail}
-              </span>
+              </Link>
             )}
           </div>
         </>
