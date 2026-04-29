@@ -260,9 +260,6 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
           {/* 06 — What This Means (dark step) */}
           <StepBlock stepLabel="What This Means" dark>
             <StepText dark>{breakdown.decisionLens}</StepText>
-            <StepTip dark>
-              Signal Grade {signalGrade} means the data is clear but not perfect. There&apos;s a defined lean with real logic — and real fragility worth knowing before you decide anything.
-            </StepTip>
 
             {/* Where the data points */}
             {breakdown.edge && breakdown.edge.length > 0 && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import type { AnyGame, Sport } from "@/lib/types";
 
 function parseGameTime(time: string): number {
@@ -19,6 +20,30 @@ export default function HomePage() {
   const [teaserGames, setTeaserGames] = useState<AnyGame[]>([]);
   const [teaserLoading, setTeaserLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const client = createClient();
+    client.auth.getUser().then(({ data }) => {
+      setAuthEmail(data.user?.email ?? null);
+    });
+    const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
+      setAuthEmail(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function handleNavLogout() {
+    const client = createClient();
+    await client.auth.signOut();
+    setAuthEmail(null);
+  }
+
+  function truncateEmail(e: string): string {
+    if (e.length <= 24) return e;
+    const atIdx = e.indexOf("@");
+    return `${e.slice(0, atIdx > 9 ? 9 : atIdx)}…${e.slice(atIdx)}`;
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -97,7 +122,7 @@ export default function HomePage() {
           .hp-stats-bar > div:nth-child(n+3) { display: none !important; }
           .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
-          .hp-preview-fade { height: 400px !important; padding-bottom: 56px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.85) 35%, rgba(240,237,230,0.98) 65%, rgba(240,237,230,1) 100%) !important; }
+          .hp-preview-fade { height: 440px !important; padding-bottom: 56px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.65) 25%, rgba(240,237,230,0.95) 48%, rgba(240,237,230,1) 62%) !important; }
         }
         .hp-preview-fade { z-index: 10; }
       `}</style>
@@ -133,16 +158,32 @@ export default function HomePage() {
           ))}
         </ul>
         <div className="hp-nav-right" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
-          <Link href="/login" className="hp-btn-login" style={{
-            fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
-            textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
-            border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s",
-          }}>Log in</Link>
-          <Link href="/login?mode=signup" className="hp-btn-cta" style={{
-            fontSize: "12.5px", fontWeight: 600, color: "#fff",
-            textDecoration: "none", padding: "7px 18px", borderRadius: "5px",
-            background: "var(--signal)", transition: "all 0.15s",
-          }}>Start free</Link>
+          {authEmail ? (
+            <>
+              <Link href="/account" style={{
+                fontSize: "12px", fontFamily: "var(--mono)", color: "rgba(255,255,255,0.45)",
+                textDecoration: "none", letterSpacing: "0.02em",
+              }}>{truncateEmail(authEmail)}</Link>
+              <button onClick={handleNavLogout} className="hp-btn-login" style={{
+                fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
+                background: "none", padding: "7px 16px", borderRadius: "5px",
+                border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s", cursor: "pointer",
+              }}>Log out</button>
+            </>
+          ) : authEmail === null ? (
+            <>
+              <Link href="/login" className="hp-btn-login" style={{
+                fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
+                textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
+                border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s",
+              }}>Log in</Link>
+              <Link href="/login?mode=signup" className="hp-btn-cta" style={{
+                fontSize: "12.5px", fontWeight: 600, color: "#fff",
+                textDecoration: "none", padding: "7px 18px", borderRadius: "5px",
+                background: "var(--signal)", transition: "all 0.15s",
+              }}>Start free</Link>
+            </>
+          ) : null}
         </div>
         {/* Hamburger — mobile only */}
         <button
@@ -178,18 +219,32 @@ export default function HomePage() {
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
               }}>{l.label}</Link>
             ))}
-            <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-              <Link href="/login" style={{
-                fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.6)",
-                textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
-                border: "1px solid rgba(255,255,255,0.12)", flex: 1, textAlign: "center",
-              }}>Log in</Link>
-              <Link href="/login?mode=signup" style={{
-                fontSize: "13px", fontWeight: 600, color: "#fff",
-                textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
-                background: "var(--signal)", flex: 1, textAlign: "center",
-              }}>Start free</Link>
-            </div>
+            {authEmail ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
+                <Link href="/account" onClick={() => setNavOpen(false)} style={{
+                  fontSize: "12px", fontFamily: "var(--mono)", color: "rgba(255,255,255,0.4)",
+                  textDecoration: "none", letterSpacing: "0.02em", padding: "4px 0",
+                }}>{truncateEmail(authEmail)}</Link>
+                <button onClick={() => { setNavOpen(false); handleNavLogout(); }} style={{
+                  fontSize: "15px", fontWeight: 500, color: "rgba(255,255,255,0.65)",
+                  background: "none", border: "none", cursor: "pointer", padding: "12px 0",
+                  textAlign: "left", borderTop: "1px solid rgba(255,255,255,0.06)",
+                }}>Log out</button>
+              </div>
+            ) : authEmail === null ? (
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                <Link href="/login" style={{
+                  fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.6)",
+                  textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                  border: "1px solid rgba(255,255,255,0.12)", flex: 1, textAlign: "center",
+                }}>Log in</Link>
+                <Link href="/login?mode=signup" style={{
+                  fontSize: "13px", fontWeight: 600, color: "#fff",
+                  textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                  background: "var(--signal)", flex: 1, textAlign: "center",
+                }}>Start free</Link>
+              </div>
+            ) : null}
           </div>
         )}
       </nav>
@@ -492,23 +547,22 @@ export default function HomePage() {
             </div>
 
             <div className="hp-preview-fade" style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: "280px",
+              position: "absolute", bottom: 0, left: 0, right: 0, height: "340px",
               zIndex: 10,
-              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.85) 40%, rgba(240,237,230,0.98) 70%, rgba(240,237,230,1) 100%)",
-              display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: "36px",
+              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.65) 28%, rgba(240,237,230,0.95) 52%, rgba(240,237,230,1) 65%)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+              paddingBottom: "44px", gap: "18px",
             }}>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ fontSize: "12.5px", color: "var(--muted)", marginBottom: "16px" }}>
-                  Fragility Check · Market Read · What This Means — sign in to read
-                </p>
-                <Link href="/intel" className="hp-preview-btn" style={{
-                  fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
-                  padding: "13px 32px", borderRadius: "6px", background: "var(--ink)",
-                  display: "inline-flex", alignItems: "center", gap: "8px", transition: "all 0.2s",
-                }}>
-                  Read the full breakdown →
-                </Link>
-              </div>
+              <p style={{ fontSize: "12.5px", color: "var(--muted)", margin: 0, letterSpacing: "0.01em", textAlign: "center" }}>
+                Fragility Check · Market Read · What This Means
+              </p>
+              <Link href="/intel" className="hp-preview-btn" style={{
+                fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
+                padding: "13px 32px", borderRadius: "6px", background: "var(--ink)",
+                display: "inline-flex", alignItems: "center", gap: "8px", transition: "all 0.2s",
+              }}>
+                Read the full breakdown →
+              </Link>
             </div>
           </div>
         </div>

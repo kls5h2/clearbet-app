@@ -170,9 +170,9 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
           <div className="hidden md:flex" style={{ marginLeft: "auto", alignItems: "center", gap: "16px" }}>
             {authReady && (email ? (
               <>
-                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
+                <Link href="/account" style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)", textDecoration: "none" }}>
                   {displayEmail}
-                </span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   style={{

@@ -282,12 +282,9 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
         )}
 
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
           paddingTop: "14px", borderTop: "1px solid var(--border)",
         }}>
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
-            {insight ? "Analysis ready" : "Tap to generate"}
-          </span>
           <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
             {insight ? "Read breakdown →" : "Build breakdown →"}
           </span>
@@ -309,11 +306,6 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
     : showUpgrade ? "Upgrade to Pro →"
     : bd ? "Read breakdown →"
     : "Build breakdown →";
-  const ctaSub = isLoggedOut ? "Free — one breakdown per day"
-    : showUpgrade ? "You've used today's free breakdown"
-    : bd ? "Analysis ready"
-    : "Tap to generate";
-
   return (
     <div
       role="button"
@@ -355,12 +347,9 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
       </div>
 
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center", justifyContent: "flex-end",
         padding: "13px 24px", borderTop: "1px solid var(--border)", background: "var(--warm-white)",
       }}>
-        <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)" }}>
-          {ctaSub}
-        </span>
         <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
           {ctaLabel}
         </span>

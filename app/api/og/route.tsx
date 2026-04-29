@@ -3,9 +3,10 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-// Latin-subset woff2 URLs from Google Fonts (stable versioned paths)
-const INTER_URL = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2";
-const MONO_URL  = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxTOlOVk6OThhvA.woff2";
+// Latin-subset woff2 URLs from Google Fonts CSS2 API responses (stable)
+const INTER_REGULAR_URL   = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2";
+const INTER_EXTRABOLD_URL = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7W0Q5nw.woff2";
+const MONO_URL            = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxTOlOVk6OThhvA.woff2";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -81,8 +82,9 @@ export async function GET(req: NextRequest) {
   const displayTitle = title || "Game Breakdown";
   const fs = titleFontSize(displayTitle.length);
 
-  const [interFont, monoFont] = await Promise.all([
-    fetch(INTER_URL).then((r) => r.arrayBuffer()),
+  const [interRegular, interBold, monoFont] = await Promise.all([
+    fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
+    fetch(INTER_EXTRABOLD_URL).then((r) => r.arrayBuffer()),
     fetch(MONO_URL).then((r) => r.arrayBuffer()),
   ]);
 
@@ -228,10 +230,9 @@ export async function GET(req: NextRequest) {
       width: 1200,
       height: 630,
       fonts: [
-        { name: "Inter", data: interFont, weight: 400, style: "normal" },
-        { name: "Inter", data: interFont, weight: 700, style: "normal" },
-        { name: "Inter", data: interFont, weight: 800, style: "normal" },
-        { name: "Mono",  data: monoFont,  weight: 400, style: "normal" },
+        { name: "Inter", data: interRegular, weight: 400, style: "normal" },
+        { name: "Inter", data: interBold,    weight: 800, style: "normal" },
+        { name: "Mono",  data: monoFont,     weight: 400, style: "normal" },
       ],
     }
   );
