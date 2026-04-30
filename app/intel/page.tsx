@@ -6,6 +6,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/client";
 import { isPro } from "@/lib/tier";
+import { getStartOfDayET } from "@/lib/usage-window";
 import type { AnyGame, ConfidenceLabel, ConfidenceLevel, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 
@@ -25,6 +26,7 @@ const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" 
 
 interface SlateBreakdown {
   gameId: string;
+  userId: string | null;
   cardSummary: string | null;
   confidenceLabel: ConfidenceLabel | null;
   confidenceLevel: ConfidenceLevel | null;
@@ -79,6 +81,21 @@ function formatSpread(spread: number | null | undefined, abv: string): string {
   return `${abv} ${spread > 0 ? "+" : ""}${spread}`;
 }
 
+function getCtaLabel(
+  bd: SlateBreakdown | null,
+  proUser: boolean,
+  authReady: boolean,
+  userId: string | null | undefined,
+  dailyUsed: boolean,
+): string | null {
+  if (!authReady) return null;
+  if (!userId) return "Sign up to read →";
+  if (proUser) return bd ? "Read breakdown →" : "Build breakdown →";
+  if (bd && bd.userId === userId) return "Read breakdown →";
+  if (!bd && !dailyUsed) return "Build breakdown →";
+  return "Upgrade to read →";
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ConfBadge({ label }: { label: ConfidenceLabel | null }) {
@@ -113,9 +130,9 @@ function SectionLabel({ icon, text }: { icon: "star" | "grid" | "calendar"; text
 
 // ─── Headliner card ───────────────────────────────────────────────────────────
 
-function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
+function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed, started }: {
   game: AnyGame; bd: SlateBreakdown | null; onRead: () => void;
-  userId: string | null | undefined; showUpgrade: boolean; started: boolean;
+  authReady: boolean; userId: string | null | undefined; proUser: boolean; dailyUsed: boolean; started: boolean;
 }) {
   const [hover, setHover] = useState(false);
   const conf = bd?.confidenceLabel ?? null;
@@ -134,11 +151,8 @@ function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
   const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
   const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
   const insight = bd?.cardSummary ?? null;
-  const isLoggedOut = userId === null;
-  const ctaLabel = isLoggedOut ? "Sign up to read →"
-    : showUpgrade ? "Upgrade to read →"
-    : bd ? "Read the breakdown →"
-    : "Build breakdown →";
+  const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
+  const isUpgradeGated = cta === "Upgrade to read →" || cta === "Sign up to read →";
   const statusLabel = game.gameStatus === "final" ? "FINAL" : "GAME IN PROGRESS";
 
   return (
@@ -217,11 +231,11 @@ function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
         {insight && (
           <div style={{
             margin: "20px 0 0", padding: "18px 20px", background: "var(--cream)",
-            borderRadius: 0, borderLeft: "3px solid var(--signal)",
+            borderRadius: 0, borderLeft: `3px solid ${isUpgradeGated ? "var(--border-strong)" : "var(--signal)"}`,
             fontSize: "15.5px", lineHeight: 1.7, color: "var(--ink-2)", fontStyle: "italic",
-            filter: showUpgrade ? "blur(4px)" : "none",
-            userSelect: showUpgrade ? "none" : "auto",
-            pointerEvents: showUpgrade ? "none" : "auto",
+            filter: isUpgradeGated ? "blur(4px)" : "none",
+            userSelect: isUpgradeGated ? "none" : "auto",
+            pointerEvents: isUpgradeGated ? "none" : "auto",
           }}>
             {insight}
           </div>
@@ -250,6 +264,8 @@ function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
           <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
             {statusLabel}
           </div>
+        ) : cta === null ? (
+          <div style={{ width: "140px", height: "44px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
         ) : (
           <div style={{
             fontSize: "13.5px", fontWeight: 700, color: "#fff",
@@ -258,7 +274,7 @@ function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
             boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
             transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
           }}>
-            {ctaLabel}
+            {cta}
           </div>
         )}
       </div>
@@ -266,14 +282,20 @@ function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
   );
 }
 
-// ─── Open game card ───────────────────────────────────────────────────────────
+// ─── Slate card ───────────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateBreakdown | null; onRead: () => void; started: boolean }) {
+function SlateCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed, started }: {
+  game: AnyGame; bd: SlateBreakdown | null; onRead: () => void;
+  authReady: boolean; userId: string | null | undefined; proUser: boolean; dailyUsed: boolean; started: boolean;
+}) {
   const [hover, setHover] = useState(false);
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
   const barColor = c?.bar ?? "var(--pass)";
+  const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
+  const isUpgradeGated = cta === "Upgrade to read →" || cta === "Sign up to read →";
   const insight = bd?.cardSummary ?? null;
+  const teaserText = "There’s a clear angle here — but it takes some digging to see it...";
 
   return (
     <div
@@ -281,14 +303,15 @@ function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateB
       tabIndex={started ? undefined : 0}
       onClick={started ? undefined : onRead}
       onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
-      onMouseEnter={started ? undefined : () => setHover(true)}
-      onMouseLeave={started ? undefined : () => setHover(false)}
+      onMouseEnter={started || isUpgradeGated ? undefined : () => setHover(true)}
+      onMouseLeave={started || isUpgradeGated ? undefined : () => setHover(false)}
       style={{
         background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
         cursor: started ? "default" : "pointer", color: "var(--ink)", outline: "none",
-        boxShadow: !started && hover ? "var(--shadow-md)" : "var(--shadow-sm)",
-        transform: !started && hover ? "translateY(-2px)" : "translateY(0)",
+        opacity: isUpgradeGated ? 0.75 : 1,
+        boxShadow: !started && !isUpgradeGated && hover ? "var(--shadow-md)" : "var(--shadow-sm)",
+        transform: !started && !isUpgradeGated && hover ? "translateY(-2px)" : "translateY(0)",
         transition: "box-shadow 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
       }}
     >
@@ -304,11 +327,21 @@ function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateB
           <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
           {game.homeTeam.teamName}
         </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: "16px" }}>
+        <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: (insight || isUpgradeGated) ? "16px" : "0" }}>
           {game.sport}
         </div>
 
-        {insight && (
+        {isUpgradeGated ? (
+          <div style={{
+            fontSize: "14px", lineHeight: 1.6, color: "var(--muted)", fontStyle: "italic",
+            padding: "14px 16px", background: "var(--cream)", borderRadius: 0,
+            borderLeft: "2px solid var(--border-strong)",
+            filter: "blur(3px)", userSelect: "none", pointerEvents: "none",
+            marginBottom: "12px",
+          }}>
+            {insight ?? teaserText}
+          </div>
+        ) : insight ? (
           <div style={{
             fontSize: "14.5px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
             marginBottom: "12px", padding: "14px 16px", background: "var(--cream)",
@@ -316,7 +349,7 @@ function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateB
           }}>
             {insight}
           </div>
-        )}
+        ) : null}
 
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "flex-end",
@@ -326,82 +359,14 @@ function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateB
             <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               {game.gameStatus === "final" ? "Final" : "In progress"}
             </span>
+          ) : cta === null ? (
+            <span style={{ width: "100px", height: "16px", background: "var(--cream)", borderRadius: 0, display: "block" }} className="animate-pulse" />
           ) : (
             <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
-              {insight ? "Read breakdown →" : "Build breakdown →"}
+              {cta}
             </span>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Locked game card ─────────────────────────────────────────────────────────
-
-function LockedGameCard({ game, bd, showUpgrade, userId, onRead, started }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; userId: string | null | undefined; onRead: () => void; started: boolean }) {
-  const conf = bd?.confidenceLabel ?? null;
-  const c = conf ? CONF[conf] : null;
-  const barColor = c?.bar ?? "var(--pass)";
-  const teaser = bd?.cardSummary ?? "There's a clear angle here — but it takes some digging to see it...";
-  const isLoggedOut = userId === null;
-  const ctaLabel = isLoggedOut ? "Sign up to read →"
-    : showUpgrade ? "Upgrade to Pro →"
-    : bd ? "Read breakdown →"
-    : "Build breakdown →";
-  return (
-    <div
-      role={started ? undefined : "button"}
-      tabIndex={started ? undefined : 0}
-      onClick={started ? undefined : onRead}
-      onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
-      style={{
-        background: "var(--surface)", borderRadius: 0,
-        border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-        color: "var(--ink)", opacity: 0.75,
-        boxShadow: "var(--shadow-sm)",
-        cursor: started ? "default" : "pointer", outline: "none",
-      }}
-    >
-      <div style={{ height: "3px", background: barColor }} />
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <ConfBadge label={conf} />
-          <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)" }}>{game.gameTime}</span>
-        </div>
-
-        <div style={{ fontSize: "clamp(16px, 3.5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
-          {game.awayTeam.teamName}
-          <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
-          {game.homeTeam.teamName}
-        </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: "12px" }}>
-          {game.sport}
-        </div>
-
-        <div style={{
-          fontSize: "14px", lineHeight: 1.6, color: "var(--muted)", fontStyle: "italic",
-          padding: "14px 16px", background: "var(--cream)", borderRadius: 0,
-          borderLeft: "2px solid var(--border-strong)",
-          filter: "blur(3px)", userSelect: "none", pointerEvents: "none",
-        }}>
-          {teaser}
-        </div>
-      </div>
-
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "flex-end",
-        padding: "13px 24px", borderTop: "1px solid var(--border)", background: "var(--warm-white)",
-      }}>
-        {started ? (
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {game.gameStatus === "final" ? "Final" : "In progress"}
-          </span>
-        ) : (
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
-            {ctaLabel}
-          </span>
-        )}
       </div>
     </div>
   );
@@ -493,31 +458,38 @@ function HomePageContent() {
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [tier, setTier] = useState<Tier | null>(null);
   const [dailyUsed, setDailyUsed] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modal, setModal] = useState<"cap" | "loggedout" | null>(null);
+  const [modal, setModal] = useState<"cap" | "bd-locked" | null>(null);
 
   useEffect(() => {
     const client = createClient();
-    async function loadTier(userId: string) {
-      const { data } = await client.from("profiles").select("tier").eq("id", userId).maybeSingle();
-      setTier((data?.tier as Tier) ?? "free");
-      const todayStr = getTodayDateString();
-      const { data: bdRows } = await client
-        .from("breakdowns")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("game_date", todayStr)
-        .limit(1);
-      setDailyUsed((bdRows?.length ?? 0) > 0);
+    async function loadTier(uid: string) {
+      const { data } = await client.from("profiles").select("tier").eq("id", uid).maybeSingle();
+      const resolvedTier = (data?.tier as Tier) ?? "free";
+      setTier(resolvedTier);
+      if (resolvedTier === "free") {
+        const windowStart = getStartOfDayET();
+        const { data: usageRows } = await client
+          .from("breakdown_usage")
+          .select("id")
+          .eq("user_id", uid)
+          .gte("created_at", windowStart)
+          .limit(1);
+        setDailyUsed((usageRows?.length ?? 0) > 0);
+      } else {
+        setDailyUsed(false);
+      }
+      setAuthReady(true);
     }
     client.auth.getUser().then(({ data }) => {
       if (data.user) { setUserId(data.user.id); loadTier(data.user.id); }
-      else { setUserId(null); setTier(null); }
+      else { setUserId(null); setTier(null); setAuthReady(true); }
     });
     const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
       if (session?.user) { setUserId(session.user.id); loadTier(session.user.id); }
-      else { setUserId(null); setTier(null); }
+      else { setUserId(null); setTier(null); setAuthReady(true); }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -527,7 +499,7 @@ function HomePageContent() {
     const todayStr = getTodayDateString();
     client
       .from("breakdowns")
-      .select("game_id, card_summary, confidence_label, confidence_level, created_at")
+      .select("game_id, user_id, card_summary, confidence_label, confidence_level, created_at")
       .eq("game_date", todayStr)
       .order("created_at", { ascending: false })
       .limit(500)
@@ -539,6 +511,7 @@ function HomePageContent() {
           seen.add(row.game_id);
           map.set(row.game_id, {
             gameId: row.game_id,
+            userId: row.user_id ?? null,
             cardSummary: row.card_summary ?? null,
             confidenceLabel: (row.confidence_label as ConfidenceLabel) ?? null,
             confidenceLevel: (row.confidence_level as ConfidenceLevel) ?? null,
@@ -620,10 +593,18 @@ function HomePageContent() {
   });
 
   function handleRead(gameId: string) {
-    if (userId === null) { setModal("loggedout"); return; }
-    // If this game already has a breakdown anyone can view it — don't gate on daily cap
-    if (tier === "free" && dailyUsed && !breakdowns.has(gameId)) { setModal("cap"); return; }
-    router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
+    if (!authReady) return;
+    if (!userId) { router.push("/login?mode=signup"); return; }
+    const bd = breakdowns.get(gameId) ?? null;
+    if (proUser) {
+      router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
+      return;
+    }
+    if (bd?.userId === userId || (!bd && !dailyUsed)) {
+      router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
+      return;
+    }
+    setModal(bd ? "bd-locked" : "cap");
   }
 
   return (
@@ -737,7 +718,7 @@ function HomePageContent() {
             {loading
               ? <SkeletonHeadliner />
               : headliner
-              ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} userId={userId} showUpgrade={tier !== null && dailyUsed} started={isStarted(headliner)} />
+              ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} authReady={authReady} userId={userId} proUser={proUser} dailyUsed={dailyUsed} started={isStarted(headliner)} />
               : null}
           </div>
         )}
@@ -751,9 +732,7 @@ function HomePageContent() {
                 ? [1, 2, 3].map((i) => <SkeletonCard key={i} />)
                 : listGames.map((game) => {
                     const bd = breakdowns.get(game.gameId) ?? null;
-                    return proUser
-                      ? <OpenGameCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} started={isStarted(game)} />
-                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} userId={userId} onRead={() => handleRead(game.gameId)} started={isStarted(game)} />;
+                    return <SlateCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} authReady={authReady} userId={userId} proUser={proUser} dailyUsed={dailyUsed} started={isStarted(game)} />;
                   })}
             </div>
           </div>
@@ -868,10 +847,10 @@ function HomePageContent() {
           ) : (
             <>
               <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
-                Create a free account to read this.
+                This breakdown isn&apos;t yours to read.
               </div>
               <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
-                Free accounts get one breakdown a day. Go Pro for unlimited access to every game on the slate.
+                Another user generated this breakdown. Free accounts can only read breakdowns they built. Upgrade to Pro for unlimited access to every game on the slate.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <Link href="/login?mode=signup" style={{
@@ -879,14 +858,17 @@ function HomePageContent() {
                   background: "var(--signal)", padding: "12px 20px", borderRadius: 0,
                   textDecoration: "none", textAlign: "center", display: "block",
                 }}>
-                  Start free →
+                  Upgrade to Pro →
                 </Link>
-                <Link href="/login" style={{
-                  fontSize: "13px", fontWeight: 500, color: "var(--muted)",
-                  textDecoration: "none", textAlign: "center", display: "block", padding: "8px",
-                }}>
-                  Log in
-                </Link>
+                <button
+                  onClick={() => setModal(null)}
+                  style={{
+                    fontSize: "13px", color: "var(--muted)", background: "none", border: "none",
+                    cursor: "pointer", padding: "8px",
+                  }}
+                >
+                  Maybe later
+                </button>
               </div>
             </>
           )}
