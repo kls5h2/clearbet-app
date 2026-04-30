@@ -131,7 +131,10 @@ export default function HomePage() {
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         padding: "0 48px", height: "56px", display: "flex", alignItems: "center",
-        background: "linear-gradient(to bottom, rgba(17,17,16,0.96) 0%, rgba(17,17,16,0) 100%)",
+        background: "rgba(17,17,16,0.96)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
       }}>
         <Link href="/" style={{
           fontSize: "15px", fontWeight: 700, letterSpacing: "-0.03em",
@@ -548,7 +551,7 @@ export default function HomePage() {
 
             <div className="hp-preview-fade" style={{
               position: "absolute", bottom: 0, left: 0, right: 0, height: "340px",
-              zIndex: 10,
+              zIndex: 10, overflow: "hidden",
               background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.65) 28%, rgba(240,237,230,0.95) 52%, rgba(240,237,230,1) 65%)",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
               paddingBottom: "44px", gap: "18px",
