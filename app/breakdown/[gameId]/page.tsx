@@ -256,7 +256,7 @@ export default function BreakdownPage() {
       }
     `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
-      <Nav backHref="/intel" backLabel="Today's Intel" />
+      <Nav backHref={`/intel?sport=${sport}`} backLabel="Today's Intel" />
 
       {/* Dark hero band */}
       <div className="f2" style={{

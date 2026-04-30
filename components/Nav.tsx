@@ -99,6 +99,9 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
             ← {backLabel}
           </Link>
           <Link href="/" style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
             fontSize: "15px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
@@ -108,12 +111,23 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
           }}>
             Raw<span style={{ color: "var(--muted-light)", fontWeight: 500 }}>Intel</span><span style={{ color: "var(--signal)" }}>.</span>
           </Link>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
-            {authReady && email && (
-              <Link href="/account" style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--muted-light)", textDecoration: "none" }}>
-                {displayEmail}
-              </Link>
-            )}
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                padding: "4px", display: "flex", flexDirection: "column",
+                gap: "5px", alignItems: "center",
+              }}
+            >
+              {[0, 1, 2].map((i) => (
+                <span key={i} style={{
+                  display: "block", width: "20px", height: "2px",
+                  background: "var(--muted)", borderRadius: "2px",
+                }} />
+              ))}
+            </button>
           </div>
         </>
       ) : (
@@ -240,9 +254,9 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
         </>
       )}
 
-      {/* Mobile dropdown */}
-      {menuOpen && !isBackMode && (
-        <div className="md:hidden" style={{
+      {/* Mobile / back-mode dropdown */}
+      {menuOpen && (
+        <div className={isBackMode ? undefined : "md:hidden"} style={{
           position: "absolute", top: "54px", left: 0, right: 0,
           background: "var(--warm-white)", borderTop: "1px solid var(--border-med)",
           padding: "0.75rem 1.5rem 1rem",

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/client";
 import type { Tier } from "@/lib/tier";
@@ -17,15 +16,34 @@ function getTodayDateString(): string {
 
 export default function AccountPage() {
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [tier, setTier] = useState<Tier | null>(null);
   const [dailyUsed, setDailyUsed] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Edit email
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
+
+  // Change password
+  const [changingPw, setChangingPw] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [pwMsg, setPwMsg] = useState<string | null>(null);
+  const [pwSaving, setPwSaving] = useState(false);
+
+  // Cancel plan
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+  const [cancelSaving, setCancelSaving] = useState(false);
+
   useEffect(() => {
     const client = createClient();
     client.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.replace("/login"); return; }
+      setUserId(data.user.id);
       setEmail(data.user.email ?? null);
 
       const { data: profile } = await client
@@ -57,6 +75,52 @@ export default function AccountPage() {
     router.refresh();
   }
 
+  async function handleSaveEmail() {
+    if (!newEmail.trim()) return;
+    setEmailSaving(true);
+    setEmailMsg(null);
+    const client = createClient();
+    const { error } = await client.auth.updateUser({ email: newEmail.trim() });
+    setEmailSaving(false);
+    if (error) {
+      setEmailMsg(`Error: ${error.message}`);
+    } else {
+      setEmailMsg("Check your new email address to confirm the change.");
+      setEditingEmail(false);
+      setNewEmail("");
+    }
+  }
+
+  async function handleSavePassword() {
+    if (!newPw.trim() || newPw.length < 8) {
+      setPwMsg("Password must be at least 8 characters.");
+      return;
+    }
+    setPwSaving(true);
+    setPwMsg(null);
+    const client = createClient();
+    const { error } = await client.auth.updateUser({ password: newPw.trim() });
+    setPwSaving(false);
+    if (error) {
+      setPwMsg(`Error: ${error.message}`);
+    } else {
+      setPwMsg("Password updated.");
+      setChangingPw(false);
+      setNewPw("");
+    }
+  }
+
+  async function handleCancelPlan() {
+    if (!userId) return;
+    setCancelSaving(true);
+    const client = createClient();
+    await client.from("profiles").update({ tier: "free" }).eq("id", userId);
+    setTier("free");
+    setCancelConfirm(false);
+    setCancelSaving(false);
+    setCancelMsg("Your plan has been cancelled. You're now on the free tier.");
+  }
+
   if (loading) {
     return (
       <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
@@ -64,6 +128,25 @@ export default function AccountPage() {
       </div>
     );
   }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "9px 12px", borderRadius: "6px",
+    border: "1px solid var(--border-med)", background: "var(--warm-white)",
+    fontSize: "14px", color: "var(--ink)", outline: "none",
+    fontFamily: "var(--sans)", boxSizing: "border-box",
+  };
+
+  const saveBtnStyle: React.CSSProperties = {
+    padding: "8px 18px", borderRadius: "6px", border: "none", cursor: "pointer",
+    fontSize: "13px", fontWeight: 600, background: "var(--ink)", color: "#fff",
+    transition: "opacity 0.12s",
+  };
+
+  const cancelBtnStyle: React.CSSProperties = {
+    padding: "8px 14px", borderRadius: "6px", border: "1px solid var(--border-med)",
+    background: "none", cursor: "pointer", fontSize: "13px", fontWeight: 500,
+    color: "var(--muted)", transition: "color 0.12s",
+  };
 
   return (
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
@@ -96,7 +179,103 @@ export default function AccountPage() {
               letterSpacing: "0.1em", textTransform: "uppercase",
               color: "var(--muted)", marginBottom: "8px",
             }}>Email</div>
-            <div style={{ fontSize: "15px", color: "var(--ink)", fontWeight: 500 }}>{email}</div>
+
+            {!editingEmail ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                <div
+                  style={{ fontSize: "15px", color: "var(--ink)", fontWeight: 500, userSelect: "text" }}
+                  translate="no"
+                >
+                  {email}
+                </div>
+                <button
+                  onClick={() => { setEditingEmail(true); setEmailMsg(null); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: "12.5px", fontWeight: 600, color: "var(--signal)", padding: 0,
+                  }}
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder={email ?? ""}
+                  style={inputStyle}
+                  autoFocus
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button onClick={handleSaveEmail} disabled={emailSaving} style={saveBtnStyle}>
+                    {emailSaving ? "Saving…" : "Save"}
+                  </button>
+                  <button onClick={() => { setEditingEmail(false); setNewEmail(""); }} style={cancelBtnStyle}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {emailMsg && (
+              <div style={{ fontSize: "12.5px", color: "var(--muted)", marginTop: "8px", lineHeight: 1.5 }}>
+                {emailMsg}
+              </div>
+            )}
+          </div>
+
+          {/* Change password */}
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border-med)",
+            borderRadius: "10px", padding: "20px 24px",
+          }}>
+            <div style={{
+              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--muted)", marginBottom: "8px",
+            }}>Password</div>
+
+            {!changingPw ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: "15px", color: "var(--muted)", fontWeight: 400, letterSpacing: "0.1em" }}>
+                  ••••••••
+                </div>
+                <button
+                  onClick={() => { setChangingPw(true); setPwMsg(null); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: "12.5px", fontWeight: 600, color: "var(--signal)", padding: 0,
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <input
+                  type="password"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  placeholder="New password (min 8 characters)"
+                  style={inputStyle}
+                  autoFocus
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button onClick={handleSavePassword} disabled={pwSaving} style={saveBtnStyle}>
+                    {pwSaving ? "Saving…" : "Save"}
+                  </button>
+                  <button onClick={() => { setChangingPw(false); setNewPw(""); }} style={cancelBtnStyle}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {pwMsg && (
+              <div style={{ fontSize: "12.5px", color: "var(--muted)", marginTop: "8px", lineHeight: 1.5 }}>
+                {pwMsg}
+              </div>
+            )}
           </div>
 
           {/* Plan */}
@@ -124,11 +303,11 @@ export default function AccountPage() {
                 )}
               </div>
               {tier === "free" && (
-                <Link href="/login?mode=signup" style={{
+                <a href="/login?mode=signup" style={{
                   fontSize: "13px", fontWeight: 600, color: "var(--signal)", textDecoration: "none",
                 }}>
                   Upgrade →
-                </Link>
+                </a>
               )}
             </div>
           </div>
@@ -157,7 +336,7 @@ export default function AccountPage() {
 
           {/* My Breakdowns — pro only */}
           {tier === "pro" && (
-            <Link href="/my-breakdowns" style={{
+            <a href="/my-breakdowns" style={{
               background: "var(--surface)", border: "1px solid var(--border-med)",
               borderRadius: "10px", padding: "20px 24px",
               textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -172,19 +351,66 @@ export default function AccountPage() {
                 <div style={{ fontSize: "15px", fontWeight: 500 }}>My Breakdowns</div>
               </div>
               <span style={{ fontSize: "18px", color: "var(--muted)" }}>→</span>
-            </Link>
+            </a>
           )}
 
-          {/* Back to slate */}
-          <Link href="/intel" style={{
-            background: "var(--surface)", border: "1px solid var(--border-med)",
-            borderRadius: "10px", padding: "20px 24px",
-            textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between",
-            color: "var(--ink)",
-          }}>
-            <div style={{ fontSize: "15px", fontWeight: 500 }}>Today&apos;s Intel</div>
-            <span style={{ fontSize: "18px", color: "var(--muted)" }}>→</span>
-          </Link>
+          {/* Cancel plan — pro only */}
+          {tier === "pro" && (
+            <div style={{
+              background: "var(--surface)", border: "1px solid var(--border-med)",
+              borderRadius: "10px", padding: "20px 24px",
+            }}>
+              <div style={{
+                fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--muted)", marginBottom: "8px",
+              }}>Subscription</div>
+
+              {!cancelConfirm ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: "14px", color: "var(--ink)" }}>Pro — active</div>
+                  <button
+                    onClick={() => setCancelConfirm(true)}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: "12.5px", fontWeight: 500, color: "var(--muted)", padding: 0,
+                      transition: "color 0.12s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--signal)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                  >
+                    Cancel plan
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ fontSize: "13.5px", color: "var(--ink)", lineHeight: 1.55 }}>
+                    Are you sure? You&apos;ll lose access to Pro features immediately.
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={handleCancelPlan}
+                      disabled={cancelSaving}
+                      style={{
+                        ...saveBtnStyle,
+                        background: "var(--signal)",
+                      }}
+                    >
+                      {cancelSaving ? "Cancelling…" : "Yes, cancel plan"}
+                    </button>
+                    <button onClick={() => setCancelConfirm(false)} style={cancelBtnStyle}>
+                      Keep Pro
+                    </button>
+                  </div>
+                </div>
+              )}
+              {cancelMsg && (
+                <div style={{ fontSize: "12.5px", color: "var(--muted)", marginTop: "8px", lineHeight: 1.5 }}>
+                  {cancelMsg}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Log out */}
           <button

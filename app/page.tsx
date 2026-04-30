@@ -553,9 +553,32 @@ export default function HomePage() {
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
               paddingBottom: "44px", gap: "18px",
             }}>
-              <p style={{ fontSize: "12.5px", color: "var(--muted)", margin: 0, letterSpacing: "0.01em", textAlign: "center" }}>
-                Fragility Check · Market Read · What This Means
-              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%", maxWidth: "520px", padding: "0 32px" }}>
+                {[
+                  { num: "04", label: "Fragility Check",  desc: "What breaks the base script" },
+                  { num: "05", label: "Market Read",       desc: "What the books are saying" },
+                  { num: "06", label: "What This Means",   desc: "The plain-English summary" },
+                ].map((row) => (
+                  <div key={row.num} style={{
+                    display: "flex", alignItems: "center", gap: "12px",
+                    padding: "9px 14px", borderRadius: "6px",
+                    background: "rgba(14,14,14,0.04)", border: "1px solid rgba(14,14,14,0.07)",
+                  }}>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", flexShrink: 0, width: "18px" }}>
+                      {row.num}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--signal)" }}>
+                        {row.label}
+                      </span>
+                      <span style={{ fontSize: "11.5px", color: "var(--muted)", marginLeft: "8px" }}>
+                        {row.desc}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11px", opacity: 0.35, flexShrink: 0 }}>🔒</span>
+                  </div>
+                ))}
+              </div>
               <Link href="/intel" className="hp-preview-btn" style={{
                 fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
                 padding: "13px 32px", borderRadius: "6px", background: "var(--ink)",
