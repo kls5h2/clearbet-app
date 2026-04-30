@@ -111,10 +111,32 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
           }}>
             Raw<span style={{ color: "var(--muted-light)", fontWeight: 500 }}>Intel</span><span style={{ color: "var(--signal)" }}>.</span>
           </Link>
-          <div style={{ marginLeft: "auto" }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "16px" }}>
+            {/* Email + logout — desktop only */}
+            {authReady && email && (
+              <div className="hidden md:flex" style={{ alignItems: "center", gap: "16px" }}>
+                <Link href="/account" style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted-light)", textDecoration: "none" }}>
+                  {displayEmail}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: "12.5px", fontWeight: 500, color: "var(--muted)",
+                    transition: "color 0.12s", padding: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+            {/* Hamburger — mobile or when not logged in on desktop */}
             <button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="Toggle menu"
+              className={authReady && email ? "md:hidden" : undefined}
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 padding: "4px", display: "flex", flexDirection: "column",

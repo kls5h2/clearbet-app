@@ -572,7 +572,8 @@ function HomePageContent() {
 
   function handleRead(gameId: string) {
     if (userId === null) { setModal("loggedout"); return; }
-    if (tier === "free" && dailyUsed) { setModal("cap"); return; }
+    // If this game already has a breakdown anyone can view it — don't gate on daily cap
+    if (tier === "free" && dailyUsed && !breakdowns.has(gameId)) { setModal("cap"); return; }
     router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
   }
 

@@ -30,6 +30,90 @@ function titleFontSize(len: number): number {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
+
+  // ── Line Translator share card ────────────────────────────────────────────
+  if (type === "line-translator") {
+    const inputLine    = searchParams.get("line") ?? "";
+    const translation  = searchParams.get("translation") ?? "";
+    const implied      = searchParams.get("implied") ?? "";
+    const tranTrunc    = translation.length > 150 ? translation.slice(0, 147) + "…" : translation;
+    const lineFs       = inputLine.length <= 18 ? 88 : inputLine.length <= 26 ? 72 : inputLine.length <= 36 ? 58 : 46;
+
+    const [interRegular, interBold, monoFont] = await Promise.all([
+      fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
+      fetch(INTER_BOLD_URL).then((r) => r.arrayBuffer()),
+      fetch(MONO_URL).then((r) => r.arrayBuffer()),
+    ]);
+
+    return new ImageResponse(
+      (
+        <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", background: "#F8F6F2" }}>
+          {/* 6px signal-red top bar */}
+          <div style={{ width: "100%", height: "6px", background: "#C9352A", flexShrink: 0 }} />
+
+          {/* Body */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "52px 80px 44px" }}>
+            {/* Wordmark + LINE TRANSLATOR label */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "baseline" }}>
+                <span style={{ fontFamily: "Inter", fontWeight: 700, fontSize: "22px", color: "#0E0E0E", letterSpacing: "-0.03em" }}>Raw</span>
+                <span style={{ fontFamily: "Inter", fontWeight: 400, fontSize: "22px", color: "#8A8A86", letterSpacing: "-0.03em" }}>Intel</span>
+                <span style={{ fontFamily: "Inter", fontWeight: 700, fontSize: "22px", color: "#C9352A", letterSpacing: "-0.03em" }}>.</span>
+              </div>
+              <div style={{ fontFamily: "Mono", fontSize: "13px", fontWeight: 400, color: "#8A8A86", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Line Translator
+              </div>
+            </div>
+
+            {/* Input line — large and bold */}
+            <div style={{ fontFamily: "Inter", fontWeight: 800, fontSize: `${lineFs}px`, color: "#0E0E0E", letterSpacing: "-0.04em", lineHeight: 1.05, marginTop: "32px" }}>
+              {inputLine || "Betting Line"}
+            </div>
+
+            {/* Translation */}
+            {tranTrunc && (
+              <div style={{ fontFamily: "Inter", fontWeight: 400, fontSize: "20px", color: "#3D3B38", lineHeight: 1.55, marginTop: "24px", maxWidth: "960px" }}>
+                {tranTrunc}
+              </div>
+            )}
+
+            {/* Implied probability */}
+            {implied && (
+              <div style={{ display: "flex", marginTop: "20px" }}>
+                <div style={{ fontFamily: "Mono", fontSize: "15px", fontWeight: 400, color: "#C9352A", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  {`IMPLIED: ${implied}%`}
+                </div>
+              </div>
+            )}
+
+            {/* Push footer to bottom */}
+            <div style={{ flex: 1 }} />
+
+            {/* Footer */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(14,14,14,0.12)", paddingTop: "18px" }}>
+              <div style={{ fontFamily: "Inter", fontSize: "13px", fontStyle: "italic", color: "#8A8A86" }}>
+                What the data says. Your decision to make.
+              </div>
+              <div style={{ fontFamily: "Mono", fontWeight: 400, fontSize: "13px", color: "#C9352A", letterSpacing: "0.06em" }}>
+                rawintel.ai
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        fonts: [
+          { name: "Inter", data: interRegular, weight: 400, style: "normal" },
+          { name: "Inter", data: interBold,    weight: 700, style: "normal" },
+          { name: "Mono",  data: monoFont,     weight: 400, style: "normal" },
+        ],
+      }
+    );
+  }
+
   const gameId = searchParams.get("gameId");
 
   let title      = searchParams.get("title") ?? "";

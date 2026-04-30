@@ -361,13 +361,15 @@ function LoginContent() {
                     onClick={() => switchMode(m)}
                     style={{
                       flex: 1,
-                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       fontSize: 13.5,
                       fontWeight: 600,
                       color: mode === m ? "var(--ink)" : "var(--muted)",
                       background:
                         mode === m
-                          ? "var(--surface)"
+                          ? "var(--warm-white)"
                           : "transparent",
                       border: "none",
                       padding: "9px 16px",
@@ -375,7 +377,7 @@ function LoginContent() {
                       cursor: "pointer",
                       transition: "all 0.15s",
                       boxShadow:
-                        mode === m ? "var(--shadow-md)" : "none",
+                        mode === m ? "0 1px 4px rgba(17,17,16,0.10)" : "none",
                       fontFamily: "var(--sans)",
                     }}
                   >

@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/client";
+import { getStartOfDayET } from "@/lib/usage-window";
 import type { Tier } from "@/lib/tier";
-
-function getTodayDateString(): string {
-  const et = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-  const [month, day, year] = et.split("/");
-  return `${year}${month}${day}`;
-}
 
 export default function AccountPage() {
   const router = useRouter();
@@ -55,12 +48,12 @@ export default function AccountPage() {
       setTier(t);
 
       if (t === "free") {
-        const todayStr = getTodayDateString();
+        const startOfDayET = getStartOfDayET();
         const { count } = await client
-          .from("breakdowns")
+          .from("breakdown_usage")
           .select("id", { count: "exact", head: true })
           .eq("user_id", data.user.id)
-          .eq("game_date", todayStr);
+          .gte("created_at", startOfDayET);
         setDailyUsed(count ?? 0);
       }
 
@@ -121,14 +114,6 @@ export default function AccountPage() {
     setCancelMsg("Your plan has been cancelled. You're now on the free tier.");
   }
 
-  if (loading) {
-    return (
-      <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
-        <Nav />
-      </div>
-    );
-  }
-
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "9px 12px", borderRadius: 0,
     border: "1px solid var(--border-med)", background: "var(--warm-white)",
@@ -152,7 +137,7 @@ export default function AccountPage() {
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav />
 
-      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "48px 24px 80px" }}>
+      {loading ? null : <div style={{ maxWidth: "560px", margin: "0 auto", padding: "48px 24px 80px" }}>
         <div style={{ marginBottom: "40px" }}>
           <div style={{
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
@@ -334,25 +319,23 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* My Breakdowns — pro only */}
-          {tier === "pro" && (
-            <a href="/my-breakdowns" style={{
-              background: "var(--surface)", border: "1px solid var(--border-med)",
-              borderRadius: 0, padding: "20px 24px",
-              textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between",
-              color: "var(--ink)",
-            }}>
-              <div>
-                <div style={{
-                  fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                  color: "var(--muted)", marginBottom: "4px",
-                }}>History</div>
-                <div style={{ fontSize: "15px", fontWeight: 500 }}>My Breakdowns</div>
-              </div>
-              <span style={{ fontSize: "18px", color: "var(--muted)" }}>→</span>
-            </a>
-          )}
+          {/* My Breakdowns */}
+          <a href="/my-breakdowns" style={{
+            background: "var(--surface)", border: "1px solid var(--border-med)",
+            borderRadius: 0, padding: "20px 24px",
+            textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between",
+            color: "var(--ink)",
+          }}>
+            <div>
+              <div style={{
+                fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--muted)", marginBottom: "4px",
+              }}>History</div>
+              <div style={{ fontSize: "15px", fontWeight: 500 }}>My Breakdowns</div>
+            </div>
+            <span style={{ fontSize: "18px", color: "var(--muted)" }}>→</span>
+          </a>
 
           {/* Cancel plan — pro only */}
           {tier === "pro" && (
@@ -428,7 +411,7 @@ export default function AccountPage() {
             Log out
           </button>
         </div>
-      </div>
+      </div>}
 
       <footer style={{
         textAlign: "center", padding: "20px", fontSize: "11.5px",
