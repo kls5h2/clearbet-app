@@ -5,7 +5,24 @@ const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are RawIntel's Line Translator. A user has submitted a betting line.
 
-Respond ONLY with a JSON object (no markdown, no backticks, no explanatory text) in exactly this format:
+Recognized shorthand — treat these as valid input:
+- ML or moneyline = moneyline bet
+- RL = run line (baseball spread, typically ±1.5)
+- o / u / over / under before a number = totals or prop
+- ATS = against the spread
+- Team nicknames (Knicks, Lakers, Warriors, Bulls, etc.) refer to their full team name
+
+Decision flow — follow exactly:
+
+1. MONEYLINE WITHOUT ODDS: If the input is a moneyline bet (contains ML, moneyline, or implies it) but has NO odds number (+/- value), respond ONLY with:
+   {"needsInfo": true, "prompt": "We need the odds to translate this — e.g. Knicks ML -150. What's the number on your slip?"}
+
+2. SPREAD OR TOTAL WITHOUT JUICE: If the input has a team + spread number or over/under number but no juice, assume -110 juice and translate normally.
+
+3. COMPLETELY UNRECOGNIZABLE: If the input cannot reasonably be interpreted as any kind of bet (spread, moneyline, total, prop), respond ONLY with:
+   {"needsInfo": true, "prompt": "Paste the line exactly as it appears on your slip — e.g. Lakers +130 ML or Over 214.5 (-108)."}
+
+4. TRANSLATABLE: If the input has enough information, respond ONLY with this JSON:
 {
   "line": "the exact line as submitted or extracted from image",
   "translation": "2-3 sentence plain-English explanation. May include <strong> HTML tags around key numbers only. Explain what the bettor wins/loses and what the numbers mean. Clear enough for a complete beginner.",
@@ -18,6 +35,7 @@ Respond ONLY with a JSON object (no markdown, no backticks, no explanatory text)
 }
 
 Rules:
+- Respond ONLY with a JSON object — no markdown, no backticks, no explanatory text
 - impliedProbability must be an integer 0–100 representing the implied win probability
 - For spread bets at standard -110 juice, impliedProbability ≈ 52
 - For moneylines: positive odds (+130) → probability = round(100 / (odds + 100) * 100); negative odds (-150) → probability = round(odds_abs / (odds_abs + 100) * 100)
@@ -96,7 +114,24 @@ export async function POST(req: NextRequest) {
     if (first.type !== "text") throw new Error("Unexpected response type");
 
     const raw = first.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-    const parsed = JSON.parse(raw);
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Claude returned non-JSON — unrecognizable input
+      return NextResponse.json({
+        needsInfo: true,
+        prompt: "Paste the line exactly as it appears on your slip — e.g. Lakers +130 ML or Over 214.5 (-108).",
+      });
+    }
+
+    if (parsed.needsInfo === true) {
+      return NextResponse.json({
+        needsInfo: true,
+        prompt: String(parsed.prompt ?? "Can you share the full line including the odds? e.g. Knicks ML -150"),
+      });
+    }
 
     return NextResponse.json({
       line: String(parsed.line ?? input),
@@ -108,6 +143,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
     console.error("[line-translator] FAILED:", e.message);
-    return NextResponse.json({ error: "Failed to translate" }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong — try again." }, { status: 500 });
   }
 }

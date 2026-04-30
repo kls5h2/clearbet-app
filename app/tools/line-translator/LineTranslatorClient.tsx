@@ -156,6 +156,7 @@ export default function LineTranslatorClient() {
   const [result, setResult] = useState<TranslateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [probBarWidth, setProbBarWidth] = useState(0);
+  const [infoPrompt, setInfoPrompt] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -179,6 +180,7 @@ export default function LineTranslatorClient() {
     setInput(value);
     setResult(null);
     setError(null);
+    setInfoPrompt(null);
     setStatus("idle");
     setProbBarWidth(0);
   }
@@ -218,6 +220,7 @@ export default function LineTranslatorClient() {
     if (!canTranslate) return;
     setStatus("loading");
     setError(null);
+    setInfoPrompt(null);
     setResult(null);
     setProbBarWidth(0);
 
@@ -235,7 +238,12 @@ export default function LineTranslatorClient() {
         const errBody = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(errBody?.error ?? "Translation failed");
       }
-      const data = await res.json() as TranslateResult;
+      const data = await res.json() as TranslateResult & { needsInfo?: true; prompt?: string };
+      if (data.needsInfo) {
+        setInfoPrompt(data.prompt ?? "Can you share more detail about the line?");
+        setStatus("idle");
+        return;
+      }
       setResult(data);
       setStatus("done");
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
@@ -264,6 +272,7 @@ export default function LineTranslatorClient() {
     setStatus("idle");
     setResult(null);
     setError(null);
+    setInfoPrompt(null);
     setInput("");
     clearImage();
     setProbBarWidth(0);
@@ -460,6 +469,20 @@ export default function LineTranslatorClient() {
             ))}
           </div>
         </div>
+
+        {/* Clarification prompt */}
+        {infoPrompt && (
+          <div style={{
+            marginBottom: "16px", padding: "14px 16px",
+            background: "var(--cream)", border: "1px solid var(--border-med)",
+            borderLeft: "3px solid var(--ink)", borderRadius: 0,
+            fontSize: "13.5px", color: "var(--ink-2)", lineHeight: 1.6,
+            display: "flex", alignItems: "flex-start", gap: "10px",
+          }}>
+            <span style={{ color: "var(--muted)", flexShrink: 0, fontSize: "13px", marginTop: "1px" }}>→</span>
+            {infoPrompt}
+          </div>
+        )}
 
         {/* Error */}
         {status === "error" && error && (
