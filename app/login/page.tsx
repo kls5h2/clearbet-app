@@ -372,6 +372,7 @@ function LoginContent() {
                           ? "var(--warm-white)"
                           : "transparent",
                       border: "none",
+                      outline: "none",
                       padding: "9px 16px",
                       borderRadius: 0,
                       cursor: "pointer",
