@@ -26,115 +26,6 @@ const EXAMPLES = [
   { label: "Spurs +9.5 RL", value: "San Antonio Spurs +9.5 run line" },
 ];
 
-// ── Share modal ───────────────────────────────────────────────────────────────
-
-function LTShareModal({ shareUrl, line, onClose }: { shareUrl: string; line: string; onClose: () => void }) {
-  const [busy, setBusy] = useState<"download" | "copy" | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  async function fetchImageBlob(): Promise<Blob> {
-    const res = await fetch(shareUrl);
-    if (!res.ok) throw new Error("Failed to load share image");
-    return res.blob();
-  }
-
-  async function handleDownload() {
-    setBusy("download");
-    setStatus(null);
-    try {
-      const blob = await fetchImageBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `rawintel-line-${line.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setStatus("Downloaded");
-    } catch {
-      setStatus("Download failed — try again");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function handleCopyImage() {
-    setBusy("copy");
-    setStatus(null);
-    try {
-      const blob = await fetchImageBlob();
-      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setStatus("Image copied");
-      } else {
-        throw new Error("clipboard-write not supported");
-      }
-    } catch {
-      setStatus("Clipboard not available — use Download");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  const btnStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.08)", border: "0.5px solid rgba(255,255,255,0.15)",
-    color: "#FAFAFA", fontFamily: "var(--sans)", fontSize: "12px", fontWeight: 500,
-    letterSpacing: "0.04em", padding: "10px 18px", borderRadius: 0, cursor: "pointer",
-  };
-
-  return (
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.78)",
-        display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", overflowY: "auto",
-      }}
-    >
-      <div style={{ position: "relative", maxWidth: "560px", width: "100%" }}>
-        <button
-          onClick={onClose}
-          style={{ position: "absolute", top: "-36px", right: 0, background: "none", border: "none", cursor: "pointer", color: "#FAFAFA", fontSize: "22px", fontWeight: 300, lineHeight: 1, padding: 0 }}
-        >
-          ×
-        </button>
-
-        {/* Preview — Satori-rendered OG image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={shareUrl}
-          alt="Share card preview"
-          style={{ width: "100%", display: "block", borderRadius: 0 }}
-        />
-
-        <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
-          <button onClick={handleCopyImage} disabled={busy !== null} style={btnStyle}>
-            {busy === "copy" ? "Copying…" : "Copy image"}
-          </button>
-          <button onClick={handleDownload} disabled={busy !== null} style={btnStyle}>
-            {busy === "download" ? "Downloading…" : "Download"}
-          </button>
-        </div>
-
-        {status && (
-          <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#FAFAFA", opacity: 0.7 }}>
-            {status}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 function readImage(file: File): Promise<{ base64: string; dataUrl: string }> {
   return new Promise((resolve, reject) => {
@@ -163,8 +54,6 @@ export default function LineTranslatorClient() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<ImageMime | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -251,21 +140,6 @@ export default function LineTranslatorClient() {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStatus("error");
     }
-  }
-
-  function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").trim();
-  }
-
-  function buildShareUrl(): string {
-    if (!result) return "";
-    const params = new URLSearchParams({
-      type: "line-translator",
-      line: result.line,
-      translation: stripHtml(result.translation).slice(0, 200),
-      implied: String(Math.round(result.impliedProbability)),
-    });
-    return `/api/og?${params.toString()}`;
   }
 
   function resetTool() {
@@ -555,7 +429,7 @@ export default function LineTranslatorClient() {
               </div>
 
               {/* Footer */}
-              <div style={{ padding: "14px 24px", background: "#F8F6F2", borderTop: "1px solid rgba(14,14,14,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ padding: "14px 24px", background: "#F8F6F2", borderTop: "1px solid rgba(14,14,14,0.06)" }}>
                 <button
                   onClick={resetTool}
                   className="lt-try-again"
@@ -563,32 +437,12 @@ export default function LineTranslatorClient() {
                 >
                   ← Translate another line
                 </button>
-                <button
-                  onClick={() => setShareOpen(true)}
-                  style={{
-                    fontSize: "12.5px", fontWeight: 600, color: "var(--signal)",
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "var(--sans)", padding: 0, transition: "opacity 0.12s",
-                  }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.75")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
-                >
-                  Share →
-                </button>
               </div>
             </div>
 
           </div>
         )}
 
-        {/* Share modal */}
-        {shareOpen && result && (
-          <LTShareModal
-            shareUrl={buildShareUrl()}
-            line={result.line}
-            onClose={() => setShareOpen(false)}
-          />
-        )}
 
       </div>
 
