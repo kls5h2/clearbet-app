@@ -122,9 +122,8 @@ export default function HomePage() {
           .hp-stats-bar > div:nth-child(n+3) { display: none !important; }
           .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
-          .hp-preview-fade { height: 440px !important; padding-bottom: 56px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.65) 25%, rgba(240,237,230,0.95) 48%, rgba(240,237,230,1) 62%) !important; }
+          .hp-preview-fade { height: 220px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.8) 45%, rgba(240,237,230,1) 75%) !important; }
         }
-        .hp-preview-fade { z-index: 10; }
       `}</style>
 
       {/* ── Nav ─────────────────────────────────────────────────────── */}
@@ -517,7 +516,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div style={{ padding: "24px 32px", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "24px 32px 0", display: "flex", flexDirection: "column" }}>
               {[
                 {
                   num: "01", title: "Game Shape",
@@ -549,39 +548,46 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="hp-preview-fade" style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: "340px",
-              zIndex: 10, overflow: "hidden",
-              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.65) 28%, rgba(240,237,230,0.95) 52%, rgba(240,237,230,1) 65%)",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
-              paddingBottom: "44px", gap: "18px",
-            }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%", maxWidth: "520px", padding: "0 32px" }}>
-                {[
-                  { num: "04", label: "Fragility Check",  desc: "What breaks the base script" },
-                  { num: "05", label: "Market Read",       desc: "What the books are saying" },
-                  { num: "06", label: "What This Means",   desc: "The plain-English summary" },
-                ].map((row) => (
-                  <div key={row.num} style={{
-                    display: "flex", alignItems: "center", gap: "12px",
-                    padding: "9px 14px", borderRadius: 0,
-                    background: "rgba(14,14,14,0.04)", border: "1px solid rgba(14,14,14,0.07)",
-                  }}>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", flexShrink: 0, width: "18px" }}>
-                      {row.num}
+            {/* Locked steps 04–06 in document flow — sets card height correctly */}
+            <div style={{ padding: "12px 32px 88px", display: "flex", flexDirection: "column", gap: "5px" }}>
+              {[
+                { num: "04", label: "Fragility Check",  desc: "What breaks the base script" },
+                { num: "05", label: "Market Read",       desc: "What the books are saying" },
+                { num: "06", label: "What This Means",   desc: "The plain-English summary" },
+              ].map((row) => (
+                <div key={row.num} style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "9px 14px", borderRadius: 0,
+                  background: "rgba(14,14,14,0.04)", border: "1px solid rgba(14,14,14,0.07)",
+                }}>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", flexShrink: 0, width: "18px" }}>
+                    {row.num}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--signal)" }}>
+                      {row.label}
                     </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--signal)" }}>
-                        {row.label}
-                      </span>
-                      <span style={{ fontSize: "11.5px", color: "var(--muted)", marginLeft: "8px" }}>
-                        {row.desc}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: "11px", opacity: 0.35, flexShrink: 0 }}>🔒</span>
+                    <span style={{ fontSize: "11.5px", color: "var(--muted)", marginLeft: "8px" }}>
+                      {row.desc}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <span style={{ fontSize: "11px", opacity: 0.35, flexShrink: 0 }}>🔒</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Pure gradient overlay — visual only, no children */}
+            <div className="hp-preview-fade" style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, height: "170px",
+              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.8) 45%, rgba(240,237,230,1) 75%)",
+              pointerEvents: "none",
+            }} />
+
+            {/* CTA button — sits above gradient */}
+            <div style={{
+              position: "absolute", bottom: "36px", left: 0, right: 0, zIndex: 20,
+              display: "flex", justifyContent: "center", pointerEvents: "auto",
+            }}>
               <Link href="/intel" className="hp-preview-btn" style={{
                 fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
                 padding: "13px 32px", borderRadius: 0, background: "var(--ink)",
