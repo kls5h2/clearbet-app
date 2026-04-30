@@ -390,7 +390,7 @@ export default function HowItWorksPage() {
           className="reveal"
           style={{
             background: "var(--ink)",
-            borderRadius: 10,
+            borderRadius: 0,
             padding: "36px 40px",
             marginBottom: 56,
           }}
@@ -516,7 +516,7 @@ export default function HowItWorksPage() {
                 <div
                   style={{
                     background: "var(--cream)",
-                    borderRadius: 6,
+                    borderRadius: 0,
                     borderLeft: "2px solid var(--border-strong)",
                     padding: "12px 14px",
                     fontSize: 13.5,
@@ -575,7 +575,7 @@ export default function HowItWorksPage() {
               className={`reveal ${i > 0 ? `rd${i}` : ""}`}
               style={{
                 background: "var(--surface)",
-                borderRadius: 8,
+                borderRadius: 0,
                 border: "1px solid rgba(17,17,16,0.06)",
                 overflow: "hidden",
                 boxShadow: "var(--shadow-sm)",
@@ -624,7 +624,7 @@ export default function HowItWorksPage() {
                     lineHeight: 1.5,
                     padding: "10px 12px",
                     background: "var(--cream)",
-                    borderRadius: 5,
+                    borderRadius: 0,
                   }}
                 >
                   {level.example}
@@ -681,7 +681,7 @@ export default function HowItWorksPage() {
           className="reveal rd1"
           style={{
             background: "var(--surface)",
-            borderRadius: 10,
+            borderRadius: 0,
             overflow: "hidden",
             border: "1px solid rgba(17,17,16,0.06)",
             boxShadow: "var(--shadow-sm)",
@@ -794,7 +794,7 @@ export default function HowItWorksPage() {
               margin: "0 24px 20px",
               padding: "16px 18px",
               background: "var(--cream)",
-              borderRadius: 7,
+              borderRadius: 0,
             }}
           >
             <div
@@ -819,7 +819,7 @@ export default function HowItWorksPage() {
                     fontSize: 12,
                     fontWeight: 600,
                     padding: "5px 12px",
-                    borderRadius: 4,
+                    borderRadius: 0,
                     color: g === "B+" ? "#fff" : "var(--ink)",
                     background: g === "B+" ? "var(--signal)" : "var(--surface)",
                     border: `1px solid ${g === "B+" ? "var(--signal)" : "var(--border-med)"}`,
@@ -880,7 +880,7 @@ export default function HowItWorksPage() {
                 gap: 14,
                 padding: "14px 18px",
                 background: "var(--surface)",
-                borderRadius: 7,
+                borderRadius: 0,
                 border: "1px solid var(--border)",
                 boxShadow: "var(--shadow-sm)",
               }}
@@ -893,7 +893,7 @@ export default function HowItWorksPage() {
                   background: "var(--cream)",
                   border: "1px solid var(--border-med)",
                   padding: "4px 10px",
-                  borderRadius: 4,
+                  borderRadius: 0,
                   whiteSpace: "nowrap",
                   flexShrink: 0,
                 }}
@@ -919,7 +919,7 @@ export default function HowItWorksPage() {
           className="reveal"
           style={{
             background: "var(--ink)",
-            borderRadius: 10,
+            borderRadius: 0,
             padding: 40,
             textAlign: "center",
             marginTop: 56,
@@ -956,7 +956,7 @@ export default function HowItWorksPage() {
               color: "#fff",
               textDecoration: "none",
               padding: "13px 32px",
-              borderRadius: 6,
+              borderRadius: 0,
               background: "var(--signal)",
               display: "inline-flex",
               alignItems: "center",

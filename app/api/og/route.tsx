@@ -246,7 +246,7 @@ export async function GET(req: NextRequest) {
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
                   padding: "7px 16px",
-                  borderRadius: "100px",
+                  borderRadius: 0,
                   display: "flex",
                 }}
               >

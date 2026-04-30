@@ -349,7 +349,7 @@ function LoginContent() {
                 style={{
                   display: "flex",
                   background: "var(--cream)",
-                  borderRadius: 8,
+                  borderRadius: 0,
                   padding: 3,
                   marginBottom: 32,
                 }}
@@ -373,7 +373,7 @@ function LoginContent() {
                           : "transparent",
                       border: "none",
                       padding: "9px 16px",
-                      borderRadius: 6,
+                      borderRadius: 0,
                       cursor: "pointer",
                       transition: "all 0.15s",
                       boxShadow:
@@ -391,7 +391,7 @@ function LoginContent() {
                 <div
                   style={{
                     background: "var(--cream)",
-                    borderRadius: 7,
+                    borderRadius: 0,
                     border: "1px solid var(--border-med)",
                     padding: "12px 16px",
                     marginBottom: 24,
@@ -632,7 +632,7 @@ function LoginContent() {
                     color: "#fff",
                     background: "var(--signal)",
                     border: "none",
-                    borderRadius: 7,
+                    borderRadius: 0,
                     cursor: submitting ? "default" : "pointer",
                     marginTop: 8,
                     transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
@@ -789,7 +789,7 @@ const inputStyle: React.CSSProperties = {
   color: "var(--ink)",
   background: "var(--surface)",
   border: "1px solid var(--border-med)",
-  borderRadius: 7,
+  borderRadius: 0,
   outline: "none",
   transition: "border-color 0.15s, box-shadow 0.15s",
   WebkitAppearance: "none",

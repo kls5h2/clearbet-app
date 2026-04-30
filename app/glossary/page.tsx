@@ -442,7 +442,7 @@ export default function GlossaryPage() {
               color: "var(--ink)",
               background: "var(--warm-white)",
               border: "1px solid var(--border-med)",
-              borderRadius: 7,
+              borderRadius: 0,
               outline: "none",
               transition: "border-color 0.15s",
               WebkitAppearance: "none",
@@ -509,7 +509,7 @@ export default function GlossaryPage() {
                 style={{
                   width: 32,
                   height: 32,
-                  borderRadius: 6,
+                  borderRadius: 0,
                   background: "var(--cream)",
                   border: "1px solid var(--border-med)",
                   display: "flex",
@@ -546,7 +546,7 @@ export default function GlossaryPage() {
                   className="glossary-term-row"
                   style={{
                     background: "var(--surface)",
-                    borderRadius: 7,
+                    borderRadius: 0,
                     border: "1px solid rgba(17,17,16,0.06)",
                     padding: "16px 20px",
                     display: "grid",

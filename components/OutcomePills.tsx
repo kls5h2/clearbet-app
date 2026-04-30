@@ -88,7 +88,7 @@ export default function OutcomePills({ gameId, initialOutcome }: Props) {
     fontSize: 11.5,
     fontWeight: 600,
     padding: "4px 12px",
-    borderRadius: 4,
+    borderRadius: 0,
     cursor: pending ? "default" : "pointer",
     border: "1px solid var(--border-med)",
     background: "transparent",

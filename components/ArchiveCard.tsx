@@ -46,7 +46,7 @@ export default function ArchiveCard({
         onMouseLeave={() => setHover(false)}
         style={{
           background: "var(--surface)",
-          borderRadius: 10,
+          borderRadius: 0,
           border: "1px solid rgba(17,17,16,0.06)",
           overflow: "hidden",
           boxShadow: hover ? "var(--shadow-md)" : "var(--shadow-sm)",

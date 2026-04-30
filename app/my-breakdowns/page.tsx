@@ -114,7 +114,7 @@ function FilterGroup({
                 background: isActive ? "var(--ink)" : "transparent",
                 border: `1px solid ${isActive ? "var(--ink)" : "var(--border-med)"}`,
                 padding: "4px 12px",
-                borderRadius: 4,
+                borderRadius: 0,
                 textDecoration: "none",
                 transition: "all 0.12s",
                 fontFamily: "var(--sans)",
@@ -444,7 +444,7 @@ export default async function MyBreakdownsPage({
             style={{
               background: "var(--surface)",
               border: "1px solid var(--border-med)",
-              borderRadius: 8,
+              borderRadius: 0,
               padding: "10px 14px",
               marginBottom: 20,
             }}
@@ -503,7 +503,7 @@ export default async function MyBreakdownsPage({
                 color: "#fff",
                 textDecoration: "none",
                 padding: "12px 28px",
-                borderRadius: 6,
+                borderRadius: 0,
                 background: "var(--signal)",
                 display: "inline-flex",
                 alignItems: "center",
