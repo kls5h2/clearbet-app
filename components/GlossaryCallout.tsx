@@ -16,7 +16,7 @@ export default function GlossaryCallout({ term, definition, dark }: Props) {
   return (
     <div style={{
       background: dark ? "rgba(255,255,255,0.06)" : "#FEF3F3",
-      borderRadius: "6px",
+      borderRadius: 0,
       padding: "16px 18px",
       marginTop: "10px",
       border: dark ? "1px solid rgba(255,255,255,0.1)" : "none",

@@ -183,14 +183,14 @@ export default function LineTranslatorClient() {
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px 40px 80px" }}>
 
         {/* Input card */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>
+        <div style={{ background: "#fff", borderRadius: 0, border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>
 
           {/* Header */}
           <div style={{ padding: "20px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
             <div style={{ fontFamily: "var(--mono)", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>
               Paste a line or upload a slip
             </div>
-            <div style={{ display: "flex", border: "1px solid rgba(17,17,16,0.15)", borderRadius: "6px", overflow: "hidden" }}>
+            <div style={{ display: "flex", border: "1px solid rgba(17,17,16,0.15)", borderRadius: 0, overflow: "hidden" }}>
               {(["text", "image"] as Mode[]).map((m, i) => (
                 <button
                   key={m}
@@ -237,10 +237,10 @@ export default function LineTranslatorClient() {
               {imagePreview ? (
                 <div style={{ position: "relative" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagePreview} alt="Bet slip preview" style={{ width: "100%", borderRadius: "6px", maxHeight: "200px", objectFit: "cover" }} />
+                  <img src={imagePreview} alt="Bet slip preview" style={{ width: "100%", borderRadius: 0, maxHeight: "200px", objectFit: "cover" }} />
                   <button
                     onClick={clearImage}
-                    style={{ position: "absolute", top: "8px", right: "8px", background: "var(--ink)", color: "#fff", border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: 600, padding: "4px 10px", cursor: "pointer" }}
+                    style={{ position: "absolute", top: "8px", right: "8px", background: "var(--ink)", color: "#fff", border: "none", borderRadius: 0, fontSize: "11px", fontWeight: 600, padding: "4px 10px", cursor: "pointer" }}
                   >
                     ✕ Remove
                   </button>
@@ -257,7 +257,7 @@ export default function LineTranslatorClient() {
                   className="lt-drop-zone"
                   style={{
                     border: `2px dashed ${dragActive ? "var(--signal)" : "rgba(17,17,16,0.15)"}`,
-                    borderRadius: "8px", padding: "32px 20px", textAlign: "center",
+                    borderRadius: 0, padding: "32px 20px", textAlign: "center",
                     cursor: "pointer", transition: "all 0.15s",
                     background: dragActive ? "rgba(201,53,42,0.03)" : "#F8F6F2",
                     position: "relative",
@@ -266,9 +266,9 @@ export default function LineTranslatorClient() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp"
+                    accept="image/*"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) ingestFile(f); e.target.value = ""; }}
-                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%", zIndex: 1 }}
                   />
                   <div style={{ fontSize: "24px", marginBottom: "8px" }}>📸</div>
                   <div style={{ fontSize: "13px", color: "var(--muted)", lineHeight: 1.5 }}>
@@ -293,7 +293,7 @@ export default function LineTranslatorClient() {
               className="lt-translate-btn"
               style={{
                 fontSize: "13.5px", fontWeight: 700, color: "#fff",
-                background: "var(--signal)", border: "none", borderRadius: "6px",
+                background: "var(--signal)", border: "none", borderRadius: 0,
                 padding: "10px 24px", cursor: status === "loading" || !canTranslate ? "default" : "pointer",
                 display: "flex", alignItems: "center", gap: "8px",
                 transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
@@ -325,7 +325,7 @@ export default function LineTranslatorClient() {
                 style={{
                   fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)",
                   background: "#fff", border: "1px solid rgba(17,17,16,0.15)",
-                  padding: "5px 12px", borderRadius: "4px", cursor: "pointer",
+                  padding: "5px 12px", borderRadius: 0, cursor: "pointer",
                   transition: "all 0.12s", whiteSpace: "nowrap",
                 }}
               >
@@ -343,7 +343,7 @@ export default function LineTranslatorClient() {
         {/* Result card */}
         {status === "done" && result && (
           <div ref={resultRef} className="lt-result">
-            <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", boxShadow: "0 2px 4px rgba(17,17,16,0.04), 0 6px 16px rgba(17,17,16,0.07), 0 16px 32px rgba(17,17,16,0.05), 0 0 0 1px rgba(17,17,16,0.04), inset 0 1px 0 rgba(255,255,255,0.6)" }}>
+            <div style={{ background: "#fff", borderRadius: 0, border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", boxShadow: "0 2px 4px rgba(17,17,16,0.04), 0 6px 16px rgba(17,17,16,0.07), 0 16px 32px rgba(17,17,16,0.05), 0 0 0 1px rgba(17,17,16,0.04), inset 0 1px 0 rgba(255,255,255,0.6)" }}>
 
               {/* Header */}
               <div style={{ background: "var(--ink)", padding: "14px 24px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
@@ -369,8 +369,8 @@ export default function LineTranslatorClient() {
                 <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", flexShrink: 0 }}>
                   Implied Probability
                 </div>
-                <div style={{ flex: 1, height: "6px", background: "#F0EDE6", borderRadius: "3px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", background: "var(--signal)", borderRadius: "3px", width: `${probBarWidth}%`, transition: "width 1s cubic-bezier(0.16,1,0.3,1)" }} />
+                <div style={{ flex: 1, height: "6px", background: "#F0EDE6", borderRadius: 0, overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "var(--signal)", borderRadius: 0, width: `${probBarWidth}%`, transition: "width 1s cubic-bezier(0.16,1,0.3,1)" }} />
                 </div>
                 <div style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, color: "var(--ink)", flexShrink: 0, minWidth: "40px", textAlign: "right" }}>
                   {Math.round(result.impliedProbability)}%

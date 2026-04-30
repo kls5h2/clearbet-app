@@ -130,20 +130,20 @@ export default function AccountPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "9px 12px", borderRadius: "6px",
+    width: "100%", padding: "9px 12px", borderRadius: 0,
     border: "1px solid var(--border-med)", background: "var(--warm-white)",
     fontSize: "14px", color: "var(--ink)", outline: "none",
     fontFamily: "var(--sans)", boxSizing: "border-box",
   };
 
   const saveBtnStyle: React.CSSProperties = {
-    padding: "8px 18px", borderRadius: "6px", border: "none", cursor: "pointer",
+    padding: "8px 18px", borderRadius: 0, border: "none", cursor: "pointer",
     fontSize: "13px", fontWeight: 600, background: "var(--ink)", color: "#fff",
     transition: "opacity 0.12s",
   };
 
   const cancelBtnStyle: React.CSSProperties = {
-    padding: "8px 14px", borderRadius: "6px", border: "1px solid var(--border-med)",
+    padding: "8px 14px", borderRadius: 0, border: "1px solid var(--border-med)",
     background: "none", cursor: "pointer", fontSize: "13px", fontWeight: 500,
     color: "var(--muted)", transition: "color 0.12s",
   };
@@ -172,7 +172,7 @@ export default function AccountPage() {
           {/* Email */}
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border-med)",
-            borderRadius: "10px", padding: "20px 24px",
+            borderRadius: 0, padding: "20px 24px",
           }}>
             <div style={{
               fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -228,7 +228,7 @@ export default function AccountPage() {
           {/* Change password */}
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border-med)",
-            borderRadius: "10px", padding: "20px 24px",
+            borderRadius: 0, padding: "20px 24px",
           }}>
             <div style={{
               fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -281,7 +281,7 @@ export default function AccountPage() {
           {/* Plan */}
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border-med)",
-            borderRadius: "10px", padding: "20px 24px",
+            borderRadius: 0, padding: "20px 24px",
           }}>
             <div style={{
               fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -297,7 +297,7 @@ export default function AccountPage() {
                   <span style={{
                     fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700,
                     letterSpacing: "0.08em", textTransform: "uppercase",
-                    padding: "3px 10px", borderRadius: "100px",
+                    padding: "3px 10px", borderRadius: 0,
                     background: "rgba(201,53,42,0.08)", color: "var(--signal)",
                   }}>PRO</span>
                 )}
@@ -316,7 +316,7 @@ export default function AccountPage() {
           {tier === "free" && (
             <div style={{
               background: "var(--surface)", border: "1px solid var(--border-med)",
-              borderRadius: "10px", padding: "20px 24px",
+              borderRadius: 0, padding: "20px 24px",
             }}>
               <div style={{
                 fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -338,7 +338,7 @@ export default function AccountPage() {
           {tier === "pro" && (
             <a href="/my-breakdowns" style={{
               background: "var(--surface)", border: "1px solid var(--border-med)",
-              borderRadius: "10px", padding: "20px 24px",
+              borderRadius: 0, padding: "20px 24px",
               textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between",
               color: "var(--ink)",
             }}>
@@ -358,7 +358,7 @@ export default function AccountPage() {
           {tier === "pro" && (
             <div style={{
               background: "var(--surface)", border: "1px solid var(--border-med)",
-              borderRadius: "10px", padding: "20px 24px",
+              borderRadius: 0, padding: "20px 24px",
             }}>
               <div style={{
                 fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -417,7 +417,7 @@ export default function AccountPage() {
             onClick={handleLogout}
             style={{
               background: "var(--surface)", border: "1px solid var(--border-med)",
-              borderRadius: "10px", padding: "18px 24px",
+              borderRadius: 0, padding: "18px 24px",
               cursor: "pointer", textAlign: "left", width: "100%",
               fontSize: "15px", fontWeight: 500, color: "var(--muted)",
               transition: "color 0.12s",

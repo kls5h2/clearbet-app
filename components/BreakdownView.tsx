@@ -51,7 +51,7 @@ function StepBlock({ stepLabel, children, dark }: { stepLabel: string; children:
     <div style={{
       marginBottom: "8px",
       background: dark ? "var(--ink)" : "var(--surface)",
-      borderRadius: "10px",
+      borderRadius: 0,
       border: dark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(17,17,16,0.06)",
       overflow: "hidden",
       boxShadow: "var(--shadow-sm)",
@@ -95,7 +95,7 @@ function StepTip({ children, dark }: { children: React.ReactNode; dark?: boolean
       display: "flex", alignItems: "flex-start", gap: "8px",
       marginTop: "14px", padding: "12px 14px",
       background: dark ? "rgba(255,255,255,0.05)" : "rgba(17,17,16,0.03)",
-      borderRadius: "6px",
+      borderRadius: 0,
       fontSize: "13px", lineHeight: 1.5,
       color: dark ? "rgba(255,255,255,0.45)" : "var(--muted)",
     }}>
@@ -112,7 +112,7 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "12px",
-      padding: "12px 14px", background: "var(--cream)", borderRadius: "7px",
+      padding: "12px 14px", background: "var(--cream)", borderRadius: 0,
     }}>
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: color }} />
       <div>
@@ -129,7 +129,7 @@ function FragilityItem({ item, color: fc }: { item: string; color: FragilityColo
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "10px",
-      padding: "12px 14px", background: "var(--cream)", borderRadius: "7px",
+      padding: "12px 14px", background: "var(--cream)", borderRadius: 0,
       borderLeft: `2px solid ${border}`,
     }}>
       <span style={{ fontSize: "14px", flexShrink: 0 }}>⚠️</span>
@@ -143,7 +143,7 @@ function MarketLine({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       marginTop: "14px", padding: "16px 18px",
-      background: "var(--cream)", borderRadius: "7px",
+      background: "var(--cream)", borderRadius: 0,
       borderLeft: "3px solid var(--signal)",
       fontSize: "15px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
     }}>
@@ -158,7 +158,7 @@ function PropItem({ type, text }: { type: string; text: string }) {
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "10px",
       padding: "11px 14px", background: "rgba(255,255,255,0.05)",
-      borderRadius: "6px", borderLeft: "2px solid rgba(255,255,255,0.1)",
+      borderRadius: 0, borderLeft: "2px solid rgba(255,255,255,0.1)",
     }}>
       <div style={{
         fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
@@ -188,7 +188,7 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
       {gameStatus === "final" && (
         <div style={{
           background: "var(--warm-white)", border: "1px solid var(--border-med)",
-          borderRadius: "6px", padding: "10px 14px", marginBottom: "16px",
+          borderRadius: 0, padding: "10px 14px", marginBottom: "16px",
           display: "flex", alignItems: "center", gap: "10px",
         }}>
           <span style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>Final</span>
@@ -200,7 +200,7 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
       {gameStatus === "live" && (
         <div style={{
           background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
-          borderRadius: "6px", padding: "10px 14px", marginBottom: "16px",
+          borderRadius: 0, padding: "10px 14px", marginBottom: "16px",
           display: "flex", alignItems: "center", gap: "10px",
         }}>
           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--signal)", display: "block", flexShrink: 0 }} className="animate-pulse" />
@@ -323,7 +323,7 @@ function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
       background: "linear-gradient(to bottom, rgba(248,246,242,0.35) 0%, rgba(248,246,242,0.94) 18%, rgba(248,246,242,0.98) 100%)",
     }}>
       <div style={{
-        background: "var(--ink)", borderRadius: "8px",
+        background: "var(--ink)", borderRadius: 0,
         padding: "40px 32px",
         maxWidth: "480px", width: "calc(100% - 32px)",
         textAlign: "center",
@@ -363,7 +363,7 @@ function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
               }}>
                 <span style={{
                   position: "absolute", left: 0, top: "7px",
-                  width: "6px", height: "6px", borderRadius: "999px", background: "var(--signal)",
+                  width: "6px", height: "6px", borderRadius: 0, background: "var(--signal)",
                 }} />
                 {feature}
               </li>
@@ -374,7 +374,7 @@ function GatedBodyOverlay({ reason }: { reason: GatedReason }) {
             display: "inline-block",
             background: "var(--signal)", color: "#fff",
             fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em",
-            textDecoration: "none", padding: "12px 28px", borderRadius: "6px",
+            textDecoration: "none", padding: "12px 28px", borderRadius: 0,
             boxShadow: "0 2px 8px rgba(201,53,42,0.3)",
             transition: "all 0.15s",
           }}>

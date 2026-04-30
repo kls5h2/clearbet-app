@@ -301,7 +301,7 @@ export default function BreakdownPage() {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: "12px",
               background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "8px", padding: "12px 16px",
+              borderRadius: 0, padding: "12px 16px",
             }}>
               <div>
                 <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
@@ -373,7 +373,7 @@ export default function BreakdownPage() {
         {status === "error" && (
           <div style={{
             background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)",
-            borderRadius: "10px", padding: "32px", textAlign: "center",
+            borderRadius: 0, padding: "32px", textAlign: "center",
             boxShadow: "var(--shadow-sm)",
           }}>
             {gameStarted ? (
@@ -407,7 +407,7 @@ export default function BreakdownPage() {
             {!gated && fromCache && generatedAt && (
               <div style={{
                 background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
-                borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                borderRadius: 0, padding: "10px 14px", fontSize: "13px",
                 color: "var(--ink-2)", marginBottom: "16px", lineHeight: 1.5,
                 display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
               }}>
@@ -424,7 +424,7 @@ export default function BreakdownPage() {
             {!gated && !(fromCache && generatedAt) && (
               <div style={{
                 background: "rgba(201,53,42,0.05)", borderLeft: "3px solid var(--signal)",
-                borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                borderRadius: 0, padding: "10px 14px", fontSize: "13px",
                 color: "var(--ink-2)", marginBottom: "16px", lineHeight: 1.5,
                 display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
               }}>
@@ -449,7 +449,7 @@ export default function BreakdownPage() {
               return (homeUnknown || awayUnknown) ? (
                 <div style={{
                   background: "rgba(217,163,58,0.08)", borderLeft: "3px solid #D9A33A",
-                  borderRadius: "6px", padding: "10px 14px", fontSize: "13px",
+                  borderRadius: 0, padding: "10px 14px", fontSize: "13px",
                   color: "var(--ink)", marginBottom: "16px", lineHeight: 1.5,
                 }}>
                   🟡 Starting pitcher(s) not yet confirmed. Breakdown reflects available data — check the lineup closer to game time.

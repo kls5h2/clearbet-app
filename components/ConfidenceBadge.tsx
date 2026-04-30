@@ -62,7 +62,7 @@ export default function ConfidenceBadge({ level, label, compact = false }: Props
         <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "13px", color: "var(--signal)" }}>{grades[level]}</span>
       </div>
       <div>
-        <span style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink)", background: "rgba(14,14,14,0.06)", padding: "3px 8px", borderRadius: "3px" }}>{label}</span>
+        <span style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink)", background: "rgba(14,14,14,0.06)", padding: "3px 8px", borderRadius: 0 }}>{label}</span>
         <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--muted)", marginLeft: "8px" }}>{descriptions[level]}</span>
       </div>
     </div>

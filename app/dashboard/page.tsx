@@ -50,7 +50,7 @@ export default async function DashboardPage({
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "48px 24px 0" }}>
-        <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderRadius: "6px", padding: "22px 24px", marginBottom: "16px" }}>
+        <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderRadius: 0, padding: "22px 24px", marginBottom: "16px" }}>
           <p style={{ fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "10px" }}>
             Plan
           </p>
@@ -69,7 +69,7 @@ export default async function DashboardPage({
                   background: "var(--signal)", color: "#FAFAFA",
                   fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
                   letterSpacing: "0.04em", padding: "12px 24px",
-                  borderRadius: "4px", textDecoration: "none",
+                  borderRadius: 0, textDecoration: "none",
                 }}
               >
                 Upgrade to Pro →

@@ -145,7 +145,7 @@ function ResetPasswordContent() {
               style={{
                 marginTop: "20px", width: "100%",
                 background: "var(--signal)", color: "#FAFAFA",
-                border: "none", borderRadius: "4px",
+                border: "none", borderRadius: 0,
                 fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
                 letterSpacing: "0.04em", padding: "14px 24px",
                 cursor: status === "submitting" ? "default" : "pointer",
@@ -182,7 +182,7 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   background: "var(--paper)",
   border: "0.5px solid var(--border)",
-  borderRadius: "4px",
+  borderRadius: 0,
   padding: "14px 18px",
   fontFamily: "var(--sans)",
   fontSize: "16px",

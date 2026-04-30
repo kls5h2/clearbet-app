@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
 
       <div style={{ maxWidth: "420px", margin: "0 auto", padding: "48px 24px 0" }}>
         {status === "sent" ? (
-          <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderLeft: "3px solid var(--signal)", borderRadius: "6px", padding: "20px 22px" }}>
+          <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderLeft: "3px solid var(--signal)", borderRadius: 0, padding: "20px 22px" }}>
             <p style={{ fontFamily: "var(--sans)", fontSize: "14px", fontWeight: 500, color: "var(--ink)", marginBottom: "6px" }}>Check your email</p>
             <p style={{ fontFamily: "var(--sans)", fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>
               We sent a password reset link to <strong style={{ color: "var(--ink)" }}>{email}</strong>. Click it to choose a new password.
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
               style={{
                 marginTop: "20px", width: "100%",
                 background: "var(--signal)", color: "#FAFAFA",
-                border: "none", borderRadius: "4px",
+                border: "none", borderRadius: 0,
                 fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
                 letterSpacing: "0.04em", padding: "14px 24px",
                 cursor: status === "submitting" ? "default" : "pointer",
@@ -138,7 +138,7 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   background: "var(--paper)",
   border: "0.5px solid var(--border)",
-  borderRadius: "4px",
+  borderRadius: 0,
   padding: "14px 18px",
   fontFamily: "var(--sans)",
   fontSize: "16px",

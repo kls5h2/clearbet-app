@@ -64,7 +64,7 @@ export default function LearnIndexPage() {
                 textDecoration: "none",
                 background: "var(--paper)",
                 border: "0.5px solid var(--border)",
-                borderRadius: "6px",
+                borderRadius: 0,
                 padding: "20px 22px",
               }}
             >

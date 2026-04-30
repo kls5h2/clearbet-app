@@ -122,7 +122,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: "var(--surface)", borderRadius: "10px",
+        background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
         marginBottom: "32px", cursor: "pointer", color: "var(--ink)",
         boxShadow: hover ? "var(--shadow-lg)" : "var(--shadow-sm)",
@@ -163,7 +163,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         </div>
 
         {/* Stats grid — ML columns hidden on mobile */}
-        <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: "7px" }}>
+        <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: 0 }}>
           <div className="hl-stats-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(5, 1fr)", minWidth: "360px", overflow: "hidden",
           }}>
@@ -189,7 +189,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         {insight && (
           <div style={{
             margin: "20px 0 0", padding: "18px 20px", background: "var(--cream)",
-            borderRadius: "7px", borderLeft: "3px solid var(--signal)",
+            borderRadius: 0, borderLeft: "3px solid var(--signal)",
             fontSize: "15.5px", lineHeight: 1.7, color: "var(--ink-2)", fontStyle: "italic",
           }}>
             {insight}
@@ -199,7 +199,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         <div style={{
           margin: "12px 0 0", fontSize: "13px", color: "var(--muted)", lineHeight: 1.55,
           display: "flex", gap: "8px", alignItems: "flex-start",
-          padding: "10px 14px", background: "rgba(17,17,16,0.03)", borderRadius: "5px",
+          padding: "10px 14px", background: "rgba(17,17,16,0.03)", borderRadius: 0,
         }}>
           <span style={{ flexShrink: 0, marginTop: "1px" }}>💡</span>
           <span>Highest signal game on tonight&apos;s slate.</span>
@@ -217,7 +217,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         </div>
         <div style={{
           fontSize: "13.5px", fontWeight: 700, color: "#fff",
-          padding: "11px 24px", borderRadius: "5px", background: "var(--signal)",
+          padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
           display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap",
           boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
           transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
@@ -247,7 +247,7 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: "var(--surface)", borderRadius: "10px",
+        background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
         cursor: "pointer", color: "var(--ink)", outline: "none",
         boxShadow: hover ? "var(--shadow-md)" : "var(--shadow-sm)",
@@ -275,7 +275,7 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
           <div style={{
             fontSize: "14.5px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
             marginBottom: "12px", padding: "14px 16px", background: "var(--cream)",
-            borderRadius: "6px", borderLeft: "2px solid var(--signal)",
+            borderRadius: 0, borderLeft: "2px solid var(--signal)",
           }}>
             {insight}
           </div>
@@ -313,7 +313,7 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
       onClick={onRead}
       onKeyDown={(e) => e.key === "Enter" && onRead()}
       style={{
-        background: "var(--surface)", borderRadius: "10px",
+        background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
         color: "var(--ink)", opacity: 0.75,
         boxShadow: "var(--shadow-sm)",
@@ -338,7 +338,7 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
 
         <div style={{
           fontSize: "14px", lineHeight: 1.6, color: "var(--muted)", fontStyle: "italic",
-          padding: "14px 16px", background: "var(--cream)", borderRadius: "6px",
+          padding: "14px 16px", background: "var(--cream)", borderRadius: 0,
           borderLeft: "2px solid var(--border-strong)",
           filter: "blur(3px)", userSelect: "none", pointerEvents: "none",
         }}>
@@ -382,12 +382,12 @@ function TomorrowRow({ game }: { game: AnyGame }) {
 
 function SkeletonHeadliner() {
   return (
-    <div style={{ background: "var(--surface)", borderRadius: "10px", border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", marginBottom: "32px" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 0, border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", marginBottom: "32px" }}>
       <div style={{ background: "var(--ink)", padding: "12px 24px", height: "44px" }} />
       <div style={{ padding: "26px 26px 20px" }}>
-        <div style={{ height: "34px", background: "var(--cream)", borderRadius: "4px", width: "65%", marginBottom: "18px" }} className="animate-pulse" />
-        <div style={{ height: "72px", background: "var(--cream)", borderRadius: "7px", marginBottom: "12px" }} className="animate-pulse" />
-        <div style={{ height: "48px", background: "var(--cream)", borderRadius: "5px" }} className="animate-pulse" />
+        <div style={{ height: "34px", background: "var(--cream)", borderRadius: 0, width: "65%", marginBottom: "18px" }} className="animate-pulse" />
+        <div style={{ height: "72px", background: "var(--cream)", borderRadius: 0, marginBottom: "12px" }} className="animate-pulse" />
+        <div style={{ height: "48px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
       </div>
       <div style={{ padding: "16px 26px", borderTop: "1px solid var(--border)", background: "var(--warm-white)", height: "56px" }} />
     </div>
@@ -396,13 +396,13 @@ function SkeletonHeadliner() {
 
 function SkeletonCard() {
   return (
-    <div style={{ background: "var(--surface)", borderRadius: "10px", border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 0, border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden" }}>
       <div style={{ height: "3px", background: "var(--cream-dark)" }} />
       <div style={{ padding: "20px 24px" }}>
-        <div style={{ height: "20px", background: "var(--cream)", borderRadius: "4px", width: "80px", marginBottom: "14px" }} className="animate-pulse" />
-        <div style={{ height: "26px", background: "var(--cream)", borderRadius: "4px", width: "70%", marginBottom: "8px" }} className="animate-pulse" />
-        <div style={{ height: "12px", background: "var(--cream)", borderRadius: "4px", width: "30%", marginBottom: "16px" }} className="animate-pulse" />
-        <div style={{ height: "64px", background: "var(--cream)", borderRadius: "6px" }} className="animate-pulse" />
+        <div style={{ height: "20px", background: "var(--cream)", borderRadius: 0, width: "80px", marginBottom: "14px" }} className="animate-pulse" />
+        <div style={{ height: "26px", background: "var(--cream)", borderRadius: 0, width: "70%", marginBottom: "8px" }} className="animate-pulse" />
+        <div style={{ height: "12px", background: "var(--cream)", borderRadius: 0, width: "30%", marginBottom: "16px" }} className="animate-pulse" />
+        <div style={{ height: "64px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
       </div>
     </div>
   );
@@ -638,7 +638,7 @@ function HomePageContent() {
                 style={{
                   fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 600,
                   letterSpacing: "0.05em", textTransform: "uppercase",
-                  padding: "7px 18px", borderRadius: "4px", cursor: "pointer",
+                  padding: "7px 18px", borderRadius: 0, cursor: "pointer",
                   border: `1px solid ${activeSport === sport ? "var(--signal)" : "rgba(255,255,255,0.12)"}`,
                   background: activeSport === sport ? "var(--signal)" : "transparent",
                   color: activeSport === sport ? "#fff" : "rgba(255,255,255,0.4)",
@@ -668,7 +668,7 @@ function HomePageContent() {
         {/* Error */}
         {error && (
           <div style={{
-            background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)", borderRadius: "10px",
+            background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)", borderRadius: 0,
             padding: "24px", textAlign: "center", marginBottom: "24px",
           }}>
             <p style={{ fontSize: "14px", color: "var(--signal)" }}>{error}</p>
@@ -713,7 +713,7 @@ function HomePageContent() {
         {!loading && !error && games.length === 0 && (
           <div style={{
             background: "var(--surface)", border: "1px solid rgba(17,17,16,0.06)",
-            borderRadius: "10px", padding: "40px 24px", textAlign: "center",
+            borderRadius: 0, padding: "40px 24px", textAlign: "center",
           }}>
             <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>
               No {activeSport} games today
@@ -735,7 +735,7 @@ function HomePageContent() {
         {/* Closing panel */}
         {!loading && (
           <div className="f6" style={{
-            background: "var(--ink)", borderRadius: "10px", overflow: "hidden",
+            background: "var(--ink)", borderRadius: 0, overflow: "hidden",
             display: "grid", gridTemplateColumns: "1fr 1fr",
           }}>
             {[
@@ -782,7 +782,7 @@ function HomePageContent() {
       >
         <div
           style={{
-            background: "var(--warm-white)", borderRadius: "12px",
+            background: "var(--warm-white)", borderRadius: 0,
             padding: "32px", maxWidth: "400px", width: "100%",
             boxShadow: "0 20px 60px rgba(14,14,14,0.25)",
           }}
@@ -799,7 +799,7 @@ function HomePageContent() {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <Link href="/login?mode=signup" style={{
                   fontSize: "14px", fontWeight: 600, color: "#fff",
-                  background: "var(--signal)", padding: "12px 20px", borderRadius: "7px",
+                  background: "var(--signal)", padding: "12px 20px", borderRadius: 0,
                   textDecoration: "none", textAlign: "center", display: "block",
                 }}>
                   Upgrade to Pro →
@@ -826,7 +826,7 @@ function HomePageContent() {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <Link href="/login?mode=signup" style={{
                   fontSize: "14px", fontWeight: 600, color: "#fff",
-                  background: "var(--signal)", padding: "12px 20px", borderRadius: "7px",
+                  background: "var(--signal)", padding: "12px 20px", borderRadius: 0,
                   textDecoration: "none", textAlign: "center", display: "block",
                 }}>
                   Start free →

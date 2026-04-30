@@ -35,7 +35,7 @@ export default function Tooltip({ children, text }: Props) {
           maxWidth: "220px",
           width: "max-content",
           padding: "8px 12px",
-          borderRadius: "4px",
+          borderRadius: 0,
           opacity: show ? 1 : 0,
           visibility: show ? "visible" : "hidden",
           transition: "opacity 150ms ease, visibility 150ms ease",

@@ -53,7 +53,7 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: { game: AnyGame; homeTeamAb
   if (!game.odds) return null;
   const labelStyle: React.CSSProperties = { fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "2px" };
   const valStyle: React.CSSProperties = { fontSize: "13px", fontWeight: 500, color: "var(--ink)" };
-  const rowStyle: React.CSSProperties = { background: "#EDEAE3", borderRadius: "4px", padding: "10px 12px", display: "flex", marginBottom: "14px" };
+  const rowStyle: React.CSSProperties = { background: "#EDEAE3", borderRadius: 0, padding: "10px 12px", display: "flex", marginBottom: "14px" };
 
   if (game.sport === "MLB") {
     const o: MLBGameOdds = game.odds;
@@ -99,7 +99,7 @@ function ClickableCard({
       className="w-full text-left cursor-pointer focus:outline-none"
       style={{
         background: hover ? "#EFEDE7" : "var(--paper)",
-        borderRadius: "6px",
+        borderRadius: 0,
         padding: "20px 24px 18px",
         border: `0.5px solid ${hover ? "rgba(14,14,14,0.18)" : "transparent"}`,
         transform: hover ? "translateY(-1px)" : "translateY(0)",
@@ -197,7 +197,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
         {/* THE READ */}
         {signal && (
-          <div style={{ background: "#EDEAE3", borderRadius: "4px", padding: "10px 13px", marginBottom: "14px" }}>
+          <div style={{ background: "#EDEAE3", borderRadius: 0, padding: "10px 13px", marginBottom: "14px" }}>
             <p style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--muted)", marginBottom: "5px" }}>The Read</p>
             <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.5 }}>{signal}</p>
           </div>
@@ -212,7 +212,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   // Dead (final / live) card
   if (isDead) {
     return (
-      <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: "6px", border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.5 }}>
+      <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 0, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.5 }}>
         <div className="flex justify-between items-center" style={{ marginBottom: "10px" }}>
           <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
           {effectiveStatus === "live" && (
@@ -242,7 +242,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
   // Tomorrow preview card
   return (
-    <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: "6px", border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.65 }}>
+    <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 0, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.65 }}>
       <div style={{ marginBottom: "10px" }}>
         <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
       </div>

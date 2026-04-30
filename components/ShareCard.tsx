@@ -145,7 +145,7 @@ export default function ShareCard({ game, confidenceLabel, shareHook, open, onCl
     fontWeight: 500,
     letterSpacing: "0.04em",
     padding: "10px 16px",
-    borderRadius: "4px",
+    borderRadius: 0,
     cursor: "pointer",
   };
 
@@ -186,7 +186,7 @@ export default function ShareCard({ game, confidenceLabel, shareHook, open, onCl
             width: "480px",
             maxWidth: "100%",
             padding: "40px",
-            borderRadius: "8px",
+            borderRadius: 0,
             margin: "0 auto",
             fontFamily: "var(--sans)",
             position: "relative",
@@ -224,7 +224,7 @@ export default function ShareCard({ game, confidenceLabel, shareHook, open, onCl
               display: "inline-block",
               background: pill.bg, color: pill.text,
               fontSize: "11px", fontWeight: 600, letterSpacing: "0.14em",
-              textTransform: "uppercase", padding: "5px 12px", borderRadius: "3px",
+              textTransform: "uppercase", padding: "5px 12px", borderRadius: 0,
             }}>
               {confidenceLabel}
             </span>

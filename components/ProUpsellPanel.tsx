@@ -21,7 +21,7 @@ export default function ProUpsellPanel({
   return (
     <div style={{
       background: "var(--ink)",
-      borderRadius: "8px",
+      borderRadius: 0,
       padding: "56px 40px",
       position: "relative",
       overflow: "hidden",
@@ -59,7 +59,7 @@ export default function ProUpsellPanel({
             background: "var(--signal)", color: "#FAFAFA",
             fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
             letterSpacing: "0.04em", textDecoration: "none",
-            padding: "12px 24px", borderRadius: "4px",
+            padding: "12px 24px", borderRadius: 0,
           }}
         >
           {ctaLabel}

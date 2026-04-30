@@ -373,9 +373,9 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       console.error(`[breakdown:NBA] game not found in today's slate: ${gameId} — likely already played`);
       return NextResponse.json({ error: "Game not found", gameStarted: true }, { status: 404 });
     }
-    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final") {
-      console.warn(`[breakdown:NBA] game already started: ${gameId} status=${rawGame.gameStatus}`);
-      return NextResponse.json({ error: "Game already started", gameStarted: true }, { status: 409 });
+    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final" || hasGameStarted(rawGame.gameTime, rawGame.gameDate)) {
+      console.warn(`[breakdown:NBA] game already started: ${gameId} status=${rawGame.gameStatus} time=${rawGame.gameTime}`);
+      return NextResponse.json({ error: "Game has already started", gameStarted: true }, { status: 403 });
     }
 
     // Tank01's home/away — may be wrong for Play-In / Playoff games
@@ -539,9 +539,9 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       console.error(`[breakdown:MLB] game not found in today's slate: ${gameId} — likely already played`);
       return NextResponse.json({ error: "Game not found", gameStarted: true }, { status: 404 });
     }
-    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final") {
-      console.warn(`[breakdown:MLB] game already started: ${gameId} status=${rawGame.gameStatus}`);
-      return NextResponse.json({ error: "Game already started", gameStarted: true }, { status: 409 });
+    if (rawGame.gameStatus === "live" || rawGame.gameStatus === "final" || hasGameStarted(rawGame.gameTime, rawGame.gameDate)) {
+      console.warn(`[breakdown:MLB] game already started: ${gameId} status=${rawGame.gameStatus} time=${rawGame.gameTime}`);
+      return NextResponse.json({ error: "Game has already started", gameStarted: true }, { status: 403 });
     }
 
     const { homeTeam, awayTeam } = rawGame;
@@ -675,4 +675,32 @@ function getTodayDateString(): string {
   }).format(now);
   const [month, day, year] = et.split("/");
   return `${year}${month}${day}`;
+}
+
+/**
+ * Returns true when the game's scheduled start time (ET) has been reached or
+ * passed. This is the primary game-start gate — it catches the window between
+ * tip-off / first pitch and when Tank01 updates gameStatus to "live".
+ */
+function hasGameStarted(gameTime: string, gameDate: string): boolean {
+  const today = getTodayDateString();
+  if (gameDate < today) return true;
+  if (gameDate > today) return false;
+
+  const m = (gameTime ?? "").match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*ET$/i);
+  if (!m) return false;
+
+  let gh = parseInt(m[1], 10);
+  const gm = parseInt(m[2], 10);
+  if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
+  if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date());
+  const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+
+  return ch * 60 + cm >= gh * 60 + gm;
 }

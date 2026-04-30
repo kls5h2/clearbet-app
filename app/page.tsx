@@ -151,7 +151,7 @@ export default function HomePage() {
             <li key={l.href}>
               <Link href={l.href} className="hp-nav-link" style={{
                 fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.45)",
-                textDecoration: "none", padding: "5px 12px", borderRadius: "5px",
+                textDecoration: "none", padding: "5px 12px", borderRadius: 0,
                 transition: "all 0.15s", display: "block",
               }}>{l.label}</Link>
             </li>
@@ -166,7 +166,7 @@ export default function HomePage() {
               }}>{truncateEmail(authEmail)}</Link>
               <button onClick={handleNavLogout} className="hp-btn-login" style={{
                 fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
-                background: "none", padding: "7px 16px", borderRadius: "5px",
+                background: "none", padding: "7px 16px", borderRadius: 0,
                 border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s", cursor: "pointer",
               }}>Log out</button>
             </>
@@ -174,12 +174,12 @@ export default function HomePage() {
             <>
               <Link href="/login" className="hp-btn-login" style={{
                 fontSize: "12.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
-                textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
+                textDecoration: "none", padding: "7px 16px", borderRadius: 0,
                 border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s",
               }}>Log in</Link>
               <Link href="/login?mode=signup" className="hp-btn-cta" style={{
                 fontSize: "12.5px", fontWeight: 600, color: "#fff",
-                textDecoration: "none", padding: "7px 18px", borderRadius: "5px",
+                textDecoration: "none", padding: "7px 18px", borderRadius: 0,
                 background: "var(--signal)", transition: "all 0.15s",
               }}>Start free</Link>
             </>
@@ -196,7 +196,7 @@ export default function HomePage() {
           }}
         >
           {[0,1,2].map(i => (
-            <span key={i} style={{ display: "block", width: "20px", height: "2px", background: "rgba(255,255,255,0.6)", borderRadius: "2px" }} />
+            <span key={i} style={{ display: "block", width: "20px", height: "2px", background: "rgba(255,255,255,0.6)", borderRadius: 0 }} />
           ))}
         </button>
         {/* Mobile dropdown */}
@@ -235,12 +235,12 @@ export default function HomePage() {
               <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
                 <Link href="/login" style={{
                   fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.6)",
-                  textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                  textDecoration: "none", padding: "9px 20px", borderRadius: 0,
                   border: "1px solid rgba(255,255,255,0.12)", flex: 1, textAlign: "center",
                 }}>Log in</Link>
                 <Link href="/login?mode=signup" style={{
                   fontSize: "13px", fontWeight: 600, color: "#fff",
-                  textDecoration: "none", padding: "9px 20px", borderRadius: "5px",
+                  textDecoration: "none", padding: "9px 20px", borderRadius: 0,
                   background: "var(--signal)", flex: 1, textAlign: "center",
                 }}>Start free</Link>
               </div>
@@ -297,7 +297,7 @@ export default function HomePage() {
           <div className="hp-hero-ctas" style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", marginBottom: "72px" }}>
             <Link href="/intel" className="hp-cta-primary" style={{
               fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
-              padding: "13px 28px", borderRadius: "6px", background: "var(--signal)",
+              padding: "13px 28px", borderRadius: 0, background: "var(--signal)",
               display: "flex", alignItems: "center", gap: "8px",
               transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
             }}>
@@ -305,7 +305,7 @@ export default function HomePage() {
             </Link>
             <Link href="/how-it-works" className="hp-cta-secondary" style={{
               fontSize: "13.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)",
-              textDecoration: "none", padding: "13px 20px", borderRadius: "6px",
+              textDecoration: "none", padding: "13px 20px", borderRadius: 0,
               border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.15s",
             }}>
               How it works
@@ -318,7 +318,7 @@ export default function HomePage() {
           {/* 3-step grid */}
           <div className="hp-hero-steps hp-step-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px",
-            background: "rgba(255,255,255,0.07)", borderRadius: "10px", overflow: "hidden",
+            background: "rgba(255,255,255,0.07)", borderRadius: 0, overflow: "hidden",
             border: "1px solid rgba(255,255,255,0.07)",
           }}>
             {[
@@ -379,7 +379,7 @@ export default function HomePage() {
 
           <div className="reveal rd1 hp-compare-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px",
-            borderRadius: "10px", overflow: "hidden", border: "1px solid var(--border-med)",
+            borderRadius: 0, overflow: "hidden", border: "1px solid var(--border-med)",
           }}>
             {[
               {
@@ -469,7 +469,7 @@ export default function HomePage() {
           </div>
 
           <div className="reveal rd1" style={{
-            background: "var(--surface)", borderRadius: "12px", overflow: "hidden",
+            background: "var(--surface)", borderRadius: 0, overflow: "hidden",
             boxShadow: "var(--shadow-md)", position: "relative", border: "1px solid rgba(17,17,16,0.06)",
           }}>
             <div style={{ background: "var(--ink)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -494,7 +494,7 @@ export default function HomePage() {
             <div style={{ padding: "16px 32px 0" }}>
               <div className="hp-stats-bar" style={{
                 display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
-                border: "1px solid var(--border-med)", borderRadius: "7px", overflow: "hidden",
+                border: "1px solid var(--border-med)", borderRadius: 0, overflow: "hidden",
               }}>
                 {[
                   { label: "Spread", value: "MIN -3.5" },
@@ -518,11 +518,11 @@ export default function HomePage() {
               {[
                 {
                   num: "01", title: "Game Shape",
-                  body: <span>This is a pace control game. Denver wants structure — slow possessions, Jokić’s gravity, half-court sets. Minnesota wants chaos — push pace, create transition, keep it unpredictable. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "3px", marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Tempo is everything.</span></span>,
+                  body: <span>This is a pace control game. Denver wants structure — slow possessions, Jokić’s gravity, half-court sets. Minnesota wants chaos — push pace, create transition, keep it unpredictable. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Tempo is everything.</span></span>,
                 },
                 {
                   num: "02", title: "Key Drivers",
-                  body: <span>Denver&apos;s half-court execution rate is elite when they control pace. Minnesota&apos;s defense leaks points in set situations but is top-5 in transition. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "3px", marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Favors Denver if slow.</span> <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "3px", marginLeft: "6px", background: "rgba(181,106,18,0.1)", color: "#B56A12" }}>Gobert availability unconfirmed.</span></span>,
+                  body: <span>Denver&apos;s half-court execution rate is elite when they control pace. Minnesota&apos;s defense leaks points in set situations but is top-5 in transition. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Favors Denver if slow.</span> <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(181,106,18,0.1)", color: "#B56A12" }}>Gobert availability unconfirmed.</span></span>,
                 },
                 {
                   num: "03", title: "Base Script",
@@ -561,7 +561,7 @@ export default function HomePage() {
                 ].map((row) => (
                   <div key={row.num} style={{
                     display: "flex", alignItems: "center", gap: "12px",
-                    padding: "9px 14px", borderRadius: "6px",
+                    padding: "9px 14px", borderRadius: 0,
                     background: "rgba(14,14,14,0.04)", border: "1px solid rgba(14,14,14,0.07)",
                   }}>
                     <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", flexShrink: 0, width: "18px" }}>
@@ -581,7 +581,7 @@ export default function HomePage() {
               </div>
               <Link href="/intel" className="hp-preview-btn" style={{
                 fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
-                padding: "13px 32px", borderRadius: "6px", background: "var(--ink)",
+                padding: "13px 32px", borderRadius: 0, background: "var(--ink)",
                 display: "inline-flex", alignItems: "center", gap: "8px", transition: "all 0.2s",
               }}>
                 Read the full breakdown →
@@ -624,7 +624,7 @@ export default function HomePage() {
                     style={{
                       fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
                       letterSpacing: "0.08em", textTransform: "uppercase",
-                      padding: "5px 14px", borderRadius: "3px", cursor: "pointer",
+                      padding: "5px 14px", borderRadius: 0, cursor: "pointer",
                       border: "1px solid var(--border-med)",
                       background: teaserSport === s ? "var(--ink)" : "transparent",
                       color: teaserSport === s ? "#fff" : "var(--muted)",
@@ -638,7 +638,7 @@ export default function HomePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               {teaserLoading
                 ? [1, 2, 3].map(i => (
-                    <div key={i} style={{ height: "52px", background: "var(--cream)", borderRadius: "6px" }} className="animate-pulse" />
+                    <div key={i} style={{ height: "52px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
                   ))
                 : teaserGames.length === 0
                 ? <div style={{ padding: "24px 16px", color: "var(--muted)", fontSize: "14px" }}>No {teaserSport} games today.</div>
@@ -649,7 +649,7 @@ export default function HomePage() {
                       className="hp-teaser-game hp-game-row"
                       style={{
                         display: "grid", gridTemplateColumns: "1fr auto auto", gap: "20px",
-                        alignItems: "center", padding: "15px 16px", borderRadius: "6px",
+                        alignItems: "center", padding: "15px 16px", borderRadius: 0,
                         background: "transparent", transition: "background 0.12s",
                         textDecoration: "none", color: "var(--ink)",
                         border: "1px solid transparent",
@@ -689,7 +689,7 @@ export default function HomePage() {
               </div>
               <Link href={`/intel?sport=${teaserSport}`} className="hp-teaser-btn" style={{
                 fontSize: "13.5px", fontWeight: 600, color: "#fff", textDecoration: "none",
-                padding: "11px 24px", borderRadius: "6px", background: "var(--signal)",
+                padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
                 display: "flex", alignItems: "center", gap: "6px", transition: "all 0.15s", whiteSpace: "nowrap",
               }}>
                 See tonight&apos;s slate →

@@ -124,7 +124,7 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
               {[0, 1, 2].map((i) => (
                 <span key={i} style={{
                   display: "block", width: "20px", height: "2px",
-                  background: "var(--muted)", borderRadius: "2px",
+                  background: "var(--muted)", borderRadius: 0,
                 }} />
               ))}
             </button>
@@ -157,7 +157,7 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
                   color: activePage === l.page ? "var(--ink)" : "var(--muted)",
                   textDecoration: "none",
                   padding: "5px 12px",
-                  borderRadius: "5px",
+                  borderRadius: 0,
                   display: "block",
                   transition: "all 0.12s",
                 }}
@@ -204,7 +204,7 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
               <>
                 <Link href="/login" style={{
                   fontSize: "12.5px", fontWeight: 500, color: "var(--muted)",
-                  textDecoration: "none", padding: "7px 16px", borderRadius: "5px",
+                  textDecoration: "none", padding: "7px 16px", borderRadius: 0,
                   border: "1px solid var(--border-med)", transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
@@ -220,7 +220,7 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
                 </Link>
                 <Link href="/login?mode=signup" style={{
                   fontSize: "12.5px", fontWeight: 600, color: "#fff",
-                  textDecoration: "none", padding: "7px 18px", borderRadius: "5px",
+                  textDecoration: "none", padding: "7px 18px", borderRadius: 0,
                   background: "var(--signal)", transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#b02e24")}
@@ -246,7 +246,7 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
               {[0, 1, 2].map((i) => (
                 <span key={i} style={{
                   display: "block", width: "20px", height: "2px",
-                  background: "var(--muted)", borderRadius: "2px",
+                  background: "var(--muted)", borderRadius: 0,
                 }} />
               ))}
             </button>

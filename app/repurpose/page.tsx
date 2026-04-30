@@ -132,14 +132,14 @@ export default function RepurposePage() {
               autoFocus
               style={{
                 background: "var(--paper)", border: "0.5px solid var(--border)",
-                borderRadius: "4px", padding: "12px 16px",
+                borderRadius: 0, padding: "12px 16px",
                 fontFamily: "var(--sans)", fontSize: "14px", color: "var(--ink)",
                 outline: "none",
               }}
             />
             <button type="submit" style={{
               background: "var(--ink)", color: "#FAFAFA", border: "none",
-              borderRadius: "4px", padding: "12px 16px",
+              borderRadius: 0, padding: "12px 16px",
               fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
               letterSpacing: "0.04em", cursor: "pointer",
             }}>
@@ -192,7 +192,7 @@ export default function RepurposePage() {
                       textAlign: "left",
                       background: active ? "#EFEDE7" : "var(--paper)",
                       border: `0.5px solid ${active ? "rgba(14,14,14,0.2)" : "var(--border)"}`,
-                      borderRadius: "6px",
+                      borderRadius: 0,
                       padding: "14px 18px",
                       cursor: loading ? "default" : "pointer",
                       fontFamily: "inherit",
@@ -265,7 +265,7 @@ function OutputBlock({ title, children }: { title: string; children: React.React
     <div style={{
       background: "var(--paper)",
       border: "0.5px solid var(--border)",
-      borderRadius: "6px",
+      borderRadius: 0,
       padding: "18px 20px",
     }}>
       <h3 style={{
@@ -317,7 +317,7 @@ function CopyRow({ label, value, showChars = false }: { label?: string; value: s
           background: copied ? "var(--ink)" : "transparent",
           color: copied ? "#FAFAFA" : "var(--ink)",
           border: "0.5px solid var(--border)",
-          borderRadius: "4px",
+          borderRadius: 0,
           padding: "6px 12px",
           fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 500,
           cursor: "pointer",

@@ -66,7 +66,7 @@ export default function NotFound() {
             className="nf-btn-primary"
             style={{
               fontSize: "13.5px", fontWeight: 700, color: "#fff", textDecoration: "none",
-              padding: "12px 28px", borderRadius: "6px", background: "var(--signal)",
+              padding: "12px 28px", borderRadius: 0, background: "var(--signal)",
               display: "flex", alignItems: "center", gap: "7px",
               transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
               boxShadow: "0 2px 8px rgba(201,53,42,0.3)",
@@ -79,7 +79,7 @@ export default function NotFound() {
             className="nf-btn-secondary"
             style={{
               fontSize: "13.5px", fontWeight: 500, color: "rgba(255,255,255,0.5)", textDecoration: "none",
-              padding: "12px 22px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)",
+              padding: "12px 22px", borderRadius: 0, border: "1px solid rgba(255,255,255,0.1)",
               transition: "all 0.15s",
             }}
           >

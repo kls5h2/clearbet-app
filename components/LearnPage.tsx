@@ -78,7 +78,7 @@ export default function LearnPage({ article }: Props) {
           <div style={{
             background: "var(--paper)",
             border: "0.5px solid var(--border)",
-            borderRadius: "6px",
+            borderRadius: 0,
             padding: "22px 24px",
           }}>
             <p style={{
@@ -154,7 +154,7 @@ export default function LearnPage({ article }: Props) {
             background: "var(--signal)", color: "#FAFAFA",
             fontFamily: "var(--sans)", fontSize: "13px",
             fontWeight: 500, letterSpacing: "0.04em",
-            padding: "14px 24px", borderRadius: "4px",
+            padding: "14px 24px", borderRadius: 0,
             textDecoration: "none",
           }}>
             See it in a real breakdown →
