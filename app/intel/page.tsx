@@ -50,6 +50,25 @@ function parseGameTime(time: string): number {
   return h * 60 + m;
 }
 
+function isStarted(game: AnyGame): boolean {
+  if (game.gameStatus === "live" || game.gameStatus === "final") return true;
+  const today = getTodayDateString();
+  if (game.gameDate < today) return true;
+  if (game.gameDate > today) return false;
+  const m = (game.gameTime ?? "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return false;
+  let gh = parseInt(m[1], 10);
+  const gm = parseInt(m[2], 10);
+  if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
+  if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date());
+  const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  return ch * 60 + cm >= gh * 60 + gm;
+}
+
 function formatML(ml: number | null | undefined): string {
   if (ml == null) return "—";
   return ml > 0 ? `+${ml}` : `${ml}`;
@@ -94,7 +113,10 @@ function SectionLabel({ icon, text }: { icon: "star" | "grid" | "calendar"; text
 
 // ─── Headliner card ───────────────────────────────────────────────────────────
 
-function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown | null; onRead: () => void }) {
+function HeadlinerCard({ game, bd, onRead, userId, showUpgrade, started }: {
+  game: AnyGame; bd: SlateBreakdown | null; onRead: () => void;
+  userId: string | null | undefined; showUpgrade: boolean; started: boolean;
+}) {
   const [hover, setHover] = useState(false);
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
@@ -112,21 +134,27 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
   const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
   const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
   const insight = bd?.cardSummary ?? null;
+  const isLoggedOut = userId === null;
+  const ctaLabel = isLoggedOut ? "Sign up to read →"
+    : showUpgrade ? "Upgrade to read →"
+    : bd ? "Read the breakdown →"
+    : "Build breakdown →";
+  const statusLabel = game.gameStatus === "final" ? "FINAL" : "GAME IN PROGRESS";
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onRead}
-      onKeyDown={(e) => e.key === "Enter" && onRead()}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      role={started ? undefined : "button"}
+      tabIndex={started ? undefined : 0}
+      onClick={started ? undefined : onRead}
+      onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
+      onMouseEnter={started ? undefined : () => setHover(true)}
+      onMouseLeave={started ? undefined : () => setHover(false)}
       style={{
         background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-        marginBottom: "32px", cursor: "pointer", color: "var(--ink)",
-        boxShadow: hover ? "var(--shadow-lg)" : "var(--shadow-sm)",
-        transform: hover ? "translateY(-3px)" : "translateY(0)",
+        marginBottom: "32px", cursor: started ? "default" : "pointer", color: "var(--ink)",
+        boxShadow: !started && hover ? "var(--shadow-lg)" : "var(--shadow-sm)",
+        transform: !started && hover ? "translateY(-3px)" : "translateY(0)",
         transition: "box-shadow 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
         outline: "none",
       }}
@@ -191,6 +219,9 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
             margin: "20px 0 0", padding: "18px 20px", background: "var(--cream)",
             borderRadius: 0, borderLeft: "3px solid var(--signal)",
             fontSize: "15.5px", lineHeight: 1.7, color: "var(--ink-2)", fontStyle: "italic",
+            filter: showUpgrade ? "blur(4px)" : "none",
+            userSelect: showUpgrade ? "none" : "auto",
+            pointerEvents: showUpgrade ? "none" : "auto",
           }}>
             {insight}
           </div>
@@ -215,15 +246,21 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <ConfBadge label={conf} />
         </div>
-        <div style={{
-          fontSize: "13.5px", fontWeight: 700, color: "#fff",
-          padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
-          display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap",
-          boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
-          transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-        }}>
-          Read the breakdown →
-        </div>
+        {started ? (
+          <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            {statusLabel}
+          </div>
+        ) : (
+          <div style={{
+            fontSize: "13.5px", fontWeight: 700, color: "#fff",
+            padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
+            display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap",
+            boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
+            transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
+          }}>
+            {ctaLabel}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -231,7 +268,7 @@ function HeadlinerCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown | null; onRead: () => void }) {
+function OpenGameCard({ game, bd, onRead, started }: { game: AnyGame; bd: SlateBreakdown | null; onRead: () => void; started: boolean }) {
   const [hover, setHover] = useState(false);
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
@@ -240,18 +277,18 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onRead}
-      onKeyDown={(e) => e.key === "Enter" && onRead()}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      role={started ? undefined : "button"}
+      tabIndex={started ? undefined : 0}
+      onClick={started ? undefined : onRead}
+      onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
+      onMouseEnter={started ? undefined : () => setHover(true)}
+      onMouseLeave={started ? undefined : () => setHover(false)}
       style={{
         background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-        cursor: "pointer", color: "var(--ink)", outline: "none",
-        boxShadow: hover ? "var(--shadow-md)" : "var(--shadow-sm)",
-        transform: hover ? "translateY(-2px)" : "translateY(0)",
+        cursor: started ? "default" : "pointer", color: "var(--ink)", outline: "none",
+        boxShadow: !started && hover ? "var(--shadow-md)" : "var(--shadow-sm)",
+        transform: !started && hover ? "translateY(-2px)" : "translateY(0)",
         transition: "box-shadow 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
       }}
     >
@@ -285,9 +322,15 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
           display: "flex", alignItems: "center", justifyContent: "flex-end",
           paddingTop: "14px", borderTop: "1px solid var(--border)",
         }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
-            {insight ? "Read breakdown →" : "Build breakdown →"}
-          </span>
+          {started ? (
+            <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              {game.gameStatus === "final" ? "Final" : "In progress"}
+            </span>
+          ) : (
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
+              {insight ? "Read breakdown →" : "Build breakdown →"}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -296,7 +339,7 @@ function OpenGameCard({ game, bd, onRead }: { game: AnyGame; bd: SlateBreakdown 
 
 // ─── Locked game card ─────────────────────────────────────────────────────────
 
-function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; userId: string | null | undefined; onRead: () => void }) {
+function LockedGameCard({ game, bd, showUpgrade, userId, onRead, started }: { game: AnyGame; bd: SlateBreakdown | null; showUpgrade: boolean; userId: string | null | undefined; onRead: () => void; started: boolean }) {
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
   const barColor = c?.bar ?? "var(--pass)";
@@ -308,16 +351,16 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
     : "Build breakdown →";
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onRead}
-      onKeyDown={(e) => e.key === "Enter" && onRead()}
+      role={started ? undefined : "button"}
+      tabIndex={started ? undefined : 0}
+      onClick={started ? undefined : onRead}
+      onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
       style={{
         background: "var(--surface)", borderRadius: 0,
         border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
         color: "var(--ink)", opacity: 0.75,
         boxShadow: "var(--shadow-sm)",
-        cursor: "pointer", outline: "none",
+        cursor: started ? "default" : "pointer", outline: "none",
       }}
     >
       <div style={{ height: "3px", background: barColor }} />
@@ -350,9 +393,15 @@ function LockedGameCard({ game, bd, showUpgrade, userId, onRead }: { game: AnyGa
         display: "flex", alignItems: "center", justifyContent: "flex-end",
         padding: "13px 24px", borderTop: "1px solid var(--border)", background: "var(--warm-white)",
       }}>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
-          {ctaLabel}
-        </span>
+        {started ? (
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            {game.gameStatus === "final" ? "Final" : "In progress"}
+          </span>
+        ) : (
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
+            {ctaLabel}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -688,7 +737,7 @@ function HomePageContent() {
             {loading
               ? <SkeletonHeadliner />
               : headliner
-              ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} />
+              ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} userId={userId} showUpgrade={tier !== null && dailyUsed} started={isStarted(headliner)} />
               : null}
           </div>
         )}
@@ -703,8 +752,8 @@ function HomePageContent() {
                 : listGames.map((game) => {
                     const bd = breakdowns.get(game.gameId) ?? null;
                     return proUser
-                      ? <OpenGameCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} />
-                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} userId={userId} onRead={() => handleRead(game.gameId)} />;
+                      ? <OpenGameCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} started={isStarted(game)} />
+                      : <LockedGameCard key={game.gameId} game={game} bd={bd} showUpgrade={tier !== null && dailyUsed} userId={userId} onRead={() => handleRead(game.gameId)} started={isStarted(game)} />;
                   })}
             </div>
           </div>
