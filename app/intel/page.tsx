@@ -450,6 +450,7 @@ function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSport: Sport = searchParams.get("sport")?.toUpperCase() === "MLB" ? "MLB" : "NBA";
+  const accountDeleted = searchParams.get("deleted") === "1";
 
   const [activeSport, setActiveSport] = useState<Sport>(initialSport);
   const [games, setGames] = useState<AnyGame[]>([]);
@@ -625,6 +626,17 @@ function HomePageContent() {
     `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav activePage="today" />
+
+      {accountDeleted && (
+        <div style={{
+          background: "var(--ink)", color: "#fff",
+          textAlign: "center", padding: "12px 24px",
+          fontSize: "13.5px", fontWeight: 500, fontFamily: "var(--sans)",
+          letterSpacing: "0.01em",
+        }}>
+          Account deleted. Sorry to see you go.
+        </div>
+      )}
 
       {/* Page hero band */}
       <div className="f2" style={{
