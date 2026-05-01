@@ -789,7 +789,7 @@ function HomePageContent() {
         {/* Tomorrow */}
         {!loading && tomorrowSorted.length > 0 && (
           <div className="f5">
-            <SectionLabel icon="calendar" text="Tomorrow · Breakdowns Available Day Of Game" />
+            <SectionLabel icon="calendar" text="Tomorrow's slate" />
             <div style={{ display: "flex", flexDirection: "column", marginBottom: "40px" }}>
               {tomorrowSorted.map((g) => <TomorrowRow key={g.gameId} game={g} />)}
             </div>
