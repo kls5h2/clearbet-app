@@ -252,7 +252,9 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
             <MarketLine>
               {odds
                 ? breakdown.marketRead
-                : `Lines haven't posted yet — check back closer to ${isMLB ? "first pitch" : "tip-off"} for the full market picture.`}
+                : gameStatus === "final"
+                  ? "Lines reflect conditions at time of generation. See odds snapshot above."
+                  : `Lines haven't posted yet — check back closer to ${isMLB ? "first pitch" : "tip-off"} for the full market picture.`}
             </MarketLine>
             <StepTip>Line movement matters. When a line moves toward the underdog, informed money is usually driving it.</StepTip>
           </StepBlock>
