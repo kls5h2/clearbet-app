@@ -557,7 +557,6 @@ export default async function MyBreakdownsPage({
                     homeTeam={row.home_team}
                     awayTeam={row.away_team}
                     sport={row.sport}
-                    confidenceLevel={row.confidence_level}
                     confidenceLabel={row.confidence_label}
                     peek={row.card_summary}
                     formattedDate={formatDate(row.game_date)}

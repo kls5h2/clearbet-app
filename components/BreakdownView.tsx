@@ -23,7 +23,6 @@ const PRO_FEATURES = [
   "Full NBA + MLB coverage — every game on the slate",
   "Your complete breakdown archive — filter by sport, date, outcome",
   "Outcome tracking (W / L / Push / No Action) on every breakdown",
-  "Signal Grade with 4-factor detail",
   "Share cards for any game",
   "Regenerate any breakdown",
   "Unlimited breakdowns",
@@ -36,8 +35,6 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
   "FRAGILE":    { color: "var(--fragile)", label: "Fragile" },
   "PASS":       { color: "var(--pass)",  label: "Pass" },
 };
-
-const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 
 export function isPitcherUnknown(name: string | undefined | null): boolean {
   if (!name) return true;
@@ -179,7 +176,6 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
   const isMLB = game.sport === "MLB";
   const confColor = CONF_COLORS[breakdown.confidenceLabel]?.color ?? "var(--clear)";
   const confLabel = CONF_COLORS[breakdown.confidenceLabel]?.label ?? breakdown.confidenceLabel;
-  const signalGrade = SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B";
 
 
   return (

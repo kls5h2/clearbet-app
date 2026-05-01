@@ -38,7 +38,6 @@ const PLACEHOLDER_BREAKDOWN: BreakdownResult = {
   glossaryDefinition: "The number of possessions a team uses per 48 minutes — a core tempo measure.",
 };
 
-const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 const CONF_SUBTITLES: Record<string, string> = {
   "CLEAR SPOT": "One of the cleaner reads tonight",
   "LEAN":       "Directional but not clean",
@@ -245,7 +244,6 @@ export default function BreakdownPage() {
 
   const confColor = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.color ?? "var(--clear)") : "var(--clear)";
   const confLabel = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.label ?? "") : "";
-  const signalGrade = breakdown ? (SIGNAL_GRADE[breakdown.confidenceLevel] ?? "B") : "—";
 
   return (
     <>
@@ -296,25 +294,16 @@ export default function BreakdownPage() {
             )}
           </div>
 
-          {/* Signal grade block — shown once breakdown loads */}
+          {/* Confidence block — shown once breakdown loads */}
           {status === "done" && breakdown && !gated && (
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: "12px",
+              display: "inline-flex", alignItems: "center", gap: "8px",
               background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 0, padding: "12px 16px",
+              borderRadius: 0, padding: "10px 16px",
             }}>
-              <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
-                  Signal Grade
-                </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "26px", fontWeight: 600, color: "var(--signal)", letterSpacing: "-0.02em" }}>
-                  {signalGrade}
-                </div>
-              </div>
-              <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.08)" }} />
+              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: confColor, display: "block", flexShrink: 0 }} />
               <div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: confColor }}>
-                  <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: confColor, display: "block" }} />
                   {confLabel}
                 </div>
                 <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>

@@ -95,11 +95,6 @@ const CATEGORIES: Category[] = [
         badge: "cb-pass",
         def: "Too many moving parts to form a strong view. The data doesn't land clearly. Knowing when to pass is part of thinking clearly about betting.",
       },
-      {
-        name: "Signal Grade",
-        keywords: "signal grade letter quality data",
-        def: <>A letter grade (A–D) rating the quality of the data environment for a game. <strong style={{ fontWeight: 600, color: "var(--ink)" }}>Not a confidence rating on the outcome</strong> — a measure of how much useful signal the data contains.</>,
-      },
     ],
   },
   {

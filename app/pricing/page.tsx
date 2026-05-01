@@ -152,7 +152,6 @@ export default function PricingPage() {
             }}
           >
             <span style={{ display: "block" }}>Read every game.</span>
-            <span style={{ display: "block" }}>Understand every grade.</span>
             <span
               style={{
                 display: "block",
@@ -333,10 +332,6 @@ export default function PricingPage() {
                     },
                     { yes: true, node: "Glossary & How It Works" },
                     { yes: true, node: "Line Translator" },
-                    {
-                      yes: false,
-                      node: "Signal Grade detail (4-factor breakdown)",
-                    },
                     {
                       yes: false,
                       node: "Full slate — every game, every night",
@@ -590,13 +585,6 @@ export default function PricingPage() {
                         Unlimited breakdowns
                       </strong>{" "}
                       — the whole board, every night
-                    </>,
-                    <>
-                      <strong style={{ fontWeight: 600, color: "#fff" }}>
-                        Signal Grade detail
-                      </strong>{" "}
-                      — see the four factors behind every grade, not just the
-                      letter
                     </>,
                     <>
                       <strong style={{ fontWeight: 600, color: "#fff" }}>

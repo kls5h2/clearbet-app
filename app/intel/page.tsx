@@ -20,7 +20,6 @@ const CONF: Record<string, { bar: string; badgeBg: string; badgeText: string; la
 };
 
 const CONF_RANK: Record<string, number> = { "CLEAR SPOT": 1, "LEAN": 2, "FRAGILE": 3, "PASS": 4 };
-const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,7 +158,6 @@ function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed
   const conf = bd?.confidenceLabel ?? null;
   const c = conf ? CONF[conf] : null;
   const barColor = c?.bar ?? "var(--pass)";
-  const grade = SIGNAL_GRADE[bd?.confidenceLevel ?? 2] ?? "B+";
   const away = game.awayTeam.teamName;
   const home = game.homeTeam.teamName;
   const odds = game.odds as Record<string, number | null> | null;
@@ -207,9 +205,6 @@ function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed
             The Cleanest Read Tonight
           </span>
         </div>
-        <span style={{ fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600, color: "var(--signal)", letterSpacing: "0.06em" }}>
-          SIGNAL {grade}
-        </span>
       </div>
 
       {/* Body */}
@@ -228,21 +223,20 @@ function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed
         {/* Stats grid — ML columns hidden on mobile */}
         <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: 0 }}>
           <div className="hl-stats-grid" style={{
-            display: "grid", gridTemplateColumns: "repeat(5, 1fr)", minWidth: "360px", overflow: "hidden",
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "300px", overflow: "hidden",
           }}>
             {[
               { label: spreadLabel, value: spreadVal, cls: "" },
               { label: "Total",     value: total,     cls: "" },
               { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "hl-ml-col" },
               { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "hl-ml-col" },
-              { label: "Signal",    value: grade,     cls: "hl-sig-col", sig: true },
             ].map((s, i) => (
               <div key={s.label} className={s.cls} style={{
-                padding: "13px 14px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
+                padding: "13px 14px", borderRight: i < 3 ? "1px solid var(--border)" : "none",
                 background: "var(--warm-white)", textAlign: "center",
               }}>
                 <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "7px" }}>{s.label}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 600, color: s.sig ? "var(--signal)" : "var(--ink)" }}>{s.value}</div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -641,7 +635,7 @@ function HomePageContent() {
     <>
     <style>{`
       @media (max-width: 768px) {
-        .hl-ml-col, .hl-sig-col { display: none !important; }
+        .hl-ml-col { display: none !important; }
         .hl-stats-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
       }
     `}</style>
@@ -692,7 +686,7 @@ function HomePageContent() {
           </div>
           <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.45)", lineHeight: 1.55, maxWidth: "480px" }}>
             {activeSport === "NBA"
-              ? "Every game analyzed. Signal graded. Your decision to make."
+              ? "Every game analyzed. Your decision to make."
               : "Pitcher matchups, bullpen depth, and park factors — all in plain English."}
           </div>
         </div>

@@ -9,12 +9,9 @@ interface ArchiveCardProps {
   awayTeam: string;
   sport: string;
   formattedDate: string;
-  confidenceLevel: number;
   confidenceLabel: string;
   peek: string | null;
 }
-
-const GRADES: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" };
 
 function confClass(label: string): string {
   const l = (label ?? "").toUpperCase().trim();
@@ -30,7 +27,6 @@ export default function ArchiveCard({
   awayTeam,
   sport,
   formattedDate,
-  confidenceLevel,
   confidenceLabel,
   peek,
 }: ArchiveCardProps) {
@@ -129,35 +125,6 @@ export default function ArchiveCard({
               flexShrink: 0,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontFamily: "var(--mono)",
-                  fontSize: 22,
-                  fontWeight: 600,
-                  color: "var(--signal)",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1,
-                  textAlign: "right",
-                }}
-              >
-                {GRADES[confidenceLevel] ?? "—"}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--mono)",
-                  fontSize: 8.5,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "var(--muted-light)",
-                  textAlign: "right",
-                  marginTop: 2,
-                }}
-              >
-                Signal
-              </div>
-            </div>
-
             <div className={confClass(confidenceLabel)}>
               <span className="dot" />
               {confidenceLabel || "—"}
