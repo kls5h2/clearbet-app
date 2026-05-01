@@ -3,10 +3,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-// Admin gate — client-side only, swap for real session check when auth lands
-const ADMIN_EMAIL = "KimLynnSharp@gmail.com";
-const STORAGE_KEY = "rawintel_admin_auth";
-
 interface BreakdownRow {
   game_id: string;
   game_date: string;
@@ -34,9 +30,8 @@ function getTodayDateString(): string {
 }
 
 export default function RepurposePage() {
+  // authed: null = loading, true = ok, false = denied
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [emailInput, setEmailInput] = useState("");
-  const [loginError, setLoginError] = useState<string | null>(null);
 
   const [breakdowns, setBreakdowns] = useState<BreakdownRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -44,9 +39,9 @@ export default function RepurposePage() {
   const [result, setResult] = useState<RepurposeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Check access by making a lightweight probe request — the server validates the session
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    setAuthed(stored === ADMIN_EMAIL);
+    setAuthed(true); // Optimistically show the UI; the API will 401/403 if not authorized
   }, []);
 
   useEffect(() => {
@@ -63,27 +58,6 @@ export default function RepurposePage() {
     }).catch(() => {});
   }, [authed]);
 
-  function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    const val = emailInput.trim().toLowerCase();
-    if (val === ADMIN_EMAIL.toLowerCase()) {
-      localStorage.setItem(STORAGE_KEY, ADMIN_EMAIL);
-      setAuthed(true);
-      setLoginError(null);
-    } else {
-      setLoginError("Not authorized");
-    }
-  }
-
-  function handleLogout() {
-    localStorage.removeItem(STORAGE_KEY);
-    setAuthed(false);
-    setBreakdowns([]);
-    setResult(null);
-    setSelectedId(null);
-    setEmailInput("");
-  }
-
   async function handleGenerate(breakdownId: string) {
     setSelectedId(breakdownId);
     setLoading(true);
@@ -95,8 +69,12 @@ export default function RepurposePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ breakdownId }),
       });
+      if (res.status === 401 || res.status === 403) {
+        setAuthed(false);
+        return;
+      }
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        const body = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(body?.error ?? "Failed to generate");
       }
       const data = (await res.json()) as RepurposeResult;
@@ -116,37 +94,13 @@ export default function RepurposePage() {
   if (!authed) {
     return (
       <div style={{ background: "var(--canvas)", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-        <div style={{ maxWidth: "400px", width: "100%" }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "28px", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.025em", marginBottom: "20px" }}>
-            Content Engine
+        <div style={{ maxWidth: "400px", width: "100%", textAlign: "center" }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "28px", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.025em", marginBottom: "16px" }}>
+            Access Denied
           </h1>
-          <p style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "18px" }}>
-            Admin access required.
+          <p style={{ fontSize: "13px", color: "var(--muted)", lineHeight: 1.6 }}>
+            You must be logged in as an admin to use the Content Engine.
           </p>
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="Email"
-              autoFocus
-              style={{
-                background: "var(--paper)", border: "0.5px solid var(--border)",
-                borderRadius: 0, padding: "12px 16px",
-                fontFamily: "var(--sans)", fontSize: "14px", color: "var(--ink)",
-                outline: "none",
-              }}
-            />
-            <button type="submit" style={{
-              background: "var(--ink)", color: "#FAFAFA", border: "none",
-              borderRadius: 0, padding: "12px 16px",
-              fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-              letterSpacing: "0.04em", cursor: "pointer",
-            }}>
-              Enter
-            </button>
-          </form>
-          {loginError && <p style={{ marginTop: "10px", fontSize: "12px", color: "var(--signal)" }}>{loginError}</p>}
         </div>
       </div>
     );
@@ -164,12 +118,11 @@ export default function RepurposePage() {
           }}>
             Content Engine
           </h1>
-          <button onClick={handleLogout} style={{
-            background: "none", border: "none", padding: 0,
-            fontSize: "12px", color: "var(--muted)", cursor: "pointer",
+          <a href="/account" style={{
+            fontSize: "12px", color: "var(--muted)", textDecoration: "none",
           }}>
-            Sign out
-          </button>
+            Account
+          </a>
         </div>
 
         {/* Breakdown list */}

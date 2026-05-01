@@ -26,7 +26,7 @@ const SIGNAL_GRADE: Record<number, string> = { 1: "A", 2: "B+", 3: "C+", 4: "C" 
 
 interface SlateBreakdown {
   gameId: string;
-  userId: string | null;
+  isOwn: boolean;
   cardSummary: string | null;
   confidenceLabel: ConfidenceLabel | null;
   confidenceLevel: ConfidenceLevel | null;
@@ -91,7 +91,7 @@ function getCtaLabel(
   if (!authReady) return null;
   if (!userId) return "Sign up to read →";
   if (proUser) return bd ? "Read breakdown →" : "Build breakdown →";
-  if (bd && bd.userId === userId) return "Read breakdown →";
+  if (bd && bd.isOwn) return "Read breakdown →";
   if (!bd && !dailyUsed) return "Build breakdown →";
   return "Upgrade to read →";
 }
@@ -466,22 +466,25 @@ function HomePageContent() {
   useEffect(() => {
     const client = createClient();
     async function loadTier(uid: string) {
-      const { data } = await client.from("profiles").select("tier").eq("id", uid).maybeSingle();
-      const resolvedTier = (data?.tier as Tier) ?? "free";
-      setTier(resolvedTier);
-      if (resolvedTier === "free") {
-        const windowStart = getStartOfDayET();
-        const { data: usageRows } = await client
-          .from("breakdown_usage")
-          .select("id")
-          .eq("user_id", uid)
-          .gte("created_at", windowStart)
-          .limit(1);
-        setDailyUsed((usageRows?.length ?? 0) > 0);
-      } else {
-        setDailyUsed(false);
+      try {
+        const { data } = await client.from("profiles").select("tier").eq("id", uid).maybeSingle();
+        const resolvedTier = (data?.tier as Tier) ?? "free";
+        setTier(resolvedTier);
+        if (resolvedTier === "free") {
+          const windowStart = getStartOfDayET();
+          const { data: usageRows } = await client
+            .from("breakdown_usage")
+            .select("id")
+            .eq("user_id", uid)
+            .gte("created_at", windowStart)
+            .limit(1);
+          setDailyUsed((usageRows?.length ?? 0) > 0);
+        } else {
+          setDailyUsed(false);
+        }
+      } finally {
+        setAuthReady(true);
       }
-      setAuthReady(true);
     }
     client.auth.getUser().then(({ data }) => {
       if (data.user) { setUserId(data.user.id); loadTier(data.user.id); }
@@ -504,20 +507,25 @@ function HomePageContent() {
       .order("created_at", { ascending: false })
       .limit(500)
       .then(({ data }) => {
-        const map = new Map<string, SlateBreakdown>();
-        const seen = new Set<string>();
-        for (const row of (data ?? [])) {
-          if (seen.has(row.game_id)) continue;
-          seen.add(row.game_id);
-          map.set(row.game_id, {
-            gameId: row.game_id,
-            userId: row.user_id ?? null,
-            cardSummary: row.card_summary ?? null,
-            confidenceLabel: (row.confidence_label as ConfidenceLabel) ?? null,
-            confidenceLevel: (row.confidence_level as ConfidenceLevel) ?? null,
-          });
-        }
-        setBreakdowns(map);
+        // Capture userId from state at query-completion time for ownership mapping
+        setUserId((currentUserId) => {
+          const map = new Map<string, SlateBreakdown>();
+          const seen = new Set<string>();
+          for (const row of (data ?? [])) {
+            if (seen.has(row.game_id)) continue;
+            seen.add(row.game_id);
+            // Map user_id to isOwn immediately — don't store the UUID in state
+            map.set(row.game_id, {
+              gameId: row.game_id,
+              isOwn: row.user_id != null && row.user_id === currentUserId,
+              cardSummary: row.card_summary ?? null,
+              confidenceLabel: (row.confidence_label as ConfidenceLabel) ?? null,
+              confidenceLevel: (row.confidence_level as ConfidenceLevel) ?? null,
+            });
+          }
+          setBreakdowns(map);
+          return currentUserId;
+        });
       }, () => {});
   }, []);
 
@@ -600,7 +608,7 @@ function HomePageContent() {
       router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
       return;
     }
-    if (bd?.userId === userId || (!bd && !dailyUsed)) {
+    if (bd?.isOwn || (!bd && !dailyUsed)) {
       router.push(`/breakdown/${encodeURIComponent(gameId)}?sport=${activeSport}`);
       return;
     }

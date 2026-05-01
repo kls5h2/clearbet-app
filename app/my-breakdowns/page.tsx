@@ -204,7 +204,7 @@ export default async function MyBreakdownsPage({
         className="f2"
         style={{
           background: "var(--ink)",
-          padding: "32px 40px",
+          padding: "32px clamp(16px, 4vw, 40px)",
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "space-between",
@@ -390,7 +390,7 @@ export default async function MyBreakdownsPage({
         style={{
           background: "var(--surface)",
           borderBottom: "1px solid var(--border-med)",
-          padding: "14px 40px",
+          padding: "14px clamp(16px, 4vw, 40px)",
           display: "flex",
           alignItems: "center",
           gap: 24,
@@ -437,7 +437,7 @@ export default async function MyBreakdownsPage({
       {/* PAGE CONTENT */}
       <div
         className="f3"
-        style={{ maxWidth: 860, margin: "0 auto", padding: "32px 40px 80px" }}
+        style={{ maxWidth: 860, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 80px" }}
       >
         {error && (
           <div
@@ -459,7 +459,7 @@ export default async function MyBreakdownsPage({
           <div
             style={{
               textAlign: "center",
-              padding: "80px 40px",
+              padding: "80px clamp(16px, 4vw, 40px)",
             }}
           >
             <div style={{ fontSize: 40, marginBottom: 20, opacity: 0.4 }}>
@@ -576,7 +576,7 @@ export default async function MyBreakdownsPage({
       <footer
         style={{
           textAlign: "center",
-          padding: "20px 40px",
+          padding: "20px clamp(16px, 4vw, 40px)",
           fontSize: 11.5,
           color: "var(--muted-light)",
           lineHeight: 1.8,

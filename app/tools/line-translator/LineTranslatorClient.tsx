@@ -18,6 +18,14 @@ interface TranslateResult {
   watch: string[];
 }
 
+function allowStrong(html: string): string {
+  return html
+    .replace(/<(?!\/?strong>)[^>]+>/gi, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 const EXAMPLES = [
   { label: "Denver -3.5 (-110)", value: "Denver Nuggets -3.5 (-110)" },
   { label: "Jokić o28.5 pts", value: "Jokić over 28.5 points (-115)" },
@@ -169,7 +177,7 @@ export default function LineTranslatorClient() {
       <Nav />
 
       {/* Hero band */}
-      <div style={{ background: "var(--ink)", padding: "32px 40px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "var(--ink)", padding: "32px clamp(16px, 4vw, 40px)", position: "relative", overflow: "hidden" }}>
         <div aria-hidden style={{
           position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
           fontSize: "clamp(140px,22vw,260px)", fontWeight: 900, color: "transparent",
@@ -189,7 +197,7 @@ export default function LineTranslatorClient() {
       </div>
 
       {/* Page content */}
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px 40px 80px" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px clamp(16px, 4vw, 40px) 80px" }}>
 
         {/* Input card */}
         <div style={{ background: "#fff", borderRadius: 0, border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>
@@ -384,7 +392,7 @@ export default function LineTranslatorClient() {
               {/* Translation */}
               <div
                 style={{ padding: "22px 24px", fontSize: "16px", lineHeight: 1.7, color: "#2E2C2A", borderBottom: "1px solid rgba(14,14,14,0.06)" }}
-                dangerouslySetInnerHTML={{ __html: result.translation }}
+                dangerouslySetInnerHTML={{ __html: allowStrong(result.translation) }}
               />
 
               {/* Implied probability */}
@@ -408,7 +416,7 @@ export default function LineTranslatorClient() {
                 </div>
                 <div
                   style={{ fontSize: "14px", lineHeight: 1.65, color: "#2E2C2A" }}
-                  dangerouslySetInnerHTML={{ __html: result.context }}
+                  dangerouslySetInnerHTML={{ __html: allowStrong(result.context) }}
                 />
               </div>
 

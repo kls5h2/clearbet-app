@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { BreakdownResult } from "@/lib/types";
 
 const MODEL = "claude-sonnet-4-6";
@@ -23,7 +24,19 @@ interface RepurposeOutput {
   learn_page_slug: string;
 }
 
+const ADMIN_EMAIL = "KimLynnSharp@gmail.com";
+
 export async function POST(req: NextRequest) {
+  // Server-side auth — must be logged in as admin
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
   let breakdownId: string;
   try {
     const body = await req.json();

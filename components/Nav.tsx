@@ -39,6 +39,10 @@ export default function Nav({ backHref, backLabel = "Today's Intel", activePage 
       setEmail(data.user?.email ?? null);
       setAuthReady(true);
       if (data.user) loadTier(data.user.id);
+    }).catch(() => {
+      setEmail(null);
+      setTier(null);
+      setAuthReady(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setEmail(session?.user?.email ?? null);

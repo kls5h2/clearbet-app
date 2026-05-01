@@ -95,7 +95,7 @@ export default async function ArchiveDetailPage({
     .from("breakdowns")
     .select("game_id, game_date, home_team, away_team, sport, breakdown_content, confidence_level, confidence_label, created_at")
     .eq("game_id", gameId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) notFound();
 

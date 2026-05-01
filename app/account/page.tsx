@@ -34,31 +34,35 @@ export default function AccountPage() {
 
   useEffect(() => {
     const client = createClient();
-    client.auth.getUser().then(async ({ data }) => {
-      if (!data.user) { router.replace("/login"); return; }
-      setUserId(data.user.id);
-      setEmail(data.user.email ?? null);
+    async function loadProfile() {
+      try {
+        const { data } = await client.auth.getUser();
+        if (!data.user) { router.replace("/login"); return; }
+        setUserId(data.user.id);
+        setEmail(data.user.email ?? null);
 
-      const { data: profile } = await client
-        .from("profiles")
-        .select("tier")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      const t = (profile?.tier as Tier) ?? "free";
-      setTier(t);
+        const { data: profile } = await client
+          .from("profiles")
+          .select("tier")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        const t = (profile?.tier as Tier) ?? "free";
+        setTier(t);
 
-      if (t === "free") {
-        const startOfDayET = getStartOfDayET();
-        const { count } = await client
-          .from("breakdown_usage")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", data.user.id)
-          .gte("created_at", startOfDayET);
-        setDailyUsed(count ?? 0);
+        if (t === "free") {
+          const startOfDayET = getStartOfDayET();
+          const { count } = await client
+            .from("breakdown_usage")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", data.user.id)
+            .gte("created_at", startOfDayET);
+          setDailyUsed(count ?? 0);
+        }
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
-    });
+    }
+    loadProfile();
   }, [router]);
 
   async function handleLogout() {
@@ -106,12 +110,20 @@ export default function AccountPage() {
   async function handleCancelPlan() {
     if (!userId) return;
     setCancelSaving(true);
-    const client = createClient();
-    await client.from("profiles").update({ tier: "free" }).eq("id", userId);
-    setTier("free");
-    setCancelConfirm(false);
-    setCancelSaving(false);
-    setCancelMsg("Your plan has been cancelled. You're now on the free tier.");
+    try {
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setCancelMsg(`Error: ${body?.error ?? "Failed to cancel plan."}`);
+        return;
+      }
+      setCancelConfirm(false);
+      setCancelMsg("Your plan will remain active until the end of your billing period.");
+    } catch {
+      setCancelMsg("Something went wrong. Please try again.");
+    } finally {
+      setCancelSaving(false);
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -368,7 +380,7 @@ export default function AccountPage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ fontSize: "13.5px", color: "var(--ink)", lineHeight: 1.55 }}>
-                    Are you sure? You&apos;ll lose access to Pro features immediately.
+                    Are you sure? Your Pro access will continue until the end of your current billing period.
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <button

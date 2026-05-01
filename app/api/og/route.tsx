@@ -4,9 +4,10 @@ import { NextRequest } from "next/server";
 export const runtime = "edge";
 
 // Latin-subset woff2 URLs from Google Fonts CSS2 API responses (stable)
-const INTER_REGULAR_URL = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2";
-const INTER_BOLD_URL    = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7W0Q5nw.woff2";
-const MONO_URL            = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxTOlOVk6OThhvA.woff2";
+const INTER_REGULAR_URL    = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2";
+const INTER_BOLD_URL       = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7W0Q5nw.woff2";
+const INTER_EXTRABOLD_URL  = "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7W0Q5nw.woff2";
+const MONO_URL             = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxTOlOVk6OThhvA.woff2";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -32,6 +33,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
 
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.warn("[og] Supabase env vars missing — gameId lookup disabled");
+  }
+
   // ── Line Translator share card ────────────────────────────────────────────
   if (type === "line-translator") {
     const inputLine    = searchParams.get("line") ?? "";
@@ -40,11 +45,27 @@ export async function GET(req: NextRequest) {
     const tranTrunc    = translation.length > 150 ? translation.slice(0, 147) + "…" : translation;
     const lineFs       = inputLine.length <= 18 ? 88 : inputLine.length <= 26 ? 72 : inputLine.length <= 36 ? 58 : 46;
 
-    const [interRegular, interBold, monoFont] = await Promise.all([
-      fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
-      fetch(INTER_BOLD_URL).then((r) => r.arrayBuffer()),
-      fetch(MONO_URL).then((r) => r.arrayBuffer()),
-    ]);
+    let interRegular: ArrayBuffer | null = null;
+    let interBold: ArrayBuffer | null = null;
+    let interExtraBold: ArrayBuffer | null = null;
+    let monoFont: ArrayBuffer | null = null;
+    try {
+      [interRegular, interBold, interExtraBold, monoFont] = await Promise.all([
+        fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
+        fetch(INTER_BOLD_URL).then((r) => r.arrayBuffer()),
+        fetch(INTER_EXTRABOLD_URL).then((r) => r.arrayBuffer()),
+        fetch(MONO_URL).then((r) => r.arrayBuffer()),
+      ]);
+    } catch {
+      // fall through — fonts stay null, Satori falls back to system fonts
+    }
+
+    const fontOptions = interRegular && interBold && interExtraBold && monoFont ? [
+      { name: "Inter", data: interRegular,   weight: 400 as const, style: "normal" as const },
+      { name: "Inter", data: interBold,      weight: 700 as const, style: "normal" as const },
+      { name: "Inter", data: interExtraBold, weight: 800 as const, style: "normal" as const },
+      { name: "Mono",  data: monoFont,       weight: 400 as const, style: "normal" as const },
+    ] : [];
 
     return new ImageResponse(
       (
@@ -105,11 +126,7 @@ export async function GET(req: NextRequest) {
       {
         width: 1200,
         height: 630,
-        fonts: [
-          { name: "Inter", data: interRegular, weight: 400, style: "normal" },
-          { name: "Inter", data: interBold,    weight: 700, style: "normal" },
-          { name: "Mono",  data: monoFont,     weight: 400, style: "normal" },
-        ],
+        fonts: fontOptions,
       }
     );
   }
@@ -166,11 +183,27 @@ export async function GET(req: NextRequest) {
   const displayTitle = title || "Game Breakdown";
   const fs = titleFontSize(displayTitle.length);
 
-  const [interRegular, interBold, monoFont] = await Promise.all([
-    fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
-    fetch(INTER_BOLD_URL).then((r) => r.arrayBuffer()),
-    fetch(MONO_URL).then((r) => r.arrayBuffer()),
-  ]);
+  let interRegular: ArrayBuffer | null = null;
+  let interBold: ArrayBuffer | null = null;
+  let interExtraBold: ArrayBuffer | null = null;
+  let monoFont: ArrayBuffer | null = null;
+  try {
+    [interRegular, interBold, interExtraBold, monoFont] = await Promise.all([
+      fetch(INTER_REGULAR_URL).then((r) => r.arrayBuffer()),
+      fetch(INTER_BOLD_URL).then((r) => r.arrayBuffer()),
+      fetch(INTER_EXTRABOLD_URL).then((r) => r.arrayBuffer()),
+      fetch(MONO_URL).then((r) => r.arrayBuffer()),
+    ]);
+  } catch {
+    // fall through — fonts stay null, Satori falls back to system fonts
+  }
+
+  const fontOptions = interRegular && interBold && interExtraBold && monoFont ? [
+    { name: "Inter", data: interRegular,   weight: 400 as const, style: "normal" as const },
+    { name: "Inter", data: interBold,      weight: 700 as const, style: "normal" as const },
+    { name: "Inter", data: interExtraBold, weight: 800 as const, style: "normal" as const },
+    { name: "Mono",  data: monoFont,       weight: 400 as const, style: "normal" as const },
+  ] : [];
 
   return new ImageResponse(
     (
@@ -313,11 +346,7 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
-      fonts: [
-        { name: "Inter", data: interRegular, weight: 400, style: "normal" },
-        { name: "Inter", data: interBold,    weight: 700, style: "normal" },
-        { name: "Mono",  data: monoFont,     weight: 400, style: "normal" },
-      ],
+      fonts: fontOptions,
     }
   );
 }

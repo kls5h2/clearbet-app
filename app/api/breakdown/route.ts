@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
   let sport: Sport;
   let regenerate: boolean;
 
+  const VALID_SPORTS = new Set(["NBA", "MLB"]);
   try {
     const body = await req.json();
     gameId = body?.gameId;
@@ -146,6 +147,9 @@ export async function POST(req: NextRequest) {
     regenerate = body?.regenerate === true;
     if (!gameId || typeof gameId !== "string") {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
+    }
+    if (!VALID_SPORTS.has(sport)) {
+      return NextResponse.json({ error: "Invalid sport" }, { status: 400 });
     }
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -217,12 +221,16 @@ export async function POST(req: NextRequest) {
   // calendar day (midnight-to-midnight ET), NOT a rolling 24h. Resets at 00:00 ET.
   if (tier === "free") {
     const startOfDayET = getStartOfDayET();
-    const { count } = await authClient
+    const { count, error: countErr } = await authClient
       .from("breakdown_usage")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .gte("created_at", startOfDayET);
-    const used = count ?? 0;
+    if (countErr || count === null) {
+      console.error(`[breakdown] usage count query failed for user=${user.id}:`, countErr?.message ?? "count was null");
+      return NextResponse.json({ error: "Failed to check usage" }, { status: 500 });
+    }
+    const used = count;
     if (used >= 1) {
       console.warn(`[breakdown] soft gate (cap) for user=${user.id}: ${used}/1 used since ${startOfDayET}`);
       const game = await buildLightGame(gameId, sport);
@@ -687,7 +695,7 @@ function hasGameStarted(gameTime: string, gameDate: string): boolean {
   if (gameDate < today) return true;
   if (gameDate > today) return false;
 
-  const m = (gameTime ?? "").match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*ET$/i);
+  const m = (gameTime ?? "").match(/^(\d{1,2}):(\d{2})\s*(AM|PM)(\s*ET)?$/i);
   if (!m) return false;
 
   let gh = parseInt(m[1], 10);
