@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import Nav from "@/components/Nav";
 import ArchiveCard from "@/components/ArchiveCard";
 import OutcomePills, { type Outcome } from "@/components/OutcomePills";
-import ProUpsellPanel from "@/components/ProUpsellPanel";
 import { createClient } from "@/lib/supabase/server";
 import { getTierForUser } from "@/lib/tier";
 
@@ -146,20 +145,195 @@ export default async function MyBreakdownsPage({
   if (!user) redirect("/login?next=/my-breakdowns");
 
   const tier = await getTierForUser(supabase, user.id);
+
+  // ── Free user: show their history with locked Pro features ──────────────────
   if (tier !== "pro") {
+    const { data: freeData } = await supabase
+      .from("breakdowns")
+      .select(
+        "id, game_id, game_date, home_team, away_team, sport, confidence_level, confidence_label, created_at, card_summary, outcome"
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    const freeRows: BreakdownRow[] = freeData ?? [];
+    const freeGroups = groupByDate(freeRows);
+    const freeDateKeys = Array.from(freeGroups.keys());
+
     return (
       <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
         <Nav activePage="my-breakdowns" />
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "3rem 1.5rem 0" }}>
-          <ProUpsellPanel
-            heading="Your breakdown archive is behind Pro."
-            body="Pro keeps a complete record of every breakdown you run — filterable by sport, date, and outcome, with a card summary on each one."
-          />
+
+        {/* Hero */}
+        <div
+          className="f2"
+          style={{
+            background: "var(--ink)",
+            padding: "32px clamp(16px, 4vw, 40px)",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 24,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
+              fontSize: "clamp(140px, 22vw, 260px)", fontWeight: 900,
+              color: "transparent", WebkitTextStroke: "1px rgba(255,255,255,0.03)",
+              lineHeight: 1, pointerEvents: "none", userSelect: "none", fontFamily: "var(--sans)",
+            }}
+          >R</div>
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{
+              fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 10,
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+              <span style={{ width: 20, height: 1, background: "var(--signal)", display: "inline-block", flexShrink: 0 }} />
+              My Breakdowns
+            </div>
+            <div style={{ fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.15 }}>
+              Every breakdown<br />you&apos;ve ever run.
+            </div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+              {freeRows.length} breakdown{freeRows.length === 1 ? "" : "s"} on record.
+            </div>
+          </div>
+          <div style={{ position: "relative", zIndex: 1, textAlign: "right", flexShrink: 0 }}>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 22, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em" }}>
+              {freeRows.length}
+            </div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+              Total
+            </div>
+          </div>
         </div>
+
+        {/* Locked filter bar */}
+        <div
+          className="f2"
+          style={{
+            background: "var(--surface)",
+            borderBottom: "1px solid var(--border-med)",
+            padding: "14px clamp(16px, 4vw, 40px)",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+            position: "sticky",
+            top: 54,
+            zIndex: 90,
+            boxShadow: "0 2px 8px rgba(17,17,16,0.03)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, opacity: 0.38, pointerEvents: "none", userSelect: "none" }}>
+            {(["Sport · All / NBA / MLB", "Date · All time / 7 days / 30 days", "Outcome · Won / Lost / Push"] as const).map((label, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {i > 0 && <div style={{ width: 1, height: 20, background: "var(--border-med)", marginRight: 10 }} />}
+                <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-light)", flexShrink: 0 }}>
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+            <svg width="11" height="13" viewBox="0 0 11 13" fill="none" aria-hidden="true">
+              <rect x="1" y="5" width="9" height="7.5" rx="0" stroke="var(--muted)" strokeWidth="1.3" />
+              <path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="var(--muted)" strokeWidth="1.3" strokeLinecap="square" />
+            </svg>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>
+              Pro only
+            </span>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div className="f3" style={{ maxWidth: 860, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 80px" }}>
+
+          {/* Upsell banner */}
+          <div style={{
+            background: "var(--ink)", borderRadius: 0,
+            padding: "20px 24px", marginBottom: 28,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 20, flexWrap: "wrap",
+          }}>
+            <div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>
+                Upgrade to Pro
+              </div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 1.6, maxWidth: 460 }}>
+                Unlimited breakdowns, full archive with filters, outcome tracking (Won / Lost / Push), and Breakdown Chat.
+              </div>
+            </div>
+            <a
+              href="/pricing"
+              style={{
+                display: "inline-flex", alignItems: "center",
+                padding: "10px 20px", borderRadius: 0,
+                background: "var(--signal)", color: "#fff",
+                fontWeight: 700, fontSize: 13.5, fontFamily: "var(--sans)",
+                textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(201,53,42,0.3)",
+              }}
+            >
+              Upgrade → $9.99/mo
+            </a>
+          </div>
+
+          {/* Breakdown list */}
+          {freeDateKeys.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "80px clamp(16px, 4vw, 40px)" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: 8 }}>
+                No breakdowns yet.
+              </div>
+              <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, maxWidth: 320, margin: "0 auto 28px" }}>
+                Start with today&apos;s slate to build your history.
+              </p>
+              <Link href="/" style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", textDecoration: "none", padding: "12px 28px", background: "var(--signal)", display: "inline-flex", alignItems: "center", gap: 7 }}>
+                View today&apos;s slate →
+              </Link>
+            </div>
+          ) : (
+            freeDateKeys.map((dateKey) => {
+              const dateRows = freeGroups.get(dateKey)!;
+              return (
+                <div key={dateKey} style={{ marginBottom: 6 }}>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-light)", padding: "16px 0 8px", display: "flex", alignItems: "center", gap: 12 }}>
+                    {formatDate(dateKey)}
+                    <span style={{ flex: 1, height: 1, background: "var(--border)", display: "block" }} />
+                  </div>
+                  {dateRows.map((row) => (
+                    <div key={row.id} style={{ marginBottom: 8 }}>
+                      <ArchiveCard
+                        gameId={row.game_id}
+                        homeTeam={row.home_team}
+                        awayTeam={row.away_team}
+                        sport={row.sport}
+                        confidenceLabel={row.confidence_label}
+                        peek={row.card_summary}
+                        formattedDate={formatDate(row.game_date)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <footer style={{ textAlign: "center", padding: "20px clamp(16px, 4vw, 40px)", fontSize: 11.5, color: "var(--muted-light)", lineHeight: 1.8 }}>
+          For informational purposes only. RawIntel does not provide financial, betting, or investment advice.{" "}© RawIntel LLC
+        </footer>
       </div>
     );
   }
 
+  // ── Pro user ────────────────────────────────────────────────────────────────
   let query = supabase
     .from("breakdowns")
     .select(

@@ -448,6 +448,63 @@ export default function BreakdownPage() {
 
             <BreakdownView breakdown={breakdown} game={game} tier={tier ?? "free"} gated={gated ?? undefined} />
 
+            {/* Breakdown Chat upsell — free users only, not gated */}
+            {!gated && tier === "free" && (
+              <div style={{
+                marginTop: "32px",
+                border: "1px solid var(--border-med)",
+                borderRadius: 0,
+                overflow: "hidden",
+              }}>
+                {/* Header */}
+                <div style={{ background: "var(--ink)", padding: "16px 22px" }}>
+                  <div style={{
+                    fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                  }}>
+                    Breakdown Chat
+                  </div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                    Have a follow-up? Ask the data.
+                  </div>
+                </div>
+                {/* Body */}
+                <div style={{ background: "var(--surface)", padding: "20px 22px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+                    {[
+                      "What does this mean for the total?",
+                      "How does the injury change this read?",
+                      "What's the strongest case against this lean?",
+                    ].map((q) => (
+                      <div key={q} style={{
+                        fontSize: "13.5px", color: "var(--muted)",
+                        padding: "10px 14px",
+                        border: "1px solid var(--border-med)",
+                        background: "var(--warm-white)",
+                        fontStyle: "italic",
+                        lineHeight: 1.4,
+                      }}>
+                        {q}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <svg width="11" height="13" viewBox="0 0 11 13" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                      <rect x="1" y="5" width="9" height="7.5" rx="0" stroke="var(--muted)" strokeWidth="1.3" />
+                      <path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="var(--muted)" strokeWidth="1.3" strokeLinecap="square" />
+                    </svg>
+                    <span style={{ fontSize: "12.5px", color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.02em" }}>
+                      Pro only.{" "}
+                    </span>
+                    <Link href="/pricing" style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--signal)", textDecoration: "none" }}>
+                      Upgrade → $9.99/mo
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Share — Pro only, not gated */}
             {!gated && tier === "pro" && (
               <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
