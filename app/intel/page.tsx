@@ -71,6 +71,27 @@ function isStarted(game: AnyGame): boolean {
   return ch * 60 + cm >= gh * 60 + gm;
 }
 
+// Returns true when the game should be labelled FINAL: either the API says so,
+// or >3 hours have elapsed since the scheduled start time (handles stale status).
+function isFinalByTime(game: AnyGame): boolean {
+  if (game.gameStatus === "final") return true;
+  const today = getTodayDateString();
+  if (game.gameDate < today) return true;
+  if (game.gameDate > today) return false;
+  const m = (game.gameTime ?? "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return false;
+  let gh = parseInt(m[1], 10);
+  const gm = parseInt(m[2], 10);
+  if (m[3].toUpperCase() === "PM" && gh !== 12) gh += 12;
+  if (m[3].toUpperCase() === "AM" && gh === 12) gh = 0;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date());
+  const ch = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  return ch * 60 + cm >= gh * 60 + gm + 180;
+}
+
 function formatML(ml: number | null | undefined): string {
   if (ml == null) return "—";
   return ml > 0 ? `+${ml}` : `${ml}`;
@@ -153,7 +174,7 @@ function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed
   const insight = bd?.cardSummary ?? null;
   const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
   const isUpgradeGated = cta === "Upgrade to read →" || cta === "Sign up to read →";
-  const statusLabel = game.gameStatus === "final" ? "FINAL" : "GAME IN PROGRESS";
+  const statusLabel = isFinalByTime(game) ? "FINAL" : "GAME IN PROGRESS";
 
   return (
     <div
@@ -357,7 +378,7 @@ function SlateCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed, st
         }}>
           {started ? (
             <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {game.gameStatus === "final" ? "Final" : "In progress"}
+              {isFinalByTime(game) ? "Final" : "In progress"}
             </span>
           ) : cta === null ? (
             <span style={{ width: "100px", height: "16px", background: "var(--cream)", borderRadius: 0, display: "block" }} className="animate-pulse" />
