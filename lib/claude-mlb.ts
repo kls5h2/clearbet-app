@@ -14,6 +14,8 @@ import type {
   BreakdownResult,
   ConfidenceLevel,
   ConfidenceLabel,
+  FragilityItem,
+  VerificationResult,
 } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
@@ -178,6 +180,33 @@ Return valid JSON only. No markdown, no preamble.
   "glossaryDefinition": "string"
 }`;
 
+const DATA_INTEGRITY_RULES = `## DATA INTEGRITY RULES — NON-NEGOTIABLE
+
+1. You are only permitted to cite data present in this payload. Do not use training knowledge to fill missing data. If a stat is not in the payload, it does not exist for this breakdown.
+
+2. Any field containing _UNAVAILABLE must be acknowledged as missing — never estimated. If h2h_records = 'H2H_DATA_UNAVAILABLE', write "Head-to-head data was not available for this matchup." Never write specific H2H records, series history, or game-by-game results that are not explicitly in the payload.
+
+3. If this payload contains a confidenceLevelPreset, use that value as the confidenceLevel in your response. Do not override it. The preset was determined by data quality verification and takes precedence over your own assessment.
+
+4. If this payload contains a fragilityReason, include it as the first item in your fragilityCheck array with color "amber". Do not omit it or paraphrase it.`;
+
+function formatVerificationSection(v: VerificationResult): string {
+  const lines = ["━━━ DATA QUALITY VERIFICATION ━━━"];
+  if (v.verificationFlags.length === 0) {
+    lines.push("All checks passed — no data quality issues detected.");
+  } else {
+    v.verificationFlags.forEach((f) => lines.push(`⚠ ${f}`));
+  }
+  if (v.confidenceLevelPreset !== null) {
+    const labels: Record<number, string> = { 1: "CLEAR SPOT", 2: "LEAN", 3: "FRAGILE", 4: "PASS" };
+    lines.push(`\nconfidenceLevelPreset: ${v.confidenceLevelPreset} (${labels[v.confidenceLevelPreset]}) — Use this as your confidenceLevel. Do not override.`);
+  }
+  if (v.fragilityReason !== null) {
+    lines.push(`fragilityReason: "${v.fragilityReason}" — This must be the first item in your fragilityCheck array with color "amber". Do not omit or paraphrase it.`);
+  }
+  return lines.join("\n");
+}
+
 // Shared instruction block injected before each team's Injuries row.
 // Forces Claude to treat "Availability unconfirmed" / stale entries as
 // UNKNOWN STATUS rather than as confirmed absences. Adapted for MLB —
@@ -195,6 +224,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   const {
     game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries,
     homePlayoffContext, awayPlayoffContext, homeBullpen, awayBullpen, h2h, parkFactor, umpire, lineMovement,
+    verification,
   } = data;
   const { homeTeam, awayTeam, odds, homePitcher, awayPitcher } = game;
 
@@ -279,7 +309,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   };
 
   const formatH2H = (record: H2HRecord | null): string => {
-    if (!record) return "No prior meetings this season";
+    if (!record) return "H2H_DATA_UNAVAILABLE";
     const games = record.games
       .map((g) => {
         const homeWon = g.homePts > g.awayPts;
@@ -346,10 +376,12 @@ Home (${homeTeam.teamAbv}): ${formatPitcher(homePitcher)}
 Away (${awayTeam.teamAbv}): ${formatPitcher(awayPitcher)}
 
 ━━━ BETTING LINES ━━━
-Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds?.homeMoneyline ?? null)} / ${awayTeam.teamAbv} ${formatOdds(odds?.awayMoneyline ?? null)}
-Run Line: ${homeTeam.teamAbv} ${odds?.runLine !== null && odds?.runLine !== undefined ? (odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine) : "N/A"}
-Total (O/U): ${odds?.total ?? "N/A"} runs
-Implied probability: ${homeTeam.teamAbv} ${odds?.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds?.impliedAwayProbability ?? "?"}%
+${odds
+  ? `Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds.homeMoneyline)} / ${awayTeam.teamAbv} ${formatOdds(odds.awayMoneyline)}
+Run Line: ${homeTeam.teamAbv} ${odds.runLine !== null && odds.runLine !== undefined ? (odds.runLine > 0 ? `+${odds.runLine}` : odds.runLine) : "N/A"}
+Total (O/U): ${odds.total ?? "N/A"} runs
+Implied probability: ${homeTeam.teamAbv} ${odds.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds.impliedAwayProbability ?? "?"}%`
+  : "ODDS_NOT_YET_POSTED — Lines have not been set for this game. Do not reference or estimate any betting line."}
 ${movementLines.length > 0 ? `\n━━━ LINE MOVEMENT (opening → current) ━━━\n${movementLines.join("\n")}` : "\n━━━ LINE MOVEMENT ━━━\nOpening line not yet recorded — first fetch of the day"}
 
 ━━━ SEASON SERIES (H2H) ━━━
@@ -373,7 +405,7 @@ Runs/game: ${homeTeamStats.runsPerGame}
 Runs allowed/game: ${homeTeamStats.runsAllowedPerGame}
 Team ERA: ${formatERA(homeTeamStats.teamERA)}
 Top hitters: ${formatHitters(homeTeamStats.topHitters)}
-Recent form (last 5): ${formatRecentForm(homeRecentForm)}
+Recent form (last 5): ${homeRecentForm.length >= 3 ? formatRecentForm(homeRecentForm) : "RECENT_FORM_UNAVAILABLE"}
 ${INJURY_INSTRUCTION}
 Injuries: ${formatInjuries(stripConfirmedPitcher(injuries.homeInjuries))}
 
@@ -383,9 +415,11 @@ Runs/game: ${awayTeamStats.runsPerGame}
 Runs allowed/game: ${awayTeamStats.runsAllowedPerGame}
 Team ERA: ${formatERA(awayTeamStats.teamERA)}
 Top hitters: ${formatHitters(awayTeamStats.topHitters)}
-Recent form (last 5): ${formatRecentForm(awayRecentForm)}
+Recent form (last 5): ${awayRecentForm.length >= 3 ? formatRecentForm(awayRecentForm) : "RECENT_FORM_UNAVAILABLE"}
 ${INJURY_INSTRUCTION}
 Injuries: ${formatInjuries(stripConfirmedPitcher(injuries.awayInjuries))}
+
+${formatVerificationSection(verification)}
 
 Now produce the seven-step RawIntel MLB breakdown. Return valid JSON only.`;
 }
@@ -411,7 +445,7 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
     : "MLB is in its offseason.";
 
   const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${mlbContext} Do not infer season context from roster data alone.`;
-  const systemPrompt = MLB_SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
+  const systemPrompt = MLB_SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n${DATA_INTEGRITY_RULES}\n\n## THE VOICE`);
 
   const message = await client.messages.create({
     model: MODEL,
@@ -461,6 +495,20 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
     4: "PASS",
   };
   parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+
+  // Apply server-side confidence preset — takes precedence over Claude's own assessment
+  if (data.verification.confidenceLevelPreset !== null) {
+    parsed.confidenceLevel = data.verification.confidenceLevelPreset;
+    parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+  }
+
+  // Prepend fragilityReason if set — server-side enforcement in case Claude omitted it
+  if (data.verification.fragilityReason !== null) {
+    const presetItem: FragilityItem = { item: data.verification.fragilityReason, color: "amber" };
+    if (!parsed.fragilityCheck.some((f) => f.item === data.verification.fragilityReason)) {
+      parsed.fragilityCheck = [presetItem, ...parsed.fragilityCheck];
+    }
+  }
 
   // Strip internal data flags that Claude occasionally leaks into the user-facing
   // text. These are prompt-context labels, not content — they must never render.

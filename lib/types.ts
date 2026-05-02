@@ -108,6 +108,7 @@ export interface TeamSeasonStats {
   wins: number;
   losses: number;
   topPlayers: PlayerStat[];
+  lastUpdated?: string | null;
 }
 
 export interface PlayerStat {
@@ -160,6 +161,12 @@ export interface LineMovement {
   awayMLMovement: number | null;
 }
 
+export interface VerificationResult {
+  verificationFlags: string[];
+  confidenceLevelPreset: ConfidenceLevel | null;
+  fragilityReason: string | null;
+}
+
 export interface GameDetailData {
   game: NBAGame;
   homeTeamStats: TeamSeasonStats;
@@ -173,6 +180,7 @@ export interface GameDetailData {
   awayPlayoffContext: PlayoffContext | null;
   h2h: H2HRecord | null;
   lineMovement: LineMovement | null;
+  verification: VerificationResult;
 }
 
 // ─── MLB ──────────────────────────────────────────────────────────────────────
@@ -279,6 +287,7 @@ export interface MLBGameDetailData {
   parkFactor: MLBParkFactor | null;
   umpire: MLBUmpire | null;
   lineMovement: LineMovement | null;
+  verification: VerificationResult;
 }
 
 // ─── Union type used by GameCard and BreakdownView ────────────────────────────

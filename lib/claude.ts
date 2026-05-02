@@ -4,7 +4,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import type { GameDetailData, BreakdownResult, ConfidenceLevel, ConfidenceLabel } from "./types";
+import type { GameDetailData, BreakdownResult, ConfidenceLevel, ConfidenceLabel, FragilityItem, VerificationResult } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -148,6 +148,16 @@ Return valid JSON only. No markdown, no preamble.
   "glossaryDefinition": "string"
 }`;
 
+const DATA_INTEGRITY_RULES = `## DATA INTEGRITY RULES — NON-NEGOTIABLE
+
+1. You are only permitted to cite data present in this payload. Do not use training knowledge to fill missing data. If a stat is not in the payload, it does not exist for this breakdown.
+
+2. Any field containing _UNAVAILABLE must be acknowledged as missing — never estimated. If h2h_records = 'H2H_DATA_UNAVAILABLE', write "Head-to-head data was not available for this matchup." Never write specific H2H records, series history, or game-by-game results that are not explicitly in the payload.
+
+3. If this payload contains a confidenceLevelPreset, use that value as the confidenceLevel in your response. Do not override it. The preset was determined by data quality verification and takes precedence over your own assessment.
+
+4. If this payload contains a fragilityReason, include it as the first item in your fragilityCheck array with color "amber". Do not omit it or paraphrase it.`;
+
 /**
  * Parse a "last played {Month} {day}" substring out of an injury description.
  * Returns both the reconstructed Date and the original label (e.g. "Apr 6").
@@ -184,8 +194,25 @@ function getPlayoffRound(month: number, day: number): string {
   return "Playoffs";
 }
 
+function formatVerificationSection(v: VerificationResult): string {
+  const lines = ["━━━ DATA QUALITY VERIFICATION ━━━"];
+  if (v.verificationFlags.length === 0) {
+    lines.push("All checks passed — no data quality issues detected.");
+  } else {
+    v.verificationFlags.forEach((f) => lines.push(`⚠ ${f}`));
+  }
+  if (v.confidenceLevelPreset !== null) {
+    const labels: Record<number, string> = { 1: "CLEAR SPOT", 2: "LEAN", 3: "FRAGILE", 4: "PASS" };
+    lines.push(`\nconfidenceLevelPreset: ${v.confidenceLevelPreset} (${labels[v.confidenceLevelPreset]}) — Use this as your confidenceLevel. Do not override.`);
+  }
+  if (v.fragilityReason !== null) {
+    lines.push(`fragilityReason: "${v.fragilityReason}" — This must be the first item in your fragilityCheck array with color "amber". Do not omit or paraphrase it.`);
+  }
+  return lines.join("\n");
+}
+
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement, verification } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   const formatRecord = (w: number, l: number) => `${w}-${l}`;
@@ -235,7 +262,7 @@ ${renderTeam(awayTeam.teamName, espnInjuries.awayInjuries)}`;
     const roundName = getPlayoffRound(m, d);
 
     if (!espnSeries.ok) {
-      return `\n━━━ SERIES CONTEXT ━━━\nSeries score unavailable — do not make assumptions about elimination stakes or series standing.`;
+      return `\n━━━ SERIES CONTEXT ━━━\nSeries record: SERIES_RECORD_UNAVAILABLE — do not make assumptions about elimination stakes or series standing.`;
     }
 
     const s = espnSeries.series;
@@ -298,10 +325,12 @@ ${renderTeam(awayTeam.teamName, espnInjuries.awayInjuries)}`;
 Date: ${game.gameDate} — ${game.gameTime}
 
 ━━━ BETTING LINES ━━━
-Spread: ${homeTeam.teamAbv} ${formatOdds(odds?.spread ?? null)} (home)
-Total (O/U): ${odds?.total ?? "N/A"}
-Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds?.homeMoneyline ?? null)} / ${awayTeam.teamAbv} ${formatOdds(odds?.awayMoneyline ?? null)}
-Implied probability: ${homeTeam.teamAbv} ${odds?.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds?.impliedAwayProbability ?? "?"}%
+${odds
+  ? `Spread: ${homeTeam.teamAbv} ${formatOdds(odds.spread)} (home)
+Total (O/U): ${odds.total ?? "N/A"}
+Moneyline: ${homeTeam.teamAbv} ${formatOdds(odds.homeMoneyline)} / ${awayTeam.teamAbv} ${formatOdds(odds.awayMoneyline)}
+Implied probability: ${homeTeam.teamAbv} ${odds.impliedHomeProbability ?? "?"}% / ${awayTeam.teamAbv} ${odds.impliedAwayProbability ?? "?"}%`
+  : "ODDS_NOT_YET_POSTED — Lines have not been set for this game. Do not reference or estimate any betting line."}
 ${movementLines.length > 0 ? `\n━━━ LINE MOVEMENT (opening → current) ━━━\n${movementLines.join("\n")}` : "\n━━━ LINE MOVEMENT ━━━\nOpening line not yet recorded — first fetch of the day"}
 
 ━━━ SEASON SERIES (H2H) ━━━
@@ -314,7 +343,7 @@ Games: ${h2h.games.map((g) => {
     return `${g.date.slice(4, 6)}/${g.date.slice(6, 8)}: ${g.away}@${g.home} ${g.awayPts}-${g.homePts} (${winner} W)`;
   }).join(", ")}
 ${h2h.wins > 0 ? `Avg margin in ${homeTeam.teamAbv} wins: +${h2h.avgMarginFor}` : ""}${h2h.losses > 0 ? `  Avg margin in ${homeTeam.teamAbv} losses: -${h2h.avgMarginAgainst}` : ""}`
-  : "No prior meetings this season"}
+  : "H2H_DATA_UNAVAILABLE"}
 
 ━━━ PLAYOFF CONTEXT ━━━
 ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins, homeTeamStats.losses)}
@@ -329,14 +358,16 @@ Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
 Points per game: ${homeTeamStats.pointsPerGame}
 Points allowed per game: ${homeTeamStats.pointsAllowedPerGame}${optionalStat("Pace", homeTeamStats.pace)}${optionalStat("Offensive rating", homeTeamStats.offensiveRating)}${optionalStat("Defensive rating", homeTeamStats.defensiveRating)}${optionalStat("Rebounds per game", homeTeamStats.reboundsPerGame)}${optionalStat("Assists per game", homeTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", homeTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", homeTeamStats.threePointAttempts)}${optionalStat("3pt%", homeTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(homeTeamStats.topPlayers)}
-Recent form (last 5): ${formatRecentForm(homeRecentForm)}
+Recent form (last 5): ${homeRecentForm.length >= 3 ? formatRecentForm(homeRecentForm) : "RECENT_FORM_UNAVAILABLE"}
 
 ━━━ ${awayTeam.teamAbv} (AWAY) ━━━
 Record: ${formatRecord(awayTeamStats.wins, awayTeamStats.losses)}
 Points per game: ${awayTeamStats.pointsPerGame}
 Points allowed per game: ${awayTeamStats.pointsAllowedPerGame}${optionalStat("Pace", awayTeamStats.pace)}${optionalStat("Offensive rating", awayTeamStats.offensiveRating)}${optionalStat("Defensive rating", awayTeamStats.defensiveRating)}${optionalStat("Rebounds per game", awayTeamStats.reboundsPerGame)}${optionalStat("Assists per game", awayTeamStats.assistsPerGame)}${optionalStat("Turnovers per game", awayTeamStats.turnoversPerGame)}${optionalStat("3pt attempts per game", awayTeamStats.threePointAttempts)}${optionalStat("3pt%", awayTeamStats.threePointPct, 3)}
 Top players: ${formatTopPlayers(awayTeamStats.topPlayers)}
-Recent form (last 5): ${formatRecentForm(awayRecentForm)}
+Recent form (last 5): ${awayRecentForm.length >= 3 ? formatRecentForm(awayRecentForm) : "RECENT_FORM_UNAVAILABLE"}
+
+${formatVerificationSection(verification)}
 
 Now produce the seven-step RawIntel breakdown. Return valid JSON only.`;
 }
@@ -395,7 +426,7 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
     : `The NBA is currently in its offseason.`;
 
   const dateContext = `Today's date is ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${nbaContext} Do not infer season context from roster data alone.`;
-  const systemPrompt = SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n## THE VOICE`);
+  const systemPrompt = SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n${DATA_INTEGRITY_RULES}\n\n## THE VOICE`);
 
   // ─── TEMPORARY DEBUG LOGGING — remove when done diagnosing ─────────────────
   console.log("\n════════════════════════════════════════════════════════════════════");
@@ -475,6 +506,20 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
     4: "PASS",
   };
   parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+
+  // Apply server-side confidence preset — takes precedence over Claude's own assessment
+  if (data.verification.confidenceLevelPreset !== null) {
+    parsed.confidenceLevel = data.verification.confidenceLevelPreset;
+    parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+  }
+
+  // Prepend fragilityReason if set — server-side enforcement in case Claude omitted it
+  if (data.verification.fragilityReason !== null) {
+    const presetItem: FragilityItem = { item: data.verification.fragilityReason, color: "amber" };
+    if (!parsed.fragilityCheck.some((f) => f.item === data.verification.fragilityReason)) {
+      parsed.fragilityCheck = [presetItem, ...parsed.fragilityCheck];
+    }
+  }
 
   return parsed;
 }

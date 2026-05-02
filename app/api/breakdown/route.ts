@@ -33,6 +33,8 @@ import type {
   MLBParkFactor,
   BreakdownApiResponse,
   Sport,
+  VerificationResult,
+  ConfidenceLevel,
 } from "@/lib/types";
 
 /**
@@ -466,6 +468,78 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       ? { wins: t01H2H.losses, losses: t01H2H.wins, games: t01H2H.games, avgMarginFor: t01H2H.avgMarginAgainst, avgMarginAgainst: t01H2H.avgMarginFor }
       : t01H2H;
 
+    // ─── NBA Data Verification ────────────────────────────────────────────────
+    const verificationFlags: string[] = [];
+    let confidenceLevelPreset: ConfidenceLevel | null = null;
+    let fragilityReason: string | null = null;
+
+    const forceFragile = (flag: string, reason: string) => {
+      verificationFlags.push(flag);
+      confidenceLevelPreset = 3;
+      if (!fragilityReason) fragilityReason = reason;
+    };
+
+    // 1. ESPN injury source / freshness checks
+    if (!espnInjuriesFinal.ok) {
+      forceFragile(
+        "ESPN injury data unavailable — injury status unverified for both rosters",
+        "Injury data could not be verified. Treat all roster assumptions as unconfirmed.",
+      );
+    } else {
+      const injAgeMs = Date.now() - new Date(espnInjuriesFinal.fetchedAt).getTime();
+      if (injAgeMs > 4 * 3600 * 1000) {
+        forceFragile(
+          `ESPN injury data is ${Math.round(injAgeMs / 3600000)}h old — may not reflect today's availability`,
+          "Injury data freshness could not be confirmed. Lineup assumptions carry elevated uncertainty.",
+        );
+      }
+
+      // 2. Top-player status check
+      const topPlayerNames = new Set([
+        ...homeStats.topPlayers.map((p) => p.playerName.toLowerCase()),
+        ...awayStats.topPlayers.map((p) => p.playerName.toLowerCase()),
+      ]);
+      const WATCHED_STATUSES = new Set(["Out", "Doubtful", "Questionable", "Day-To-Day"]);
+      const allEspnEntries = [
+        ...espnInjuriesFinal.homeInjuries,
+        ...espnInjuriesFinal.awayInjuries,
+      ];
+      const impacted = allEspnEntries.find(
+        (e) => topPlayerNames.has(e.playerName.toLowerCase()) && WATCHED_STATUSES.has(e.status),
+      );
+      if (impacted) {
+        forceFragile(
+          `Top player ${impacted.playerName} listed as ${impacted.status}`,
+          `${impacted.playerName} is listed as ${impacted.status}. Confidence reduced pending lineup confirmation.`,
+        );
+      }
+    }
+
+    // 3. Tank01 team stats freshness check (only runs when timestamp is available)
+    for (const [abv, stats] of [[homeTeam.teamAbv, homeStats], [awayTeam.teamAbv, awayStats]] as const) {
+      if (stats.lastUpdated) {
+        const ageMs = Date.now() - new Date(stats.lastUpdated).getTime();
+        if (ageMs > 36 * 3600 * 1000) {
+          forceFragile(
+            `${abv} team stats may not reflect last game (last updated ${Math.round(ageMs / 3600000)}h ago)`,
+            "Team stats may not reflect the most recent game.",
+          );
+        }
+      }
+    }
+
+    // 4. Null signal flags (rendering handled in buildUserMessage)
+    if (!odds) verificationFlags.push("Odds not yet posted for this game — ODDS_NOT_YET_POSTED");
+    if (!h2h)  verificationFlags.push("H2H data unavailable — H2H_DATA_UNAVAILABLE");
+    if (homeForm.length < 3) verificationFlags.push(`${homeTeam.teamAbv} recent form limited (${homeForm.length} games) — RECENT_FORM_UNAVAILABLE`);
+    if (awayForm.length < 3) verificationFlags.push(`${awayTeam.teamAbv} recent form limited (${awayForm.length} games) — RECENT_FORM_UNAVAILABLE`);
+    const now = new Date();
+    const inPlayoffWindow = (now.getMonth() + 1 === 4 && now.getDate() >= 18) || (now.getMonth() + 1 >= 5 && now.getMonth() + 1 <= 7);
+    if (inPlayoffWindow && !espnSeriesFinal.ok) verificationFlags.push("Playoff series record unavailable — SERIES_RECORD_UNAVAILABLE");
+
+    const nbaVerification: VerificationResult = { verificationFlags, confidenceLevelPreset, fragilityReason };
+    // ─── End NBA Data Verification ────────────────────────────────────────────
+
     // Record opening line (insert-only, non-blocking) then fetch it for movement calc
     recordOpeningLine(
       gameId, today,
@@ -508,6 +582,7 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       awayPlayoffContext: playoffCtx.away,
       h2h,
       lineMovement,
+      verification: nbaVerification,
     };
 
     console.log("[breakdown:NBA] calling Claude...");
@@ -588,6 +663,56 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       `away=${awayPitcher?.name ?? "none"} (confirmed=${awayPitcher?.confirmed ?? false})`
     );
 
+    // Derive odds early so verification can check whether lines are posted
+    const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
+    const mlbOdds = oddsMap.get(oddsKey)?.mlbOdds ?? null;
+
+    // ─── MLB Data Verification ────────────────────────────────────────────────
+    const mlbFlags: string[] = [];
+    let mlbConfidencePreset: ConfidenceLevel | null = null;
+    let mlbFragilityReason: string | null = null;
+
+    const forceMLBFragile = (flag: string, reason: string) => {
+      mlbFlags.push(flag);
+      mlbConfidencePreset = 3;
+      if (!mlbFragilityReason) mlbFragilityReason = reason;
+    };
+
+    // 1. Derive explicit pitcher status fields
+    type PitcherStatus = "confirmed" | "unconfirmed" | "unknown";
+    const homePitcherStatus: PitcherStatus =
+      homePitcher === null ? "unknown" : homePitcher.confirmed === true ? "confirmed" : "unconfirmed";
+    const awayPitcherStatus: PitcherStatus =
+      awayPitcher === null ? "unknown" : awayPitcher.confirmed === true ? "confirmed" : "unconfirmed";
+
+    console.log(`[breakdown:MLB] pitcherStatus: home=${homePitcherStatus} away=${awayPitcherStatus}`);
+
+    if (homePitcherStatus === "unconfirmed" || homePitcherStatus === "unknown") {
+      forceMLBFragile(
+        `Home pitcher (${homePitcher?.name ?? "unknown"}) status: ${homePitcherStatus} — not confirmed by MLB Stats API`,
+        "Pitcher confirmation is pending. Lineup data may change before first pitch.",
+      );
+    }
+    if (awayPitcherStatus === "unconfirmed" || awayPitcherStatus === "unknown") {
+      forceMLBFragile(
+        `Away pitcher (${awayPitcher?.name ?? "unknown"}) status: ${awayPitcherStatus} — not confirmed by MLB Stats API`,
+        mlbFragilityReason ?? "Pitcher confirmation is pending. Lineup data may change before first pitch.",
+      );
+    }
+
+    // 2. Null signal flags
+    if (!mlbOdds) mlbFlags.push("Odds not yet posted for this game — ODDS_NOT_YET_POSTED");
+    if (!h2h)    mlbFlags.push("H2H data unavailable — H2H_DATA_UNAVAILABLE");
+    if (homeForm.length < 3) mlbFlags.push(`${homeTeam.teamAbv} recent form limited (${homeForm.length} games) — RECENT_FORM_UNAVAILABLE`);
+    if (awayForm.length < 3) mlbFlags.push(`${awayTeam.teamAbv} recent form limited (${awayForm.length} games) — RECENT_FORM_UNAVAILABLE`);
+
+    const mlbVerification: VerificationResult = {
+      verificationFlags: mlbFlags,
+      confidenceLevelPreset: mlbConfidencePreset,
+      fragilityReason: mlbFragilityReason,
+    };
+    // ─── End MLB Data Verification ────────────────────────────────────────────
+
     const MLB_PARK_FACTORS: Record<string, MLBParkFactor> = {
       COL: { parkName: "Coors Field", factor: "high" },
       SD:  { parkName: "Petco Park", factor: "low" },
@@ -595,9 +720,6 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       CIN: { parkName: "Great American Ball Park", factor: "high" },
     };
     const parkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
-
-    const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
-    const mlbOdds = oddsMap.get(oddsKey)?.mlbOdds ?? null;
 
     // Record opening line (insert-only, non-blocking) then fetch it for movement calc
     recordOpeningLine(
@@ -645,6 +767,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       parkFactor,
       umpire,
       lineMovement,
+      verification: mlbVerification,
     };
 
     console.log("[breakdown:MLB] calling Claude...");
