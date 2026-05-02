@@ -10,7 +10,6 @@ export default function TermsPage() {
     <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      {/* Dark hero — standardized */}
       <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
@@ -25,52 +24,74 @@ export default function TermsPage() {
             Terms of Service
           </h1>
           <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
-            RawIntel Sports LLC · Last updated April 21, 2026
+            RawIntel Sports LLC · Last updated May 1, 2026
           </p>
         </div>
       </div>
 
       <article style={{ maxWidth: "680px", margin: "0 auto", padding: "48px 24px 0", fontFamily: "var(--sans)", color: "var(--ink)", lineHeight: 1.75 }}>
-        <Section n="1" title="About RawIntel">
-          RawIntel Sports LLC (&ldquo;RawIntel,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) operates rawintelsports.com, a sports data analysis and information platform. RawIntel provides structured game analysis and educational content to help users make informed decisions. RawIntel is not a sportsbook, gambling operator, picks service, or financial advisor. We do not accept bets. We do not tell users what to bet.
+        <Section n="1" title="Acceptance of Terms">
+          By accessing or using rawintelsports.com, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.
         </Section>
 
-        <Section n="2" title="Eligibility">
-          You must be at least 18 years old to use RawIntel. By using this service you confirm you meet this requirement.
+        <Section n="2" title="About RawIntel">
+          RawIntel Sports LLC (&ldquo;RawIntel,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) operates rawintelsports.com, a sports data analysis and information platform. RawIntel provides structured game analysis for informational purposes only, to help users understand publicly available data. RawIntel is not a sportsbook, gambling operator, picks service, or financial advisor. We do not accept bets. We do not tell users what to bet.
         </Section>
 
-        <Section n="3" title="Subscription & Billing">
-          RawIntel offers a free tier and paid Pro tier. Pro subscriptions are billed on a recurring monthly ($9.99) or annual ($79.00) basis. Subscriptions auto-renew unless cancelled before the renewal date. You may cancel at any time through your account settings. No refunds are issued for partial billing periods.
+        <Section n="3" title="Eligibility">
+          You must be at least 18 years old to use RawIntel. By using this service you confirm you meet this requirement and that you are permitted to access sports analysis content in your jurisdiction.
         </Section>
 
-        <Section n="4" title="No Guarantee of Outcomes">
-          All analysis is generated from available data at the time of generation. RawIntel does not predict outcomes. Past analysis does not predict future results. Nothing on this platform constitutes a guarantee, warranty, or promise of any kind regarding any sporting event.
+        <Section n="4" title="Your Account">
+          You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. Notify us immediately at{" "}
+          <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>kimberly@rawintelsports.com</a>{" "}
+          if you suspect unauthorized access. We are not liable for losses caused by unauthorized use of your account.
         </Section>
 
-        <Section n="5" title="Responsible Gambling">
-          Sports betting involves real financial risk. If you or someone you know has a gambling problem, help is available. Contact the National Council on Problem Gambling:{" "}
+        <Section n="5" title="Subscription & Billing">
+          RawIntel offers a free tier and a paid Pro tier. Pro subscriptions are billed on a recurring monthly ($9.99) basis. Subscriptions auto-renew unless cancelled before the renewal date. You may cancel at any time through your account settings. No refunds are issued for partial billing periods.
+        </Section>
+
+        <Section n="6" title="No Guarantee of Outcomes">
+          All analysis is generated from available data at the time of generation. RawIntel does not predict outcomes. Past analysis does not predict future results. Nothing on this platform constitutes a guarantee, warranty, or promise of any kind regarding any sporting event or betting outcome.
+        </Section>
+
+        <Section n="7" title="Responsible Gambling">
+          Sports betting involves real financial risk. RawIntel content is for informational purposes only and is not intended to encourage gambling. If you or someone you know has a gambling problem, help is available. Contact the National Council on Problem Gambling:{" "}
           <a href="tel:1-800-522-4700" style={linkStyle}>1-800-522-4700</a> or{" "}
           <a href="https://www.ncpgambling.org" target="_blank" rel="noopener noreferrer" style={linkStyle}>ncpgambling.org</a>.
         </Section>
 
-        <Section n="6" title="Prohibited Use">
-          You may not resell, redistribute, republish, or scrape any content from RawIntel without written permission.
+        <Section n="8" title="Intellectual Property">
+          All content on rawintelsports.com — including breakdowns, analysis, design, and copy — is owned by RawIntel Sports LLC. You may not reproduce, redistribute, or create derivative works from our content without written permission.
         </Section>
 
-        <Section n="7" title="Limitation of Liability">
-          RawIntel&rsquo;s total liability to you for any claim is limited to the amount you paid us in the 30 days prior to the claim. We are not liable for any indirect, incidental, or consequential damages.
+        <Section n="9" title="Prohibited Use">
+          You may not resell, republish, scrape, or automate access to any content on RawIntel. You may not use the service for any unlawful purpose or in violation of any applicable laws or regulations.
         </Section>
 
-        <Section n="8" title="Governing Law">
-          These terms are governed by the laws of the State of Missouri.
+        <Section n="10" title="Disclaimer of Warranties">
+          RawIntel is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind, express or implied. We do not warrant that the service will be uninterrupted, error-free, or free of harmful components.
         </Section>
 
-        <Section n="9" title="Changes">
-          We may update these terms at any time. Continued use of the service constitutes acceptance.
+        <Section n="11" title="Limitation of Liability">
+          RawIntel&rsquo;s total liability to you for any claim is limited to the amount you paid us in the 30 days prior to the claim. We are not liable for any indirect, incidental, special, or consequential damages, including financial losses arising from decisions made using our content.
+        </Section>
+
+        <Section n="12" title="Termination">
+          We reserve the right to suspend or terminate your account at any time for violation of these terms or for any other reason at our discretion. You may delete your account at any time through your account settings.
+        </Section>
+
+        <Section n="13" title="Governing Law">
+          These terms are governed by the laws of the State of Missouri, without regard to conflict of law principles.
+        </Section>
+
+        <Section n="14" title="Changes">
+          We may update these terms at any time. Continued use of the service after changes are posted constitutes acceptance of the revised terms.
         </Section>
 
         <p style={{ marginTop: "40px", paddingTop: "24px", borderTop: "0.5px solid var(--border)", fontSize: "14px", color: "var(--muted)" }}>
-          Contact:{" "}
+          Questions?{" "}
           <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>
             kimberly@rawintelsports.com
           </a>

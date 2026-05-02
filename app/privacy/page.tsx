@@ -10,7 +10,6 @@ export default function PrivacyPage() {
     <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
-      {/* Dark hero — standardized */}
       <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
@@ -25,7 +24,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
-            RawIntel Sports LLC · Last updated April 21, 2026
+            RawIntel Sports LLC · Last updated May 1, 2026
           </p>
         </div>
       </div>
@@ -34,56 +33,70 @@ export default function PrivacyPage() {
         <Section n="1" title="What We Collect">
           <ul style={ulStyle}>
             <li>Email address (for account creation and communications)</li>
-            <li>Usage data (breakdowns generated, features used)</li>
-            <li>Payment data (processed by Stripe — we never see or store your card details)</li>
+            <li>Usage data (breakdowns generated, features used, session activity)</li>
+            <li>Device and browser information (IP address, browser type, referring URL) — collected automatically by our infrastructure</li>
+            <li>Payment data — processed entirely by Stripe; we never see or store your card details</li>
           </ul>
         </Section>
 
         <Section n="2" title="How We Use It">
           <ul style={ulStyle}>
-            <li>To provide and improve the service</li>
-            <li>To send account-related communications</li>
+            <li>To provide and improve the RawIntel service</li>
+            <li>To send account-related communications (billing, security, product updates)</li>
             <li>To process subscription payments via Stripe</li>
+            <li>To monitor for abuse and maintain service integrity</li>
           </ul>
         </Section>
 
         <Section n="3" title="Data Processors">
           <ul style={ulStyle}>
             <li>
-              Stripe handles all payment processing. See Stripe&rsquo;s privacy policy at{" "}
+              <strong>Stripe</strong> handles all payment processing. See{" "}
               <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" style={linkStyle}>stripe.com/privacy</a>.
             </li>
             <li>
-              Supabase stores account and usage data. See Supabase&rsquo;s privacy policy at{" "}
+              <strong>Supabase</strong> stores account and usage data. See{" "}
               <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" style={linkStyle}>supabase.com/privacy</a>.
+            </li>
+            <li>
+              <strong>Vercel</strong> hosts the application and handles web traffic. See{" "}
+              <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" style={linkStyle}>vercel.com/legal/privacy-policy</a>.
             </li>
           </ul>
         </Section>
 
         <Section n="4" title="Data Sharing">
-          We do not sell your data. We do not share your data with third parties except as required to operate the service (Stripe, Supabase) or as required by law.
+          We do not sell your data. We do not share your data with third parties except as required to operate the service (Stripe, Supabase, Vercel) or as required by law.
         </Section>
 
         <Section n="5" title="Data Retention">
-          We retain your data for as long as your account is active. You may request deletion at any time by emailing{" "}
-          <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>kimberly@rawintelsports.com</a>. We will delete your data within 30 days of a verified request.
+          We retain your data for as long as your account is active. You may delete your account at any time through your account settings, which removes your data from our systems. You may also request deletion by emailing{" "}
+          <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>kimberly@rawintelsports.com</a>. We will complete verified deletion requests within 30 days.
         </Section>
 
-        <Section n="6" title="California Residents (CCPA)">
+        <Section n="6" title="Security">
+          We implement industry-standard security measures including encrypted connections (HTTPS), secure authentication via Supabase, and payment processing entirely delegated to Stripe. No system is completely secure — if you believe your account has been compromised, contact us immediately.
+        </Section>
+
+        <Section n="7" title="Cookies">
+          We use essential cookies to maintain your login session. We do not use tracking, advertising, or analytics cookies.
+        </Section>
+
+        <Section n="8" title="Children">
+          RawIntel is intended for users 18 and older. We do not knowingly collect personal information from anyone under 18. If we become aware that we have collected data from a minor, we will delete it promptly.
+        </Section>
+
+        <Section n="9" title="California Residents (CCPA)">
           California residents have the right to know what personal data we collect, request deletion, and opt out of sale (we do not sell data). To exercise these rights, email{" "}
           <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>kimberly@rawintelsports.com</a>.
         </Section>
 
-        <Section n="7" title="Cookies">
-          We use essential cookies to maintain your session. We do not use tracking or advertising cookies.
-        </Section>
-
-        <Section n="8" title="Changes">
-          We may update this policy at any time. We will notify users of material changes by email.
+        <Section n="10" title="Changes">
+          We may update this policy at any time. We will notify users of material changes by email. Continued use after changes are posted constitutes acceptance.
         </Section>
 
         <p style={{ marginTop: "40px", paddingTop: "24px", borderTop: "0.5px solid var(--border)", fontSize: "14px", color: "var(--muted)" }}>
-          Contact:{" "}
+          Questions?{" "}
           <a href="mailto:kimberly@rawintelsports.com" style={linkStyle}>
             kimberly@rawintelsports.com
           </a>
