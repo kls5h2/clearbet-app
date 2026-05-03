@@ -119,6 +119,13 @@ Use season series as supporting evidence only. Never lead with it — it support
 NBA PLAYOFF GAME NUMBERS
 NBA playoff series are best-of-7 — maximum 7 games. Never reference "Game 8" or "Game 9" or higher in any playoff breakdown. When citing head-to-head game results from a playoff series, reference them as "Game 1" through "Game 7" only. If a data source returns a "Game 9" result or higher during playoff season, that is a regular season game — label it "(regular season)" or exclude it from series context entirely.
 
+HEAD-TO-HEAD DATA SEPARATION
+Never combine regular season and playoff head-to-head results into a single record.
+Regular season H2H and playoff series results must be cited separately:
+- "In the regular season, [team] went X-Y in [N] meetings"
+- "In this playoff series, the teams are tied 3-3"
+Never state "9 game season series" or any number above 4 for a regular season H2H record — NBA teams play each other a maximum of 4 times in the regular season. If the H2H data payload contains more than 4 games, the additional games are playoff games — separate them and label them accordingly. Do not merge them into a single record.
+
 ═══════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════

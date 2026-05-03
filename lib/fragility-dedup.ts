@@ -2,7 +2,7 @@
  * Structural deduplication for fragility check points.
  *
  * Applied after every Claude API response, before saving or displaying a breakdown.
- * Two independent passes:
+ * Three independent passes:
  *
  *   Pass 1 — confirmed-absence removal:
  *     If a fragility point names a confirmed-OUT player AND that player already
@@ -12,6 +12,13 @@
  *   Pass 2 — word-overlap deduplication:
  *     Two items are duplicates when they share the same subject (text before the
  *     first colon) OR have >60% meaningful-word overlap. First occurrence is kept.
+ *
+ *   Pass 3 — premise restatement removal:
+ *     Removes items that are only a server-generated status label with confidence
+ *     boilerplate and no analytical consequence. Pattern:
+ *     "[player] is listed as [status]. Confidence reduced pending lineup confirmation."
+ *     A valid fragility point must name the variable, the condition, AND what happens
+ *     to the read if it resolves against you. Status labels alone are not fragility.
  */
 
 import type { FragilityItem } from "./types";
@@ -97,5 +104,33 @@ export function deduplicateFragilityCheck(
     }
   }
 
-  return { items: kept, removedCount: items.length - kept.length, log };
+  // ── Pass 3: remove premise restatements (status label + boilerplate, no consequence) ──
+  // Exact server-generated pattern from route.ts:
+  //   "[player] is listed as [status]. Confidence reduced pending lineup confirmation."
+  // These contain no analytical content — no consequence clause — so they are not
+  // valid fragility points. A valid point must say what happens to the read.
+  const BOILERPLATE_PHRASES = [
+    /confidence reduced pending lineup confirmation/i,
+    /pitcher confirmation is pending\.\s*lineup data may change before first pitch/i,
+  ];
+
+  const hasConsequenceClause = (text: string): boolean => {
+    // A consequence clause follows "—" or "–" with substantive text (>15 chars),
+    // or contains an "if [subject] [verb]" → consequence structure.
+    const dashIdx = text.search(/[—–]/);
+    if (dashIdx > 0 && text.slice(dashIdx + 1).trim().length > 15) return true;
+    if (/\bif\b.{10,}/i.test(text)) return true;
+    return false;
+  };
+
+  const analyticalKept = kept.filter((f) => {
+    const hasBoilerplate = BOILERPLATE_PHRASES.some((re) => re.test(f.item));
+    if (!hasBoilerplate) return true;
+    // If the item has a consequence clause beyond the boilerplate, keep it.
+    if (hasConsequenceClause(f.item)) return true;
+    log.push(`premise-restatement removed (no consequence): "${f.item.slice(0, 80)}"`);
+    return false;
+  });
+
+  return { items: analyticalKept, removedCount: items.length - analyticalKept.length, log };
 }
