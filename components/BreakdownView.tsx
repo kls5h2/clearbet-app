@@ -105,7 +105,35 @@ function StepTip({ children, dark }: { children: React.ReactNode; dark?: boolean
 // Driver item (Key Drivers)
 function DriverItem({ direction, factor }: { direction: string; factor: string }) {
   const color = direction === "positive" ? "var(--clear)" : direction === "negative" ? "var(--signal)" : direction === "neutral" ? "var(--lean)" : "var(--fragile)";
-  const label = direction === "positive" ? "Supports the script" : direction === "negative" ? "Works against" : direction === "neutral" ? "Neutral context" : "Injury / uncertainty";
+
+  // Parse embedded label prefix that Claude writes into the factor text.
+  // Extracts team name when present so the label becomes "Works against Toronto"
+  // instead of the generic fallback. Strips the prefix from the body text.
+  const toTitleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+  let label: string;
+  let body = factor;
+
+  const worksAgainst = factor.match(/^WORKS AGAINST\s+([A-Z][A-Z ]{1,30}?)\s*[—–:]/i);
+  const supportsScript = factor.match(/^SUPPORTS THE SCRIPT\s*[—–:]/i);
+  const neutralCtx = factor.match(/^NEUTRAL CONTEXT\s*[—–:]/i);
+
+  if (worksAgainst) {
+    label = `Works against ${toTitleCase(worksAgainst[1].trim())}`;
+    body = factor.slice(worksAgainst[0].length).trim();
+  } else if (supportsScript) {
+    label = "Supports the script";
+    body = factor.slice(supportsScript[0].length).trim();
+  } else if (neutralCtx) {
+    label = "Neutral context";
+    body = factor.slice(neutralCtx[0].length).trim();
+  } else {
+    label = direction === "positive" ? "Supports the script"
+          : direction === "negative" ? "Works against"
+          : direction === "neutral"  ? "Neutral context"
+          : "Injury / uncertainty";
+  }
+
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "12px",
@@ -114,7 +142,7 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: color }} />
       <div>
         <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "3px", color }}>{label}</div>
-        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{factor}</div>
+        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{body}</div>
       </div>
     </div>
   );
