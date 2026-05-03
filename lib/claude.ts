@@ -5,6 +5,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { GameDetailData, BreakdownResult, ConfidenceLevel, ConfidenceLabel, FragilityItem, VerificationResult } from "./types";
+import { deduplicateFragilityCheck } from "./fragility-dedup";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -620,84 +621,99 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
   console.log("════════════════════════════════════════════════════════════════════\n");
   // ─── END DEBUG LOGGING ────────────────────────────────────────────────────
 
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4000,
-    system: systemPrompt,
-    messages: [
-      {
-        role: "user",
-        content: userMessage,
-      },
-    ],
-  });
+  // ── Confirmed-OUT names for structural dedup ────────────────────────────────
+  // ESPN is authoritative for NBA injuries; fall back to Tank01 if ESPN failed.
+  const injurySource = data.espnInjuries.ok
+    ? [...data.espnInjuries.homeInjuries, ...data.espnInjuries.awayInjuries]
+    : [...data.injuries.homeInjuries, ...data.injuries.awayInjuries];
+  const confirmedOutNames = injurySource
+    .filter((p) => p.status === "Out")
+    .map((p) => p.playerName);
 
-  const raw = message.content[0];
-  if (raw.type !== "text") throw new Error("Unexpected Claude response type");
-
-  // Strip any accidental markdown code fences
-  const json = raw.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-
-  let parsed: BreakdownResult;
-  try {
-    parsed = JSON.parse(json) as BreakdownResult;
-  } catch {
-    throw new Error(`Claude returned invalid JSON: ${json.slice(0, 200)}`);
-  }
-
-  // Validate the closing line is present in decisionLens
+  // ── Inner: call Claude once and apply all standard post-processing ───────────
   const CLOSING_LINE = "This is not a pick. This is what the data says. Your decision is always yours.";
-  if (!parsed.decisionLens) {
-    parsed.decisionLens = CLOSING_LINE;
-  } else if (!parsed.decisionLens.includes(CLOSING_LINE)) {
-    parsed.decisionLens = parsed.decisionLens.trimEnd() + " " + CLOSING_LINE;
-  }
-
-  // Enforce the edge closing line
   const EDGE_CLOSING_LINE = "These are the environments the data creates. Your decision is always yours.";
-  if (!parsed.edgeClosingLine || !parsed.edgeClosingLine.includes(EDGE_CLOSING_LINE)) {
-    parsed.edgeClosingLine = EDGE_CLOSING_LINE;
-  }
-  if (!Array.isArray(parsed.edge)) parsed.edge = [];
-
-  // Default cardSummary to empty string if Claude omitted it — slate page renders nothing rather than fallback
-  if (typeof parsed.cardSummary !== "string") parsed.cardSummary = "";
-
-  // Default shareHook to empty string; enforce 120-char ceiling.
-  if (typeof parsed.shareHook !== "string") parsed.shareHook = "";
-  if (parsed.shareHook.length > 120) parsed.shareHook = parsed.shareHook.slice(0, 117).trimEnd() + "…";
-
-  // Normalize new optional fields — leave undefined rather than force a wrong value.
   const validGrades = ["A", "B", "C", "D", "F"] as const;
-  if (!parsed.signalGrade || !validGrades.includes(parsed.signalGrade as typeof validGrades[number])) {
-    parsed.signalGrade = undefined;
-  }
-  if (typeof parsed.earlyRead !== "boolean") parsed.earlyRead = false;
-  // primaryUncertainty is string | undefined — no default, leave as Claude returned it.
-
-  // Clamp confidence level
-  parsed.confidenceLevel = Math.max(1, Math.min(4, parsed.confidenceLevel)) as ConfidenceLevel;
-
-  // Ensure confidenceLabel matches level
   const labelMap: Record<ConfidenceLevel, ConfidenceLabel> = {
-    1: "CLEAR SPOT",
-    2: "LEAN",
-    3: "FRAGILE",
-    4: "PASS",
+    1: "CLEAR SPOT", 2: "LEAN", 3: "FRAGILE", 4: "PASS",
   };
-  parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
 
-  // Apply server-side confidence preset — takes precedence over Claude's own assessment
-  if (data.verification.confidenceLevelPreset !== null) {
-    parsed.confidenceLevel = data.verification.confidenceLevelPreset;
-    parsed.confidenceLabel = labelMap[parsed.confidenceLevel];
+  async function callOnce(): Promise<BreakdownResult> {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const raw = message.content[0];
+    if (raw.type !== "text") throw new Error("Unexpected Claude response type");
+
+    const json = raw.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    let p: BreakdownResult;
+    try {
+      p = JSON.parse(json) as BreakdownResult;
+    } catch {
+      throw new Error(`Claude returned invalid JSON: ${json.slice(0, 200)}`);
+    }
+
+    if (!p.decisionLens) {
+      p.decisionLens = CLOSING_LINE;
+    } else if (!p.decisionLens.includes(CLOSING_LINE)) {
+      p.decisionLens = p.decisionLens.trimEnd() + " " + CLOSING_LINE;
+    }
+    if (!p.edgeClosingLine || !p.edgeClosingLine.includes(EDGE_CLOSING_LINE)) {
+      p.edgeClosingLine = EDGE_CLOSING_LINE;
+    }
+    if (!Array.isArray(p.edge)) p.edge = [];
+    if (typeof p.cardSummary !== "string") p.cardSummary = "";
+    if (typeof p.shareHook !== "string") p.shareHook = "";
+    if (p.shareHook.length > 120) p.shareHook = p.shareHook.slice(0, 117).trimEnd() + "…";
+
+    if (!p.signalGrade || !validGrades.includes(p.signalGrade as typeof validGrades[number])) {
+      p.signalGrade = undefined;
+    }
+    if (typeof p.earlyRead !== "boolean") p.earlyRead = false;
+
+    p.confidenceLevel = Math.max(1, Math.min(4, p.confidenceLevel)) as ConfidenceLevel;
+    p.confidenceLabel = labelMap[p.confidenceLevel];
+
+    if (data.verification.confidenceLevelPreset !== null) {
+      p.confidenceLevel = data.verification.confidenceLevelPreset;
+      p.confidenceLabel = labelMap[p.confidenceLevel];
+    }
+
+    if (data.verification.fragilityReason !== null) {
+      const presetItem: FragilityItem = { item: data.verification.fragilityReason, color: "amber" };
+      if (!p.fragilityCheck.some((f) => f.item === data.verification.fragilityReason)) {
+        p.fragilityCheck = [presetItem, ...p.fragilityCheck];
+      }
+    }
+
+    return p;
   }
 
-  // Prepend fragilityReason if set — server-side enforcement in case Claude omitted it
-  if (data.verification.fragilityReason !== null) {
-    const presetItem: FragilityItem = { item: data.verification.fragilityReason, color: "amber" };
-    if (!parsed.fragilityCheck.some((f) => f.item === data.verification.fragilityReason)) {
-      parsed.fragilityCheck = [presetItem, ...parsed.fragilityCheck];
+  // ── First attempt ───────────────────────────────────────────────────────────
+  let parsed = await callOnce();
+
+  // ── Structural fragility dedup ──────────────────────────────────────────────
+  let dedup = deduplicateFragilityCheck(parsed.fragilityCheck, confirmedOutNames, parsed.gameShape);
+  if (dedup.removedCount > 0) {
+    console.warn(`[breakdown:NBA] fragility dedup: removed ${dedup.removedCount} point(s) —`, dedup.log);
+    parsed.fragilityCheck = dedup.items;
+  }
+
+  // ── Retry if dedup left fewer than 2 distinct points ───────────────────────
+  if (parsed.fragilityCheck.length < 2 && dedup.removedCount > 0) {
+    console.warn("[breakdown:NBA] Fragility check had duplicate points removed — regenerating");
+    parsed = await callOnce();
+    dedup = deduplicateFragilityCheck(parsed.fragilityCheck, confirmedOutNames, parsed.gameShape);
+    if (dedup.removedCount > 0) {
+      console.warn(`[breakdown:NBA] fragility dedup (retry): removed ${dedup.removedCount} —`, dedup.log);
+      parsed.fragilityCheck = dedup.items;
+    }
+    if (parsed.fragilityCheck.length < 2) {
+      console.warn("[breakdown:NBA] Retry still produced fewer than 2 distinct fragility points — returning as-is");
     }
   }
 
