@@ -20,10 +20,29 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://rawintelsports.com";
+const OG_IMAGE = `${SITE_URL}/api/og?type=home`;
+
 export const metadata: Metadata = {
   title: "RawIntel — What the data says. Your decision to make.",
   description:
     "RawIntel turns raw game data into plain-English analysis so you can make informed betting decisions in under 60 seconds.",
+  openGraph: {
+    title: "RawIntel — Raw data. Clear read. Your call.",
+    description:
+      "Six-step breakdown on every game. Plain-English reasoning. Never picks — your decision is always yours.",
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "RawIntel — Raw data. Clear read. Your call." }],
+    type: "website",
+    siteName: "RawIntel",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RawIntel — Raw data. Clear read. Your call.",
+    description:
+      "Six-step breakdown on every game. Plain-English reasoning. Never picks — your decision is always yours.",
+    images: [OG_IMAGE],
+  },
 };
 
 export default function RootLayout({
