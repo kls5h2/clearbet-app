@@ -11,7 +11,6 @@ import type {
   MLBBullpenStats,
   MLBParkFactor,
   MLBUmpire,
-  H2HRecord,
   BreakdownResult,
   ConfidenceLevel,
   ConfidenceLabel,
@@ -109,6 +108,12 @@ Never reference game-by-game series results, home/road series records by game, o
 
 ## SEASON SERIES RULE
 Supporting evidence only. Never the primary driver.
+
+The H2H payload is pre-split into two explicitly labeled fields — do not combine them.
+- regularSeasonRecord — regular season meetings only. Use as supporting context in Key Drivers only if relevant. Do not cite in Game Shape.
+- playoffSeriesRecord — current postseason series games only. In Game Shape, cite this and only this if present. State as "tied X-X" or "[team] leads X-X" — never narrate the source or explain how many games were regular season vs postseason.
+
+Never reconstruct a combined record from these two fields.
 
 ## THE SEVEN STEPS
 
@@ -398,22 +403,49 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
     return `${abv}: ERA last 7 days: ${era7} | Saves: ${savePct} | Blown saves: ${b.blownSaves}`;
   };
 
-  const formatH2H = (record: H2HRecord | null): string => {
-    if (!record) return "H2H_DATA_UNAVAILABLE";
-    const games = record.games
-      .map((g) => {
+  // ── H2H split: regular season vs postseason ─────────────────────────────────
+  // MLB regular season ends ~Sept 30; playoffs begin ~Oct 1.
+  // Date strings are YYYYMMDD — lexicographic compare works correctly.
+  const mlbGameYear = parseInt(game.gameDate.slice(0, 4), 10);
+  const mlbPostseasonCutoff = `${mlbGameYear}1001`;
+
+  const computeH2HBlock = (): string => {
+    if (!h2h) return "H2H_DATA_UNAVAILABLE";
+    const rsGames = h2h.games.filter((g) => g.date < mlbPostseasonCutoff);
+    const poGames = h2h.games.filter((g) => g.date >= mlbPostseasonCutoff);
+
+    const countWL = (games: typeof h2h.games) => {
+      let w = 0, l = 0;
+      for (const g of games) {
+        const refIsHome = g.home === homeTeam.teamAbv;
         const homeWon = g.homePts > g.awayPts;
-        const winner = homeWon ? g.home : g.away;
+        if ((refIsHome && homeWon) || (!refIsHome && !homeWon)) w++;
+        else l++;
+      }
+      return { w, l };
+    };
+    const fmtGames = (games: typeof h2h.games) =>
+      games.map((g) => {
+        const winner = g.homePts > g.awayPts ? g.home : g.away;
         return `${g.date.slice(4, 6)}/${g.date.slice(6, 8)}: ${g.away}@${g.home} ${g.awayPts}-${g.homePts} (${winner} W)`;
-      })
-      .join(", ");
-    return [
-      `${homeTeam.teamAbv} vs ${awayTeam.teamAbv} this season: ${record.wins}-${record.losses} (${homeTeam.teamAbv} perspective)`,
-      `Games: ${games}`,
-      record.wins > 0 ? `Avg margin in ${homeTeam.teamAbv} wins: +${record.avgMarginFor}` : "",
-      record.losses > 0 ? `Avg margin in ${homeTeam.teamAbv} losses: -${record.avgMarginAgainst}` : "",
-    ].filter(Boolean).join("\n");
+      }).join(", ");
+
+    const parts: string[] = [];
+    const rs = countWL(rsGames);
+    parts.push(
+      rsGames.length > 0
+        ? `regularSeasonRecord: ${homeTeam.teamAbv} ${rs.w}-${rs.l} vs ${awayTeam.teamAbv} (${rsGames.length} regular season meeting${rsGames.length !== 1 ? "s" : ""})\nGames: ${fmtGames(rsGames)}`
+        : `regularSeasonRecord: No regular season meetings this season`
+    );
+    if (poGames.length > 0) {
+      const po = countWL(poGames);
+      parts.push(
+        `playoffSeriesRecord: ${homeTeam.teamAbv} ${po.w}-${po.l} vs ${awayTeam.teamAbv} (current series, ${poGames.length} game${poGames.length !== 1 ? "s" : ""} played)\nGames: ${fmtGames(poGames)}`
+      );
+    }
+    return parts.join("\n\n");
   };
+  const h2hBlock = computeH2HBlock();
 
   const formatUmpire = (u: MLBUmpire | null): string => {
     if (!u) return "Not yet assigned";
@@ -475,7 +507,7 @@ Implied probability: ${homeTeam.teamAbv} ${odds.impliedHomeProbability ?? "?"}% 
 ${movementLines.length > 0 ? `\n━━━ LINE MOVEMENT (opening → current) ━━━\n${movementLines.join("\n")}` : "\n━━━ LINE MOVEMENT ━━━\nOpening line not yet recorded — first fetch of the day"}
 
 ━━━ SEASON SERIES (H2H) ━━━
-${formatH2H(h2h)}
+${h2hBlock}
 
 ━━━ PLAYOFF CONTEXT ━━━
 ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv)}

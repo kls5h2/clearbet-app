@@ -134,11 +134,11 @@ NBA PLAYOFF GAME NUMBERS
 NBA playoff series are best-of-7 — maximum 7 games. Never reference "Game 8" or "Game 9" or higher in any playoff breakdown. When citing head-to-head game results from a playoff series, reference them as "Game 1" through "Game 7" only. If a data source returns a "Game 9" result or higher during playoff season, that is a regular season game — label it "(regular season)" or exclude it from series context entirely.
 
 HEAD-TO-HEAD DATA SEPARATION
-Never combine regular season and playoff head-to-head results into a single record.
-Regular season H2H and playoff series results must be cited separately:
-- "In the regular season, [team] went X-Y in [N] meetings"
-- "In this playoff series, the teams are tied 3-3"
-Never state "9 game season series" or any number above 4 for a regular season H2H record — NBA teams play each other a maximum of 4 times in the regular season. If the H2H data payload contains more than 4 games, the additional games are playoff games — separate them and label them accordingly. Do not merge them into a single record.
+The H2H payload is pre-split into two explicitly labeled fields — do not combine them.
+- regularSeasonRecord — regular season meetings only. Do not cite in Game Shape. Use as supporting context in Key Drivers only if relevant.
+- playoffSeriesRecord — current playoff series games only. In Game Shape, cite this and only this if present. State as "tied X-X" or "[team] leads X-X" — never narrate the source or explain how many games were regular season vs playoff.
+
+Never reconstruct a combined record from these two fields. Never state a total number of games that spans both fields.
 
 ═══════════════════════════════════════════
 OUTPUT FORMAT
@@ -399,6 +399,50 @@ function buildUserMessage(data: GameDetailData): string {
     ? Math.max(0, Math.round((new Date(tipTime).getTime() - Date.now()) / (1000 * 60 * 60) * 10) / 10)
     : null;
 
+  // ── H2H split: regular season vs playoff series ─────────────────────────────
+  // NBA Play-In starts ~April 14; anything on or after that date is postseason.
+  // Date strings are YYYYMMDD — lexicographic compare works correctly.
+  const gameYear = parseInt(game.gameDate.slice(0, 4), 10);
+  const nbaPostseasonCutoff = `${gameYear}0414`;
+
+  const computeH2HBlock = (): string => {
+    if (!h2h) return "H2H_DATA_UNAVAILABLE";
+    const rsGames = h2h.games.filter((g) => g.date < nbaPostseasonCutoff);
+    const poGames = h2h.games.filter((g) => g.date >= nbaPostseasonCutoff);
+
+    const countWL = (games: typeof h2h.games) => {
+      let w = 0, l = 0;
+      for (const g of games) {
+        const refIsHome = g.home === homeTeam.teamAbv;
+        const homeWon = g.homePts > g.awayPts;
+        if ((refIsHome && homeWon) || (!refIsHome && !homeWon)) w++;
+        else l++;
+      }
+      return { w, l };
+    };
+    const fmtGames = (games: typeof h2h.games) =>
+      games.map((g) => {
+        const winner = g.homePts > g.awayPts ? g.home : g.away;
+        return `${g.date.slice(4, 6)}/${g.date.slice(6, 8)}: ${g.away}@${g.home} ${g.awayPts}-${g.homePts} (${winner} W)`;
+      }).join(", ");
+
+    const parts: string[] = [];
+    const rs = countWL(rsGames);
+    parts.push(
+      rsGames.length > 0
+        ? `regularSeasonRecord: ${homeTeam.teamAbv} ${rs.w}-${rs.l} vs ${awayTeam.teamAbv} (${rsGames.length} regular season meeting${rsGames.length !== 1 ? "s" : ""})\nGames: ${fmtGames(rsGames)}`
+        : `regularSeasonRecord: No regular season meetings this season`
+    );
+    if (poGames.length > 0) {
+      const po = countWL(poGames);
+      parts.push(
+        `playoffSeriesRecord: ${homeTeam.teamAbv} ${po.w}-${po.l} vs ${awayTeam.teamAbv} (current series, ${poGames.length} game${poGames.length !== 1 ? "s" : ""} played)\nGames: ${fmtGames(poGames)}`
+      );
+    }
+    return parts.join("\n\n");
+  };
+  const h2hBlock = computeH2HBlock();
+
   // Compute opening-line values by reversing the stored delta (current − delta = open).
   const spreadCurrent = odds?.spread ?? null;
   const totalCurrent = odds?.total ?? null;
@@ -550,16 +594,7 @@ ${movementLines.length > 0
   : `\n━━━ LINE MOVEMENT ━━━\nAs of ${currentTime}: opening line not yet recorded — first fetch of the day`}
 
 ━━━ SEASON SERIES (H2H) ━━━
-${h2h
-  ? `${homeTeam.teamAbv} vs ${awayTeam.teamAbv} this season: ${h2h.wins}-${h2h.losses} (${homeTeam.teamAbv} perspective)
-Games: ${h2h.games.map((g) => {
-    const homeWon = g.homePts > g.awayPts;
-    const refIsHome = g.home === homeTeam.teamAbv;
-    const winner = homeWon ? g.home : g.away;
-    return `${g.date.slice(4, 6)}/${g.date.slice(6, 8)}: ${g.away}@${g.home} ${g.awayPts}-${g.homePts} (${winner} W)`;
-  }).join(", ")}
-${h2h.wins > 0 ? `Avg margin in ${homeTeam.teamAbv} wins: +${h2h.avgMarginFor}` : ""}${h2h.losses > 0 ? `  Avg margin in ${homeTeam.teamAbv} losses: -${h2h.avgMarginAgainst}` : ""}`
-  : "H2H_DATA_UNAVAILABLE"}
+${h2hBlock}
 
 ━━━ PLAYOFF CONTEXT ━━━
 ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins, homeTeamStats.losses)}
