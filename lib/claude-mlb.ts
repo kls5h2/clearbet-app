@@ -186,9 +186,7 @@ const DATA_INTEGRITY_RULES = `## DATA INTEGRITY RULES — NON-NEGOTIABLE
 
 2. Any field containing _UNAVAILABLE must be acknowledged as missing — never estimated. If h2h_records = 'H2H_DATA_UNAVAILABLE', write "Head-to-head data was not available for this matchup." Never write specific H2H records, series history, or game-by-game results that are not explicitly in the payload.
 
-3. If this payload contains a confidenceLevelPreset, use that value as the confidenceLevel in your response. Do not override it. The preset was determined by data quality verification and takes precedence over your own assessment.
-
-4. If this payload contains a fragilityReason, include it as the first item in your fragilityCheck array with color "amber". Do not omit it or paraphrase it.`;
+3. If this payload contains a confidenceLevelPreset, use that value as the confidenceLevel in your response. Do not override it. The preset was determined by data quality verification and takes precedence over your own assessment.`;
 
 function formatVerificationSection(v: VerificationResult): string {
   const lines = ["━━━ DATA QUALITY VERIFICATION ━━━"];

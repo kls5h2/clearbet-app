@@ -652,6 +652,21 @@ function HomePageContent() {
         return ra !== rb ? ra - rb : parseGameTime(a.gameTime) - parseGameTime(b.gameTime);
       });
 
+    console.log(`[headliner:${activeSport}] total games=${sorted.length} breakdownsReady=${breakdownsReady}`);
+    console.log(`[headliner:${activeSport}] breakdown coverage:`, sorted.map((g) => ({
+      gameId: g.gameId,
+      matchup: `${g.awayTeam.teamAbv}@${g.homeTeam.teamAbv}`,
+      label: breakdowns.get(g.gameId)?.confidenceLabel ?? "NO_BREAKDOWN",
+    })));
+    console.log(`[headliner:${activeSport}] eligible (Clear Spot / Lean):`, eligible.map((g) => ({
+      gameId: g.gameId,
+      matchup: `${g.awayTeam.teamAbv}@${g.homeTeam.teamAbv}`,
+      label: breakdowns.get(g.gameId)?.confidenceLabel,
+    })));
+    console.log(`[headliner:${activeSport}] winner:`, eligible[0]
+      ? `${eligible[0].awayTeam.teamAbv}@${eligible[0].homeTeam.teamAbv} (${breakdowns.get(eligible[0].gameId)?.confidenceLabel})`
+      : "none — headliner will be null");
+
     if (eligible.length > 0) {
       try { sessionStorage.setItem(headlinerKey, eligible[0].gameId); } catch {}
       return eligible[0];
