@@ -9,6 +9,7 @@ import {
   getMLBInjuryReport,
   getMLBStartingPitcher,
   getMLBH2HRecord,
+  getMLBTeamRosterNames,
 } from "@/lib/tank01-mlb";
 import {
   fetchMLBProbableStarters,
@@ -641,6 +642,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     const [
       homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap,
       mlbStatsPitchers, playoffCtx, h2h, homeBullpen, awayBullpen, umpire,
+      homeRoster, awayRoster,
     ] = await Promise.all([
       getMLBTeamStats(homeTeam.teamAbv),
       getMLBTeamStats(awayTeam.teamAbv),
@@ -654,6 +656,8 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       getMLBBullpenStats(homeTeam.teamAbv).catch(() => null),
       getMLBBullpenStats(awayTeam.teamAbv).catch(() => null),
       getMLBUmpire(today, homeTeam.teamAbv).catch(() => null),
+      getMLBTeamRosterNames(homeTeam.teamAbv).catch(() => []),
+      getMLBTeamRosterNames(awayTeam.teamAbv).catch(() => []),
     ]);
 
     const statsEntry =
@@ -762,6 +766,10 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       awayPitcher,
     };
 
+    console.log(`[breakdown:MLB] rosters: ${homeTeam.teamAbv}=${homeRoster.length} players, ${awayTeam.teamAbv}=${awayRoster.length} players`);
+    if (homeRoster.length === 0) console.warn(`[breakdown:MLB] WARNING: ${homeTeam.teamAbv} roster is EMPTY — Claude will hallucinate players`);
+    if (awayRoster.length === 0) console.warn(`[breakdown:MLB] WARNING: ${awayTeam.teamAbv} roster is EMPTY — Claude will hallucinate players`);
+
     const detailData: MLBGameDetailData = {
       game,
       homeTeamStats: homeStats,
@@ -778,6 +786,8 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       umpire,
       lineMovement,
       verification: mlbVerification,
+      homeRoster,
+      awayRoster,
     };
 
     console.log("[breakdown:MLB] calling Claude...");

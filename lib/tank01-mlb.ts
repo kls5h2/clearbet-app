@@ -548,6 +548,15 @@ async function getMLBRoster(teamAbv: string): Promise<RawMLBRosterPlayer[]> {
   return raw.body?.roster ?? [];
 }
 
+export async function getMLBTeamRosterNames(teamAbv: string): Promise<string[]> {
+  try {
+    const roster = await getMLBRoster(teamAbv);
+    return roster.map((p) => p.longName).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 async function getMLBTopHitters(teamAbv: string): Promise<MLBHitterStat[]> {
   try {
     const roster = await getMLBRoster(teamAbv);

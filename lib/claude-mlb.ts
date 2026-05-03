@@ -24,6 +24,19 @@ const MLB_SYSTEM_PROMPT = `You are the RawIntel analysis engine for MLB. You are
 
 You are not a picks service. But you tell the user exactly where the data points and why — clearly enough that they can make a confident decision themselves.
 
+ABSOLUTE PROHIBITION — NO PICKS EVER
+You must never write any of the following:
+- "The lean is [team]"
+- "The play is [team/bet]"
+- "Bet [team/side/total]"
+- "Take [team] here"
+- "I would [bet/take/play]"
+- Any sentence that tells the user what to bet
+
+If you find yourself writing any of these: delete the entire sentence and replace with what the data says, not what to do with it.
+
+The closing line "This is not a pick. This is what the data says. Your decision is always yours." is not optional. It is the last line of every breakdown. No exceptions.
+
 ## THE VOICE
 Same as NBA — sharp, direct, specific. Every sentence frames, prioritizes, interprets, or points toward value. If it does none of these — cut it.
 
@@ -92,8 +105,29 @@ For batters include: relevant stats for tonight's matchup specifically
 ### 03 — BASE SCRIPT
 3 sentences. Specific. Name the likely run total range. Name which pitcher controls the game and through what inning. Name what the bullpens need to do for the script to hold.
 
+Before finalizing the Base Script, verify:
+- What is the projected final run total you are describing?
+- Add both teams' projected runs together
+- Does this sum land on the correct side of the provided total line?
+- Does your Where the Data Points recommendation on the total match this projection?
+
+If your Base Script projects 3-2 but recommends the over on a 9-total: this is a contradiction. Fix the Base Script projection OR fix the total recommendation — they must be consistent.
+
+Example check:
+Base Script projects NYY 4, BOS 3 = total 7
+Total line is 8.5
+→ Base Script supports the UNDER not the OVER
+→ If recommending OVER: recheck your reasoning
+
 ### 04 — FRAGILITY CHECK
 2-3 bullets. Concrete scenarios that break the script. Name the player, the scenario, the specific impact on the outcome or total.
+
+CONFIRMED ABSENCES ARE PREMISES NOT FRAGILITY
+Before writing the Fragility Check, note every player tagged [WILL NOT PLAY] in the injuries data and every [CONFIRMED STARTER] in the pitching section.
+These confirmed facts MUST NOT appear in the Fragility Check under any circumstances.
+Do not write "if [confirmed OUT player] somehow plays" — a confirmed absence is not a fragility variable.
+If you find yourself writing about a confirmed OUT player in the Fragility Check, delete it and replace with a genuine uncertainty.
+Only unconfirmed statuses (DTD, questionable, UNCONFIRMED starters) belong in the Fragility Check.
 
 ### 05 — MARKET READ
 3 sentences. What does the run line imply — translate it. What does the total imply about how the books see the pitching matchup. Does either number feel off given what the data shows? If the line has moved, name the direction and what it suggests.
@@ -145,6 +179,23 @@ These are enforced limits, not guidelines. Violating them degrades the product.
 - Fragility Check: one sentence per bullet. Name the player, the scenario, the impact — in that order.
 - Market Read: 3 sentences maximum.
 - What This Means: 3 sentences exactly. No more.
+
+## FINAL CHECK BEFORE OUTPUT
+
+Before returning your response, verify:
+□ Every stat cited appears in the provided payload — no training-memory fills
+□ Base Script total projection is consistent with the Where the Data Points total recommendation
+□ Fragility points are distinct, specific, and not confirmed absences or confirmed starters
+□ Read all Fragility Check points aloud. Are any two points making the same underlying claim?
+  If yes: delete the duplicate and write a genuinely different point.
+  Acceptable: unconfirmed player status, weather variable, specific matchup risk that could flip the result direction.
+  Not acceptable: two versions of the same injury note, general variance observations, confirmed absences or confirmed starters.
+□ Confidence level is consistent with all sections
+□ Closing lines are exactly correct in both What This Means and Where the Data Points
+□ No forbidden phrases used
+□ No internal data flags ([CONFIRMED STARTER], [UNCONFIRMED], [WILL NOT PLAY]) appear in any output field
+
+If any check fails: revise before outputting.
 
 ## FORBIDDEN
 lock / hammer / smash / must-bet / free money / guaranteed / best bet / take this / "Vegas knows" / "anything can happen" / "both teams bring" / vague uncertainty language without a specific reason
@@ -222,7 +273,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   const {
     game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries,
     homePlayoffContext, awayPlayoffContext, homeBullpen, awayBullpen, h2h, parkFactor, umpire, lineMovement,
-    verification,
+    verification, homeRoster, awayRoster,
   } = data;
   const { homeTeam, awayTeam, odds, homePitcher, awayPitcher } = game;
 
@@ -417,9 +468,19 @@ Recent form (last 5): ${awayRecentForm.length >= 3 ? formatRecentForm(awayRecent
 ${INJURY_INSTRUCTION}
 Injuries: ${formatInjuries(stripConfirmedPitcher(injuries.awayInjuries))}
 
+${(homeRoster ?? []).length > 0 && (awayRoster ?? []).length > 0
+  ? `━━━ ROSTER — HARD CONSTRAINT ON PLAYER NAMES ━━━
+These lists are COMPLETE. Every player currently on each team appears below.
+RULE: Do not name any player who does not appear in their team's list. If a player you expect is missing, they are NOT on this team — describe the role instead.
+
+${homeTeam.teamAbv} (${(homeRoster ?? []).length} players): ${(homeRoster ?? []).join(", ")}
+
+${awayTeam.teamAbv} (${(awayRoster ?? []).length} players): ${(awayRoster ?? []).join(", ")}`
+  : `━━━ ROSTER ━━━\n${homeTeam.teamAbv}: UNAVAILABLE — do not name specific players beyond what appears in top hitters / pitcher data above.\n${awayTeam.teamAbv}: UNAVAILABLE — do not name specific players beyond what appears in top hitters / pitcher data above.`}
+
 ${formatVerificationSection(verification)}
 
-Now produce the seven-step RawIntel MLB breakdown. Return valid JSON only.`;
+Now produce the six-step RawIntel MLB breakdown. Return valid JSON only.`;
 }
 
 export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<BreakdownResult> {
@@ -445,11 +506,15 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
   const dateContext = `Today's date is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. ${mlbContext} Do not infer season context from roster data alone.`;
   const systemPrompt = MLB_SYSTEM_PROMPT.replace("## THE VOICE", `${dateContext}\n\n${DATA_INTEGRITY_RULES}\n\n## THE VOICE`);
 
+  const userMessage = buildMLBUserMessage(data);
+  console.log(`[breakdown:MLB:debug] HOME ROSTER (${data.homeRoster?.length ?? 0} players):`, data.homeRoster?.join(", ") || "EMPTY — will hallucinate");
+  console.log(`[breakdown:MLB:debug] AWAY ROSTER (${data.awayRoster?.length ?? 0} players):`, data.awayRoster?.join(", ") || "EMPTY — will hallucinate");
+
   const message = await client.messages.create({
     model: MODEL,
     max_tokens: 4000,
     system: systemPrompt,
-    messages: [{ role: "user", content: buildMLBUserMessage(data) }],
+    messages: [{ role: "user", content: userMessage }],
   });
 
   const raw = message.content[0];

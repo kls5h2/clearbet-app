@@ -298,6 +298,8 @@ export interface MLBGameDetailData {
   umpire: MLBUmpire | null;
   lineMovement: LineMovement | null;
   verification: VerificationResult;
+  homeRoster?: string[];
+  awayRoster?: string[];
 }
 
 // ─── Union type used by GameCard and BreakdownView ────────────────────────────
