@@ -270,7 +270,7 @@ function formatVerificationSection(v: VerificationResult): string {
 }
 
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement, verification } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement, verification, homeRoster, awayRoster } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   // Timing context — drives hoursUntilTip ceiling in RULE 4 of the system prompt
@@ -419,7 +419,7 @@ Date: ${game.gameDate} — ${game.gameTime}
 currentTime: ${currentTime}
 tipTime: ${tipTime ?? "UNAVAILABLE — could not parse game time"}
 hoursUntilTip: ${hoursUntilTip !== null ? hoursUntilTip : "UNAVAILABLE"}
-hoursTracked: UNAVAILABLE — requires opening line created_at (pending DB query update)
+hoursTracked: ${lineMovement?.hoursTracked !== null && lineMovement?.hoursTracked !== undefined ? `${lineMovement.hoursTracked}h` : "UNAVAILABLE — no opening line recorded yet"}
 
 ━━━ BETTING LINES ━━━
 ${odds
@@ -452,10 +452,17 @@ ${formatPlayoffContext(awayPlayoffContext, awayTeam.teamAbv, awayTeamStats.wins,
 ${renderESPNSection()}
 ${renderSeriesSection()}
 
-━━━ ROSTER (CONFIRMED ACTIVE PLAYERS) ━━━
-${homeTeam.teamAbv}: UNAVAILABLE — only reference players named in team stats sections below
-${awayTeam.teamAbv}: UNAVAILABLE — only reference players named in team stats sections below
-(TODO: wire Tank01 getRoster() in handleNBABreakdown() to populate this section)
+${(homeRoster ?? []).length > 0 && (awayRoster ?? []).length > 0
+  ? `━━━ ROSTER — HARD CONSTRAINT ON PLAYER NAMES ━━━
+These lists are COMPLETE. Every player currently on each team appears below.
+RULE: Do not name any player who does not appear in their team's list. If a player you expect is missing, they are NOT on this team — describe the role instead (e.g. "their primary wing scorer").
+
+${homeTeam.teamAbv} (${(homeRoster ?? []).length} players): ${(homeRoster ?? []).join(", ")}
+
+${awayTeam.teamAbv} (${(awayRoster ?? []).length} players): ${(awayRoster ?? []).join(", ")}`
+  : `━━━ ROSTER ━━━
+${homeTeam.teamAbv}: UNAVAILABLE — only reference players named in the team stats sections below
+${awayTeam.teamAbv}: UNAVAILABLE — only reference players named in the team stats sections below`}
 
 ━━━ ${homeTeam.teamAbv} (HOME) ━━━
 Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
@@ -548,6 +555,8 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
   console.log("[breakdown:NBA:debug] AWAY TOP PLAYERS (raw from Tank01):");
   console.log(JSON.stringify(data.awayTeamStats.topPlayers, null, 2));
   console.log("────────────────────────────────────────────────────────────────────");
+  console.log(`[breakdown:NBA:debug] HOME ROSTER (${data.homeRoster?.length ?? 0} players):`, data.homeRoster?.join(", ") || "EMPTY — will hallucinate");
+  console.log(`[breakdown:NBA:debug] AWAY ROSTER (${data.awayRoster?.length ?? 0} players):`, data.awayRoster?.join(", ") || "EMPTY — will hallucinate");
   console.log("[breakdown:NBA:debug] FULL SYSTEM PROMPT sent to Claude:");
   console.log(systemPrompt);
   console.log("────────────────────────────────────────────────────────────────────");

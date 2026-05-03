@@ -14,6 +14,7 @@ export interface OpeningLineRecord {
   total: number | null;
   home_ml: number | null;
   away_ml: number | null;
+  created_at: string | null; // ISO timestamp of first odds fetch
 }
 
 export interface LineMovement {
@@ -21,6 +22,7 @@ export interface LineMovement {
   totalMovement: number | null;   // positive = line moved up, negative = moved down
   homeMLMovement: number | null;
   awayMLMovement: number | null;
+  hoursTracked: number | null;    // hours since opening line was first recorded
 }
 
 /**
@@ -66,7 +68,7 @@ export function recordOpeningLine(
 export async function getOpeningLine(gameId: string): Promise<OpeningLineRecord | null> {
   const { data, error } = await createServiceClient()
     .from("opening_lines")
-    .select("game_id, spread, total, home_ml, away_ml")
+    .select("game_id, spread, total, home_ml, away_ml, created_at")
     .eq("game_id", gameId)
     .maybeSingle();
 
@@ -88,10 +90,15 @@ export function calcLineMovement(
   const diff = (cur: number | null, open: number | null): number | null =>
     cur !== null && open !== null ? Math.round((cur - open) * 10) / 10 : null;
 
+  const hoursTracked = opening?.created_at
+    ? Math.round((Date.now() - new Date(opening.created_at).getTime()) / (1000 * 60 * 60) * 10) / 10
+    : null;
+
   return {
     spreadMovement: diff(currentSpread, opening?.spread ?? null),
     totalMovement: diff(currentTotal, opening?.total ?? null),
     homeMLMovement: diff(currentHomeMl, opening?.home_ml ?? null),
     awayMLMovement: diff(currentAwayMl, opening?.away_ml ?? null),
+    hoursTracked,
   };
 }

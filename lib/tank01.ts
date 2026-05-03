@@ -225,6 +225,20 @@ export async function getTeamStats(teamAbv: string): Promise<TeamSeasonStats> {
 }
 
 /**
+ * Return every player name currently on a team's Tank01 roster.
+ * Includes injured players — the goal is to give Claude a complete list of
+ * who is on the team so it cannot hallucinate players from other rosters.
+ */
+export async function getTeamRosterNames(teamAbv: string): Promise<string[]> {
+  try {
+    const roster = await getRoster(teamAbv);
+    return roster.map((p) => p.longName).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch roster with stats and injury data for a team.
  * Returns the full roster so it can be used for both top players and injuries.
  */

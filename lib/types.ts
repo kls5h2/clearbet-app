@@ -165,6 +165,7 @@ export interface LineMovement {
   totalMovement: number | null;
   homeMLMovement: number | null;
   awayMLMovement: number | null;
+  hoursTracked: number | null; // hours since first odds fetch for this game
 }
 
 export interface VerificationResult {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport, getPlayoffContext, getH2HRecord } from "@/lib/tank01";
+import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport, getPlayoffContext, getH2HRecord, getTeamRosterNames } from "@/lib/tank01";
 import { fetchNBAOdds, buildMatchupKey, fetchMLBOdds, type OddsMatchup } from "@/lib/odds-api";
 import { generateBreakdown } from "@/lib/claude";
 import {
@@ -394,7 +394,7 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
 
     // Fetch all data in parallel using Tank01's designations.
     // ESPN injuries + series score are authoritative real-time sources.
-    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries, espnSeries] = await Promise.all([
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries, espnSeries, t01HomeRoster, t01AwayRoster] = await Promise.all([
       getTeamStats(t01Home.teamAbv),
       getTeamStats(t01Away.teamAbv),
       getRecentForm(t01Home.teamAbv),
@@ -405,6 +405,8 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       getH2HRecord(t01Home.teamAbv, t01Away.teamAbv).catch(() => null),
       fetchESPNNBAInjuries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
       fetchESPNNBASeries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
+      getTeamRosterNames(t01Home.teamAbv).catch(() => []),
+      getTeamRosterNames(t01Away.teamAbv).catch(() => []),
     ]);
 
     // Cross-validate home/away with The Odds API (authoritative for Play-In / Playoff)
@@ -461,6 +463,12 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     } else {
       console.warn("[breakdown:NBA] ESPN series UNAVAILABLE — prompt will flag as such");
     }
+    const homeRoster    = flipped ? t01AwayRoster : t01HomeRoster;
+    const awayRoster    = flipped ? t01HomeRoster : t01AwayRoster;
+    console.log(`[breakdown:NBA] rosters: ${homeTeam.teamAbv}=${homeRoster.length} players, ${awayTeam.teamAbv}=${awayRoster.length} players`);
+    if (homeRoster.length === 0) console.warn(`[breakdown:NBA] WARNING: ${homeTeam.teamAbv} roster is EMPTY — Claude will hallucinate players`);
+    if (awayRoster.length === 0) console.warn(`[breakdown:NBA] WARNING: ${awayTeam.teamAbv} roster is EMPTY — Claude will hallucinate players`);
+
     const playoffCtx    = flipped
       ? { home: t01Playoff.away, away: t01Playoff.home }
       : t01Playoff;
@@ -583,6 +591,8 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       h2h,
       lineMovement,
       verification: nbaVerification,
+      homeRoster,
+      awayRoster,
     };
 
     console.log("[breakdown:NBA] calling Claude...");
