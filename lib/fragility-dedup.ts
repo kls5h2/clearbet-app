@@ -132,5 +132,21 @@ export function deduplicateFragilityCheck(
     return false;
   });
 
-  return { items: analyticalKept, removedCount: items.length - analyticalKept.length, log };
+  // ── Pass 4: strip status-label prefix from items that survived with analytical content ──
+  // When a fragility point starts with the server-generated status prefix but has real
+  // analytical content after it, remove the prefix and keep only the analytical part.
+  // "[player] is listed as [status]. Confidence reduced pending lineup confirmation. [analysis]"
+  //                                                                                  ↑ keep this
+  const STATUS_PREFIX_RE = /^.+?\bis listed as\b.+?Confidence reduced pending lineup confirmation\.?\s*/i;
+
+  const stripped = analyticalKept.map((f) => {
+    const match = STATUS_PREFIX_RE.exec(f.item);
+    if (!match) return f;
+    const remainder = f.item.slice(match[0].length).trim();
+    if (remainder.length < 20) return f; // don't strip if nothing meaningful remains
+    log.push(`status-prefix stripped: "${match[0].slice(0, 60)}…"`);
+    return { ...f, item: remainder };
+  });
+
+  return { items: stripped, removedCount: items.length - analyticalKept.length, log };
 }
