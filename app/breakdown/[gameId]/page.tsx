@@ -5,7 +5,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import BreakdownView, { type GatedReason, isPitcherUnknown } from "@/components/BreakdownView";
-import ShareCard from "@/components/ShareCard";
 import type { BreakdownResult, AnyGame, MLBGame, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 import { lookupTeam, parseGameId } from "@/lib/team-names";
@@ -112,7 +111,6 @@ export default function BreakdownPage() {
   const [error, setError] = useState<string | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [shareOpen, setShareOpen] = useState(false);
   const [tier, setTier] = useState<Tier | null>(null);
   const [gated, setGated] = useState<GatedReason | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -505,21 +503,6 @@ export default function BreakdownPage() {
               </div>
             )}
 
-            {/* Share — Pro only, not gated */}
-            {!gated && tier === "pro" && (
-              <div style={{ display: "flex", justifyContent: "center", marginTop: "24px" }}>
-                <button
-                  onClick={() => setShareOpen(true)}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
-                    letterSpacing: "0.04em", color: "var(--signal)",
-                  }}
-                >
-                  Share this read →
-                </button>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -532,15 +515,6 @@ export default function BreakdownPage() {
         {" · "}© RawIntel LLC
       </footer>
 
-      {status === "done" && breakdown && game && (
-        <ShareCard
-          game={game}
-          confidenceLabel={breakdown.confidenceLabel}
-          shareHook={breakdown.shareHook ?? ""}
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-        />
-      )}
     </div>
     </>
   );

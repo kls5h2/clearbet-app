@@ -122,9 +122,10 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
 
 // Fragility item
 function FragilityItem({ item, color: fc }: { item: string; color: FragilityColor }) {
-  // Strip any color prefix Claude may have embedded in the text
+  // Strip any color/warning prefix Claude may have embedded in the item text.
+  // Handles: 🔴/🟡/🟢, ⚠️/⚠, "RED —", "AMBER —", "GREEN —" at the start.
   const cleanItem = item
-    .replace(/^[🔴🟡🟢]\s*/u, "")
+    .replace(/^(?:[🔴🟡🟢]|⚠️?)\s*/u, "")
     .replace(/^(RED|AMBER|GREEN)\s*[—–-]\s*/i, "")
     .trim();
 

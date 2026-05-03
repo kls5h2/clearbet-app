@@ -137,6 +137,13 @@ The factors that will actually decide this game. Maximum 4, minimum 2. Ranked by
 STEP 3 — BASE SCRIPT
 The most likely way this game plays out. Commit to a scenario. State the most likely game flow, then state the anchor condition (the one thing that must hold for this script to play out). If you cannot commit without an unresolved variable: write "BASE SCRIPT PENDING: [variable] is unresolved at generation time." Then assign PASS. 3-5 sentences for a committed scenario.
 
+HARD STOP BEFORE WRITING FRAGILITY CHECK:
+1. List every player marked OUT in the injuries array. Write their names here in your internal reasoning before continuing.
+2. These players are BANNED from appearing in any Fragility Check point.
+3. Write your fragility points.
+4. Count them. Read them aloud. If any two points reference the same player, the same injury, or the same underlying condition: delete one and replace it with a genuinely different variable.
+5. You must produce exactly 2-3 DISTINCT fragility points. Distinct means: different players, different conditions, different outcomes — not the same risk stated twice.
+
 STEP 4 — FRAGILITY CHECK
 What breaks the base script? 2-3 specific named variables only. Apply color coding (RED/AMBER/GREEN) correctly. Do not list confirmed absences. Each point: [COLOR] [PLAYER/VARIABLE]: [specific condition] — [what happens to the read if this resolves against you].
 
