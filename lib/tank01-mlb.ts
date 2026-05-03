@@ -226,8 +226,12 @@ export async function getMLBGamesForDate(dateStr: string): Promise<{
     const away = resolveTeam(g.awayTeamAbbr, g.away ?? "");
 
     const statusCode = g.gameStatusCode ?? "0";
+    const rawStatus = (g as { gameStatus?: string }).gameStatus ?? "";
     const gameStatus: GameStatus =
-      statusCode === "2" ? "final" : statusCode === "1" ? "live" : "scheduled";
+      /postpone/i.test(rawStatus) ? "postponed"
+      : statusCode === "2" ? "final"
+      : statusCode === "1" ? "live"
+      : "scheduled";
 
     return {
       gameId: g.gameID,

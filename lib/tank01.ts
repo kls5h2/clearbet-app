@@ -633,8 +633,12 @@ async function getGameMeta(gameId: string, homeTeamAbv: string): Promise<GameMet
     const game = (raw.body?.schedule ?? []).find((g) => g.gameID === gameId);
     const gameTime = game?.gameTime ? formatGameTime(game.gameTime) : "";
     const statusCode = game?.gameStatusCode ?? "0";
+    const rawStatus = game?.gameStatus ?? "";
     const gameStatus: import("./types").GameStatus =
-      statusCode === "2" ? "final" : statusCode === "1" ? "live" : "scheduled";
+      /postpone/i.test(rawStatus) ? "postponed"
+      : statusCode === "2" ? "final"
+      : statusCode === "1" ? "live"
+      : "scheduled";
     return { gameTime, gameStatus };
   } catch {
     return { gameTime: "", gameStatus: "scheduled" };

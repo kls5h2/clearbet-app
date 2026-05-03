@@ -187,10 +187,16 @@ export default function BreakdownPage() {
     };
   })();
 
-  const effectiveStatus: "scheduled" | "live" | "final" = (() => {
+  // effectiveStatus drives canRegenerate and the pitcher warning — it must never
+  // infer "final" from elapsed time. Only Tank01 can confirm a game is over.
+  const effectiveStatus: "scheduled" | "live" | "final" | "postponed" = (() => {
     if (!game) return "scheduled";
     if (game.gameStatus === "final") return "final";
+    if (game.gameStatus === "postponed") return "postponed";
     if (game.gameStatus === "live") return "live";
+    // gameStatus is "scheduled" (snapshot captured before game started).
+    // Use time to determine whether regeneration should still be allowed,
+    // but never promote to "final" — only Tank01 can confirm the game ended.
     const m = game.gameTime?.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)\s+ET$/i);
     if (m) {
       let gh = parseInt(m[1], 10);
@@ -202,12 +208,11 @@ export default function BreakdownPage() {
       const cm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
       const past = ch * 60 + cm - (gh * 60 + gm);
       if (past <= 0) return "scheduled";
-      if (past > 180) return "final";
-      return "live";
+      return "live"; // game has started — block regeneration, but don't assume final
     }
     if (game.gameDate && /^\d{8}$/.test(game.gameDate)) {
       const todayEt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).replace(/-/g, "");
-      if (game.gameDate < todayEt) return "final";
+      if (game.gameDate < todayEt) return "live"; // past date — assume started, not confirmed final
       if (game.gameDate > todayEt) return "scheduled";
       return "live";
     }

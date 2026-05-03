@@ -19,6 +19,7 @@ interface ArchiveDetailRow {
   confidence_level: number;
   confidence_label: string;
   created_at: string;
+  game_snapshot: AnyGame | null;
 }
 
 function formatDate(dateStr: string): string {
@@ -67,6 +68,13 @@ function getTeamName(abv: string, sport: string): string {
 }
 
 function buildGameShell(row: ArchiveDetailRow): AnyGame {
+  // Prefer the snapshot stored at generation time — it has the correct gameStatus,
+  // real team names, game time, and pitcher data.
+  if (row.game_snapshot) return row.game_snapshot;
+
+  // Legacy fallback for rows that predate the game_snapshot column.
+  // Use "scheduled" — we cannot determine the true status from row data alone,
+  // and "final" would be wrong for any breakdown generated before game end.
   const homeName = getTeamName(row.home_team, row.sport);
   const awayName = getTeamName(row.away_team, row.sport);
   const homeTeam = {
@@ -78,9 +86,9 @@ function buildGameShell(row: ArchiveDetailRow): AnyGame {
     teamCity: awayName.split(" ").slice(0, -1).join(" "),
   };
   if (row.sport === "MLB") {
-    return { sport: "MLB", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "final", homeTeam, awayTeam, odds: null, homePitcher: null, awayPitcher: null };
+    return { sport: "MLB", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "scheduled", homeTeam, awayTeam, odds: null, homePitcher: null, awayPitcher: null };
   }
-  return { sport: "NBA", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "final", homeTeam, awayTeam, odds: null };
+  return { sport: "NBA", gameId: row.game_id, gameDate: row.game_date, gameTime: "", gameStatus: "scheduled", homeTeam, awayTeam, odds: null };
 }
 
 export default async function ArchiveDetailPage({
@@ -93,7 +101,7 @@ export default async function ArchiveDetailPage({
 
   const { data, error } = await supabase
     .from("breakdowns")
-    .select("game_id, game_date, home_team, away_team, sport, breakdown_content, confidence_level, confidence_label, created_at")
+    .select("game_id, game_date, home_team, away_team, sport, breakdown_content, confidence_level, confidence_label, created_at, game_snapshot")
     .eq("game_id", gameId)
     .maybeSingle();
 

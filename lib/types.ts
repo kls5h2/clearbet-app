@@ -4,7 +4,7 @@ export type Sport = "NBA" | "MLB";
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
-export type GameStatus = "scheduled" | "live" | "final";
+export type GameStatus = "scheduled" | "live" | "final" | "postponed";
 
 export interface Team {
   teamId: string;

@@ -71,13 +71,17 @@ function isStarted(game: AnyGame): boolean {
   return ch * 60 + cm >= gh * 60 + gm;
 }
 
-// Returns true when the game should be labelled FINAL: either the API says so,
-// or >3 hours have elapsed since the scheduled start time (handles stale status).
+// Returns true when the game should be labelled FINAL.
+// Tank01 confirmation (gameStatus === "final") is the authoritative signal.
+// The time-based fallback only applies for same-day games where Tank01 may lag —
+// never infer final from a past date alone (games can be postponed).
 function isFinalByTime(game: AnyGame): boolean {
   if (game.gameStatus === "final") return true;
+  if (game.gameStatus === "postponed") return false;
   const today = getTodayDateString();
-  if (game.gameDate < today) return true;
   if (game.gameDate > today) return false;
+  // Same-day only: treat as final if >3 hours past scheduled start (stale status fallback).
+  if (game.gameDate < today) return false;
   const m = (game.gameTime ?? "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
   if (!m) return false;
   let gh = parseInt(m[1], 10);
