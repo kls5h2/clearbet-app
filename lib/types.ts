@@ -32,6 +32,8 @@ export interface PlayerInjury {
   position: string;
   status: "Out" | "Doubtful" | "Questionable" | "Day-To-Day";
   description: string;
+  // true = authoritative source (ESPN/MLB Stats API); false/undefined = fallback source (Tank01)
+  confirmed?: boolean;
 }
 
 // ─── Breakdown (Claude output) ────────────────────────────────────────────────
@@ -66,6 +68,10 @@ export interface BreakdownResult {
   confidenceLabel: ConfidenceLabel;
   glossaryTerm: string;
   glossaryDefinition: string;
+  // New fields from revised prompt (optional — may not be present in cached breakdowns)
+  signalGrade?: "A" | "B" | "C" | "D" | "F"; // data environment quality, separate from confidence
+  earlyRead?: boolean;           // true when hoursUntilTip > 6 at generation time
+  primaryUncertainty?: string;   // named variable for FRAGILE/PASS confidence levels
 }
 
 // ─── NBA ──────────────────────────────────────────────────────────────────────
@@ -181,6 +187,9 @@ export interface GameDetailData {
   h2h: H2HRecord | null;
   lineMovement: LineMovement | null;
   verification: VerificationResult;
+  // TODO: Add these once Tank01 getRoster() is wired into the breakdown route
+  homeRoster?: string[]; // confirmed active players — from Tank01 getRoster()
+  awayRoster?: string[]; // confirmed active players — from Tank01 getRoster()
 }
 
 // ─── MLB ──────────────────────────────────────────────────────────────────────
