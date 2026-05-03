@@ -20,6 +20,7 @@ const CONF: Record<string, { bar: string; badgeBg: string; badgeText: string; la
 };
 
 const CONF_RANK: Record<string, number> = { "CLEAR SPOT": 1, "LEAN": 2, "FRAGILE": 3, "PASS": 4 };
+const ELIGIBLE_CONF = new Set(["CLEAR SPOT", "LEAN"]);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,6 +145,42 @@ function SectionLabel({ icon, text }: { icon: "star" | "grid" | "calendar"; text
       <span style={{ color: "var(--signal)", display: "flex" }}>{icons[icon]}</span>
       {text}
       <span style={{ flex: 1, height: "1px", background: "var(--border-med)", display: "block" }} />
+    </div>
+  );
+}
+
+// ─── Murky slate card ─────────────────────────────────────────────────────────
+
+function MurkyCard() {
+  return (
+    <div style={{
+      background: "var(--surface)", borderRadius: 0,
+      border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
+      marginBottom: "32px",
+    }}>
+      <div style={{ height: "3px", background: "var(--border-strong)" }} />
+      <div style={{
+        background: "var(--ink)", padding: "12px 24px",
+        display: "flex", alignItems: "center",
+      }}>
+        <span style={{ fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
+          The Cleanest Read Tonight
+        </span>
+      </div>
+      <div style={{ padding: "32px 26px 30px" }}>
+        <div style={{
+          fontSize: "clamp(17px, 3.5vw, 22px)", fontWeight: 700,
+          letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.2,
+          marginBottom: "12px",
+        }}>
+          Tonight&apos;s slate is murky.
+        </div>
+        <p style={{
+          fontSize: "15.5px", color: "var(--muted)", lineHeight: 1.65, margin: 0,
+        }}>
+          Every game has meaningful uncertainty — read the fragility checks before deciding anything.
+        </p>
+      </div>
     </div>
   );
 }
@@ -478,6 +515,7 @@ function HomePageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<"cap" | "bd-locked" | null>(null);
+  const [breakdownsReady, setBreakdownsReady] = useState(false);
 
   useEffect(() => {
     const client = createClient();
@@ -542,7 +580,8 @@ function HomePageContent() {
           setBreakdowns(map);
           return currentUserId;
         });
-      }, () => {});
+        setBreakdownsReady(true);
+      }, () => { setBreakdownsReady(true); });
   }, []);
 
   useEffect(() => {
@@ -583,30 +622,51 @@ function HomePageContent() {
   const tomorrowSorted = [...tomorrowGames].sort((a, b) => parseGameTime(a.gameTime) - parseGameTime(b.gameTime));
 
   const headliner = (() => {
-    if (sorted.length === 0) return null;
+    if (sorted.length === 0 || !breakdownsReady) return null;
 
-    // Restore locked headliner — prevents re-ranking as data updates
     const headlinerKey = `ri_headliner_${activeSport}_${getTodayDateString()}`;
+
+    // Restore locked headliner — but only if it still qualifies as Clear Spot or Lean
     try {
       const lockedId = sessionStorage.getItem(headlinerKey);
       if (lockedId) {
         const locked = sorted.find((g) => g.gameId === lockedId);
-        if (locked) return locked;
+        if (locked) {
+          const lockedLabel = breakdowns.get(locked.gameId)?.confidenceLabel;
+          if (lockedLabel && ELIGIBLE_CONF.has(lockedLabel)) return locked;
+          // Lock is stale (game became Fragile/Pass or never had a breakdown) — clear it
+          try { sessionStorage.removeItem(headlinerKey); } catch {}
+        }
       }
     } catch {}
 
-    const withBd = sorted
-      .filter((g) => breakdowns.has(g.gameId))
+    // Pick the best Clear Spot or Lean game, ranked by confidence then game time
+    const eligible = sorted
+      .filter((g) => {
+        const label = breakdowns.get(g.gameId)?.confidenceLabel;
+        return label != null && ELIGIBLE_CONF.has(label);
+      })
       .sort((a, b) => {
-        const ra = CONF_RANK[breakdowns.get(a.gameId)?.confidenceLabel ?? "LEAN"] ?? 5;
-        const rb = CONF_RANK[breakdowns.get(b.gameId)?.confidenceLabel ?? "LEAN"] ?? 5;
+        const ra = CONF_RANK[breakdowns.get(a.gameId)?.confidenceLabel ?? ""] ?? 5;
+        const rb = CONF_RANK[breakdowns.get(b.gameId)?.confidenceLabel ?? ""] ?? 5;
         return ra !== rb ? ra - rb : parseGameTime(a.gameTime) - parseGameTime(b.gameTime);
       });
-    const selection = withBd[0] ?? sorted[0];
 
-    // Lock this selection for the session/day
-    try { sessionStorage.setItem(`ri_headliner_${activeSport}_${getTodayDateString()}`, selection.gameId); } catch {}
-    return selection;
+    if (eligible.length > 0) {
+      try { sessionStorage.setItem(headlinerKey, eligible[0].gameId); } catch {}
+      return eligible[0];
+    }
+
+    return null;
+  })();
+
+  // True when breakdowns exist for today but none are Clear Spot or Lean
+  const allMurky = !loading && breakdownsReady && sorted.length > 0 && headliner === null && (() => {
+    const gamesWithBd = sorted.filter((g) => breakdowns.has(g.gameId));
+    return gamesWithBd.length > 0 && gamesWithBd.every((g) => {
+      const label = breakdowns.get(g.gameId)?.confidenceLabel;
+      return label != null && !ELIGIBLE_CONF.has(label);
+    });
   })();
 
   const listGames = headliner ? sorted.filter((g) => g.gameId !== headliner.gameId) : sorted;
@@ -748,12 +808,14 @@ function HomePageContent() {
         )}
 
         {/* Headliner */}
-        {(loading || headliner) && (
+        {(loading || !breakdownsReady || headliner || allMurky) && (
           <div className="f3">
-            {loading
+            {(loading || !breakdownsReady)
               ? <SkeletonHeadliner />
               : headliner
               ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} authReady={authReady} userId={userId} proUser={proUser} dailyUsed={dailyUsed} started={isStarted(headliner)} />
+              : allMurky
+              ? <MurkyCard />
               : null}
           </div>
         )}
