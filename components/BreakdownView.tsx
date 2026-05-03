@@ -122,15 +122,22 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
 
 // Fragility item
 function FragilityItem({ item, color: fc }: { item: string; color: FragilityColor }) {
-  const border = fc === "green" ? "var(--clear)" : fc === "red" ? "var(--fragile)" : "var(--fragile)";
+  // Strip any color prefix Claude may have embedded in the text
+  const cleanItem = item
+    .replace(/^[🔴🟡🟢]\s*/u, "")
+    .replace(/^(RED|AMBER|GREEN)\s*[—–-]\s*/i, "")
+    .trim();
+
+  const dotColor = fc === "green" ? "var(--clear)" : fc === "amber" ? "var(--fragile)" : "var(--signal)";
+
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "10px",
       padding: "12px 14px", background: "var(--cream)", borderRadius: 0,
-      borderLeft: `2px solid ${border}`,
+      borderLeft: `2px solid ${dotColor}`,
     }}>
-      <span style={{ fontSize: "14px", flexShrink: 0 }}>⚠️</span>
-      <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{item}</div>
+      <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "5px", background: dotColor }} />
+      <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{cleanItem}</div>
     </div>
   );
 }

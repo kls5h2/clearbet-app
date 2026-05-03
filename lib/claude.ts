@@ -115,6 +115,9 @@ Never reference game-by-game series results unless that data is explicitly prese
 SEASON SERIES RULE
 Use season series as supporting evidence only. Never lead with it — it supports the position, it doesn't create it.
 
+NBA PLAYOFF GAME NUMBERS
+NBA playoff series are best-of-7 — maximum 7 games. Never reference "Game 8" or "Game 9" or higher in any playoff breakdown. When citing head-to-head game results from a playoff series, reference them as "Game 1" through "Game 7" only. If a data source returns a "Game 9" result or higher during playoff season, that is a regular season game — label it "(regular season)" or exclude it from series context entirely.
+
 ═══════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════
@@ -122,7 +125,11 @@ OUTPUT FORMAT
 Generate each section in order. Every sentence must add information the previous sentence did not contain. Eliminate filler: "it's worth noting," "interestingly," "at the end of the day," "this is a fascinating matchup," "game within a game."
 
 STEP 1 — GAME SHAPE
-What kind of game is this? Set the environment — pace, stakes, setting, series context if playoff. Do not begin driver-level analysis here. 2-4 sentences. Must cite at least one specific data point. Do not use generic Game 7 clichés.
+What kind of game is this? Set the environment — pace, stakes, setting, series context if playoff. Do not begin driver-level analysis here. 2-4 sentences. Must cite at least one specific data point.
+
+Do not open Game Shape with a generic stakes statement ("one loss from going home," "season on the line," "backs against the wall," "everything to play for"). These are clichés that add zero information. Open instead with the specific environment: pace profile, series context, key personnel fact, or matchup structure. The stakes are implied by the context — never state them explicitly.
+
+Lead sentence must describe the game environment — not the situation.
 
 STEP 2 — KEY DRIVERS
 The factors that will actually decide this game. Maximum 4, minimum 2. Ranked by importance — most important first. Each driver: label (WORKS AGAINST [TEAM] or SUPPORTS THE SCRIPT), one specific data point with a number, one sentence of context. Verify label matches direction before writing. At least one driver must reference a specific matchup dynamic (not just team-level stats). After writing all drivers: re-read each one and confirm the label direction is correct.
@@ -311,7 +318,13 @@ function buildUserMessage(data: GameDetailData): string {
   const { homeTeam, awayTeam, odds } = game;
 
   // Timing context — drives hoursUntilTip ceiling in RULE 4 of the system prompt
-  const currentTime = new Date().toISOString();
+  // Format as human-readable ET time (sports season = EDT, UTC-4). Market Read uses this string directly.
+  const _nowUtc = new Date();
+  const etHour = (_nowUtc.getUTCHours() + 20) % 24; // UTC-4 (EDT)
+  const etMin = _nowUtc.getUTCMinutes();
+  const ampm = etHour >= 12 ? "PM" : "AM";
+  const h12 = etHour % 12 || 12;
+  const currentTime = `${h12}:${String(etMin).padStart(2, "0")} ${ampm} ET`;
   const tipTime = parseTipTimeISO(game.gameTime, game.gameDate);
   const hoursUntilTip = tipTime
     ? Math.max(0, Math.round((new Date(tipTime).getTime() - Date.now()) / (1000 * 60 * 60) * 10) / 10)
