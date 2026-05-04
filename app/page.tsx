@@ -3,7 +3,75 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { AnyGame, Sport } from "@/lib/types";
+import type { AnyGame, Sport, BreakdownResult } from "@/lib/types";
+import BreakdownView from "@/components/BreakdownView";
+
+const SAMPLE_BREAKDOWN: BreakdownResult = {
+  gameShape: "Game 5 of the OKC–Memphis First Round series is a half-court game by design. Both teams prefer structured offense — OKC through SGA isolation, Memphis through Morant creation — and pace in Games 3 and 4 averaged 95.3 possessions, confirming neither team is playing fast. Memphis arrives facing elimination, which adds defensive intensity but also the risk of forcing offense in situations the data doesn't support. OKC is deeper and more efficient in the half-court; this environment favors them.",
+  keyDrivers: [
+    {
+      factor: "SUPPORTS THE SCRIPT — SGA half-court dominance: Shai Gilgeous-Alexander is averaging 31.2 PPG on 52.4% shooting through four games, operating at 1.21 points per possession against Memphis's single-coverage scheme — above his season mark of 1.09 PPP. Memphis has no reliable answer for him one-on-one.",
+      weight: "primary",
+      direction: "positive",
+    },
+    {
+      factor: "WORKS AGAINST MEMPHIS — JJJ foul trouble pattern: Jaren Jackson Jr. has picked up 3+ fouls by halftime in three of four games. OKC's pick-and-roll coverage draws JJJ into early defensive commitments, removing Memphis's primary rim protection during OKC's peak isolation runs in the second and third quarters.",
+      weight: "primary",
+      direction: "negative",
+    },
+    {
+      factor: "WORKS AGAINST MEMPHIS — Ja Morant questionable (right knee contusion): Morant logged 31 minutes in Game 4 while limited — Memphis's half-court creation rate in this series drops from 1.05 PPP with him to 0.87 without him at full speed. His status for tonight remains unresolved.",
+      weight: "primary",
+      direction: "negative",
+    },
+    {
+      factor: "SUPPORTS THE SCRIPT — OKC fourth-quarter execution: OKC's fourth-quarter net rating is +8.4, best in the league, and they are 12-2 in games decided by 6 or fewer points this season. Memphis ranks 28th in fourth-quarter net rating at -4.1 — OKC's closing execution has been the margin in all three wins.",
+      weight: "secondary",
+      direction: "positive",
+    },
+  ],
+  baseScript: "OKC controls pace through three quarters — SGA operates in the mid-range and isolation, JJJ's foul trouble limits Memphis's interior defense, and Memphis cannot generate clean half-court offense against OKC's switching scheme. If Morant remains limited, Memphis has no reliable creation mechanism late and OKC closes with their fourth-quarter execution. Projected range: OKC 109, Memphis 98 — combined 207, well under the posted 211.5.",
+  fragilityCheck: [
+    { item: "Morant plays 36+ minutes at full speed — if Morant is fully available tonight, Memphis's half-court creation rate climbs back toward its regular-season mark and the expected margin compresses significantly.", color: "red" },
+    { item: "Jaren Jackson Jr. availability — JJJ is listed questionable with knee inflammation. A scratched JJJ removes Memphis's primary rim protection and would push the expected total well below 211.5.", color: "amber" },
+    { item: "OKC abandons half-court structure — OKC pushed their transition rate to 102.4 in Game 2, a game they lost. If they leave the disciplined approach that has produced wins in Games 3 and 4, Memphis generates transition buckets and the spread margin shrinks.", color: "red" },
+  ],
+  marketRead: "As of 6:15 PM ET, the spread has moved from OKC -7 to OKC -8.5 — 1.5 points of movement toward OKC since open. OKC -375 implies a 78.9% win probability; MEM +305 implies a 24.7% win probability — the combined 103.6% reflects 3.6% vig. The total of 211.5 has held from open with no movement in either direction, consistent with the market accepting the pace and defensive environment both teams established in Games 3 and 4. Sharp spread movement toward OKC is notable given Memphis's elimination urgency — the market is pricing OKC's closing execution over desperation-driven variance.",
+  edge: [
+    "The data points toward OKC covering -8.5 based on their fourth-quarter net rating (+8.4) and SGA's 1.21 PPP efficiency against Memphis's single-coverage scheme. The stronger case is OKC covering if Morant remains limited — this read changes if he's confirmed full go at game time.",
+    "Base Script projects a combined 207. The stronger case is the under on 211.5 because pace in Games 3 and 4 has averaged 95.3 possessions and OKC's defensive structure has held Memphis to their lowest transition scoring rate of the season.",
+  ],
+  edgeClosingLine: "These are the environments the data creates. Your decision is always yours.",
+  decisionLens: "The data points toward OKC — their fourth-quarter execution margin and SGA's efficiency against Memphis's coverage scheme are the structural edges here. The condition that flips this read is Morant fully available for 36+ minutes, which is exactly why this carries a Lean and not a Clear Spot. Confirm Morant's status and JJJ's availability at game time before acting on either the spread or total. This is not a pick. This is what the data says. Your decision is always yours.",
+  cardSummary: "OKC's fourth-quarter net rating (+8.4) and SGA's isolation efficiency create a structural edge in Game 5. Morant's questionable status is the single variable that could compress the expected margin.",
+  shareHook: "OKC is 12-2 in close games this season — and Memphis is 28th in 4th-quarter net rating.",
+  confidenceLevel: 2,
+  confidenceLabel: "LEAN",
+  signalGrade: "B",
+  primaryUncertainty: "Ja Morant's availability and minutes load for Game 5",
+  glossaryTerm: "net rating",
+  glossaryDefinition: "Points scored minus points allowed per 100 possessions — the standard measure of how well a team performs on both ends, independent of pace.",
+};
+
+const SAMPLE_GAME: AnyGame = {
+  sport: "NBA",
+  gameId: "sample-mem-okc-20260504",
+  gameDate: "20260504",
+  gameTime: "9:30 PM ET",
+  gameStatus: "scheduled",
+  homeTeam: { teamId: "OKC", teamAbv: "OKC", teamName: "Oklahoma City Thunder", teamCity: "Oklahoma City" },
+  awayTeam: { teamId: "MEM", teamAbv: "MEM", teamName: "Memphis Grizzlies", teamCity: "Memphis" },
+  odds: {
+    spread: -8.5,
+    total: 211.5,
+    homeMoneyline: -375,
+    awayMoneyline: 305,
+    impliedHomeProbability: 78.9,
+    impliedAwayProbability: 24.7,
+    spreadBookmaker: "sample",
+    totalsBookmaker: "sample",
+  },
+};
 
 function parseGameTime(time: string): number {
   const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -117,12 +185,7 @@ export default function HomePage() {
           .hp-compare-grid { grid-template-columns: 1fr !important; }
           .hp-game-row { grid-template-columns: 1fr auto !important; gap: 12px !important; }
           .hp-game-cta { display: none !important; }
-          .hp-preview-wrap { padding: 28px 20px 0 !important; }
-          .hp-stats-bar { grid-template-columns: repeat(2, 1fr) !important; }
-          .hp-stats-bar > div:nth-child(n+3) { display: none !important; }
-          .hp-stat-4,.hp-stat-5 { display: none !important; }
           .hp-footer-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
-          .hp-preview-fade { height: 220px !important; background: linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.8) 45%, rgba(240,237,230,1) 75%) !important; }
         }
       `}</style>
 
@@ -466,136 +529,87 @@ export default function HomePage() {
               The breakdown,<br />step by step.
             </div>
             <div style={{ fontSize: "15px", lineHeight: 1.6, color: "var(--muted)", maxWidth: "520px" }}>
-              Every breakdown follows the same structure — so you always know where you are and what it means.
+              Every breakdown follows the same six-step structure — so you always know where you are and what it means.
             </div>
           </div>
 
           <div className="reveal rd1" style={{
-            background: "var(--surface)", borderRadius: 0, overflow: "hidden",
-            boxShadow: "var(--shadow-md)", position: "relative", border: "1px solid rgba(17,17,16,0.06)",
+            background: "var(--surface)", borderRadius: 0,
+            boxShadow: "var(--shadow-md)", border: "1px solid rgba(17,17,16,0.06)",
           }}>
-            <div style={{ background: "var(--ink)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--signal)" }} />
-                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
-                  Sample Breakdown · NBA
-                </span>
-              </div>
-              <span style={{ fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600, color: "var(--signal)" }}>SIGNAL B+</span>
-            </div>
-
-            <div style={{ padding: "28px 32px 0", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px" }}>
-              <div style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-0.035em", color: "var(--ink)", lineHeight: 1.1 }}>
-                Denver Nuggets{" "}
-                <span style={{ fontSize: "17px", fontWeight: 400, color: "var(--muted)", margin: "0 8px" }}>at</span>
-                Minnesota Timberwolves
-              </div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", flexShrink: 0 }}>8:30 PM ET</div>
-            </div>
-
-            <div style={{ padding: "16px 32px 0" }}>
-              <div className="hp-stats-bar" style={{
-                display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
-                border: "1px solid var(--border-med)", borderRadius: 0, overflow: "hidden",
-              }}>
-                {[
-                  { label: "Spread", value: "MIN -3.5" },
-                  { label: "Total",  value: "218.5" },
-                  { label: "DEN ML", value: "+145" },
-                  { label: "MIN ML", value: "-165" },
-                  { label: "Signal", value: "B+" },
-                ].map((s, i) => (
-                  <div key={s.label} style={{
-                    padding: "11px 12px", borderRight: i < 4 ? "1px solid var(--border)" : "none",
-                    background: "var(--warm-white)", textAlign: "center",
-                  }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, color: s.label === "Signal" ? "var(--signal)" : "var(--ink)" }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ padding: "24px 32px 0", display: "flex", flexDirection: "column" }}>
-              {[
-                {
-                  num: "01", title: "Game Shape",
-                  body: <span>This is a pace control game. Denver wants structure — slow possessions, Jokić’s gravity, half-court sets. Minnesota wants chaos — push pace, create transition, keep it unpredictable. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Tempo is everything.</span></span>,
-                },
-                {
-                  num: "02", title: "Key Drivers",
-                  body: <span>Denver&apos;s half-court execution rate is elite when they control pace. Minnesota&apos;s defense leaks points in set situations but is top-5 in transition. <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(26,122,72,0.1)", color: "#1A7A48" }}>Favors Denver if slow.</span> <span style={{ display: "inline-flex", alignItems: "center", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: 0, marginLeft: "6px", background: "rgba(181,106,18,0.1)", color: "#B56A12" }}>Gobert availability unconfirmed.</span></span>,
-                },
-                {
-                  num: "03", title: "Base Script",
-                  body: "If nothing unexpected happens — Denver controls pace, Jokić operates in space, Minnesota can’t generate easy transition buckets — this plays out tight and under the total.",
-                },
-              ].map((step, i) => (
-                <div key={step.num} style={{
-                  display: "grid", gridTemplateColumns: "32px 1fr", gap: "18px",
-                  padding: "18px 0", borderBottom: i < 2 ? "1px solid var(--border)" : "none",
+            {/* Dark hero band — mirrors the breakdown page */}
+            <div style={{ background: "var(--ink)", padding: "20px 28px", position: "relative", overflow: "hidden" }}>
+              <span aria-hidden="true" style={{
+                position: "absolute", right: "-3%", top: "50%", transform: "translateY(-50%)",
+                fontSize: "clamp(80px,18vw,160px)", fontWeight: 900,
+                color: "transparent", WebkitTextStroke: "1px rgba(255,255,255,0.03)",
+                lineHeight: 1, pointerEvents: "none", userSelect: "none",
+              }}>R</span>
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{
+                  fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)", marginBottom: "10px",
+                  display: "flex", alignItems: "center", gap: "10px",
                 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", paddingTop: "3px" }}>
-                    {step.num}
-                  </div>
+                  <span style={{ width: "16px", height: "1px", background: "var(--signal)", display: "block" }} />
+                  NBA · First Round · Sample Breakdown
+                </div>
+                <div style={{
+                  fontSize: "clamp(18px,4vw,26px)", fontWeight: 800,
+                  letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.1, marginBottom: "16px",
+                }}>
+                  Memphis Grizzlies
+                  <span style={{ fontSize: "0.55em", fontWeight: 400, color: "rgba(255,255,255,0.4)", margin: "0 8px" }}>at</span>
+                  Oklahoma City Thunder
+                </div>
+                {/* Confidence badge */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "8px",
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 0, padding: "10px 16px",
+                }}>
+                  <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--lean)", display: "block", flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--signal)", marginBottom: "7px" }}>
-                      {step.title}
-                    </div>
-                    <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.62 }}>{step.body}</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--lean)" }}>Lean</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>Directional but not clean</div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* Locked steps 04–06 in document flow — sets card height correctly */}
-            <div style={{ padding: "12px 32px 88px", display: "flex", flexDirection: "column", gap: "5px" }}>
+            {/* Stats bar */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", background: "var(--surface)", borderBottom: "1px solid var(--border-med)" }}>
               {[
-                { num: "04", label: "Fragility Check",  desc: "What breaks the base script" },
-                { num: "05", label: "Market Read",       desc: "What the books are saying" },
-                { num: "06", label: "What This Means",   desc: "The plain-English summary" },
-              ].map((row) => (
-                <div key={row.num} style={{
-                  display: "flex", alignItems: "center", gap: "12px",
-                  padding: "9px 14px", borderRadius: 0,
-                  background: "rgba(14,14,14,0.04)", border: "1px solid rgba(14,14,14,0.07)",
+                { label: "Spread",  value: "OKC -8.5" },
+                { label: "Total",   value: "211.5" },
+                { label: "MEM ML",  value: "+305" },
+                { label: "OKC ML",  value: "-375" },
+              ].map((s, i) => (
+                <div key={s.label} style={{
+                  padding: "14px 16px", textAlign: "center",
+                  borderRight: i < 3 ? "1px solid var(--border)" : "none",
                 }}>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600, color: "var(--muted-light)", letterSpacing: "0.08em", flexShrink: 0, width: "18px" }}>
-                    {row.num}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--signal)" }}>
-                      {row.label}
-                    </span>
-                    <span style={{ fontSize: "11.5px", color: "var(--muted)", marginLeft: "8px" }}>
-                      {row.desc}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: "11px", opacity: 0.35, flexShrink: 0 }}>🔒</span>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
                 </div>
               ))}
             </div>
 
-            {/* Pure gradient overlay — visual only, no children */}
-            <div className="hp-preview-fade" style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: "170px",
-              background: "linear-gradient(to bottom, rgba(240,237,230,0) 0%, rgba(240,237,230,0.8) 45%, rgba(240,237,230,1) 75%)",
-              pointerEvents: "none",
-            }} />
-
-            {/* CTA button — sits above gradient */}
-            <div style={{
-              position: "absolute", bottom: "36px", left: 0, right: 0, zIndex: 20,
-              display: "flex", justifyContent: "center", pointerEvents: "auto",
-            }}>
-              <Link href="/intel" className="hp-preview-btn" style={{
-                fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
-                padding: "13px 32px", borderRadius: 0, background: "var(--ink)",
-                display: "inline-flex", alignItems: "center", gap: "8px", transition: "all 0.2s",
-              }}>
-                Read the full breakdown →
-              </Link>
+            {/* Full breakdown — all six steps */}
+            <div style={{ padding: "28px 24px 40px", maxWidth: "720px", margin: "0 auto" }}>
+              <BreakdownView breakdown={SAMPLE_BREAKDOWN} game={SAMPLE_GAME} />
             </div>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: "40px" }}>
+            <Link href="/intel" className="hp-preview-btn" style={{
+              fontSize: "14px", fontWeight: 600, color: "#fff", textDecoration: "none",
+              padding: "13px 32px", borderRadius: 0, background: "var(--ink)",
+              display: "inline-flex", alignItems: "center", gap: "8px", transition: "all 0.2s",
+            }}>
+              Get tonight&apos;s breakdown →
+            </Link>
           </div>
         </div>
       </section>
