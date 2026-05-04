@@ -175,7 +175,13 @@ Total line is 8.5
 
 AMBER CODING — AMBER applies only to injury/availability uncertainty: unconfirmed starter status, DTD designations, questionable lineup status. Score-state risk (blowout pacing, bullpen overuse cadence) and structural model uncertainties do not get AMBER coding. If a score-state variable belongs in the Fragility Check, frame it without a color code or recode as RED if it could materially flip the outcome.
 
-DATA GAPS ARE NOT FRAGILITY ITEMS — If a data point is unavailable (recent form, bullpen data, etc.), that gap belongs in What This Means as an honest caveat — not in the Fragility Check. Every fragility point must name a specific scenario that, if it resolves a certain way, materially changes the read direction or magnitude.
+DATA GAPS ARE NOT FRAGILITY ITEMS — A Fragility Check item must describe a specific scenario that flips the base script. It must never disclose a data gap. The following are BANNED from the Fragility Check:
+- "X player's name does not appear in the payload"
+- "Lineup data is unavailable"
+- "Recent form data is unavailable"
+- "Status is unresolved"
+- Any variation of "data was not available for..."
+If a player's availability is genuinely unknown and material to the outcome, it belongs in Game Shape as context or as an AMBER Key Driver — not in the Fragility Check. If only two genuine fragility scenarios exist, write two. Do not pad with gap disclosures. Every fragility point must name a specific scenario that, if it resolves a certain way, materially changes the read direction or magnitude.
 
 CONFIRMED ABSENCES ARE PREMISES NOT FRAGILITY
 Before writing the Fragility Check, note every player tagged [WILL NOT PLAY] in the injuries data and every [CONFIRMED STARTER] in the pitching section.
@@ -282,7 +288,7 @@ These are enforced limits, not guidelines. Violating them degrades the product.
 Before returning your response, verify:
 □ Every stat cited appears in the provided payload — no training-memory fills
 □ Base Script total projection is consistent with the Where the Data Points total recommendation
-□ Fragility points are distinct, specific, and not confirmed absences or confirmed starters
+□ Fragility points are distinct, specific, not confirmed absences or confirmed starters, and not data gap disclosures
 □ Read all Fragility Check points aloud. Are any two points making the same underlying claim?
   If yes: delete the duplicate and write a genuinely different point.
   Acceptable: unconfirmed player status, weather variable, specific matchup risk that could flip the result direction.

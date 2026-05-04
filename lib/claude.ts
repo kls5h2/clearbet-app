@@ -90,7 +90,13 @@ Total line is 9
 RULE 8 — FRAGILITY CHECK STANDARDS
 Each fragility point must be: a specific named variable (not a general observation), something that could materially change the read direction (not just affect the margin), different from the other fragility points (do not list the same risk from two angles), and not a restatement of the Base Script conditions.
 
-DATA GAPS ARE NOT FRAGILITY ITEMS — If a data point is unavailable (recent form, lineup, etc.), that gap belongs in What This Means as an honest caveat — not in the Fragility Check. "Recent form data was unavailable" is not a fragility item. Every fragility point must name a specific scenario that, if it resolves a certain way, materially changes the read direction or magnitude.
+DATA GAPS ARE NOT FRAGILITY ITEMS — A Fragility Check item must describe a specific scenario that flips the base script. It must never disclose a data gap. The following are BANNED from the Fragility Check:
+- "X player's name does not appear in the payload"
+- "Lineup data is unavailable"
+- "Recent form data is unavailable"
+- "Status is unresolved"
+- Any variation of "data was not available for..."
+If a player's availability is genuinely unknown and material to the outcome, it belongs in Game Shape as context or as an AMBER Key Driver — not in the Fragility Check. If only two genuine fragility scenarios exist, write two. Do not pad with gap disclosures. Every fragility point must name a specific scenario that, if it resolves a certain way, materially changes the read direction or magnitude.
 
 CONFIRMED ABSENCES ARE PREMISES NOT FRAGILITY
 Before writing the Fragility Check, list every player marked as OUT in the injuries array.
@@ -194,8 +200,8 @@ HARD STOP BEFORE WRITING FRAGILITY CHECK:
 1. List every player marked OUT in the injuries array. Write their names here in your internal reasoning before continuing.
 2. These players are BANNED from appearing in any Fragility Check point.
 3. QUESTIONABLE and DOUBTFUL players ARE valid Fragility Check items (AMBER). PROBABLE players are expected active — do not list them as fragility unless their role is genuinely pivotal.
-4. Write your fragility points.
-5. Count them. Read them aloud. If any two points reference the same player, the same injury, or the same underlying condition: delete one and replace it with a genuinely different variable.
+4. Write your fragility points. Each one must describe a scenario that flips the base script — not a data gap, not an absence of information, not "status is unresolved."
+5. Count them. Read them aloud. If any two points reference the same player, the same injury, or the same underlying condition: delete one and replace it with a genuinely different variable. If any point is a data gap disclosure ("data was unavailable", "player not in payload", "lineup unknown"), delete it — do not replace with another gap. If only two genuine scenarios exist, write two.
 6. You must produce exactly 2-3 DISTINCT fragility points. Distinct means: different players, different conditions, different outcomes — not the same risk stated twice.
 
 STEP 4 — FRAGILITY CHECK
@@ -300,7 +306,7 @@ Before returning your response, verify:
 □ Market Read attributes line movement to provided lineMovement data only
 □ Driver labels match driver directions
 □ Base Script commits to a most-likely scenario
-□ Fragility points are distinct, specific, and not confirmed absences
+□ Fragility points are distinct, specific, not confirmed absences, and not data gap disclosures
 □ Read all Fragility Check points aloud. Are any two points making the same underlying claim?
   If yes: delete the duplicate and write a genuinely different point.
   Acceptable: unconfirmed player status, weather variable, specific matchup risk that could flip the result direction.
