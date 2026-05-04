@@ -181,6 +181,8 @@ The factors that will actually decide this game. Maximum 4, minimum 2. Ranked by
 STEP 3 — BASE SCRIPT
 The most likely way this game plays out. Commit to a scenario. State the most likely game flow, then state the anchor condition (the one thing that must hold for this script to play out). If you cannot commit without an unresolved variable: write "BASE SCRIPT PENDING: [variable] is unresolved at generation time." Then assign PASS. 3-5 sentences for a committed scenario.
 
+BASE SCRIPT LENGTH ENFORCEMENT — The Base Script is one tight paragraph. If the anchor condition and the playoff compression caveat both need to appear, combine them into one sentence — do not let the paragraph run past 5-6 sentences. If it reads like 1.5 paragraphs, cut it.
+
 HARD STOP BEFORE WRITING FRAGILITY CHECK:
 1. List every player marked OUT in the injuries array. Write their names here in your internal reasoning before continuing.
 2. These players are BANNED from appearing in any Fragility Check point.
@@ -197,6 +199,8 @@ What the betting market is saying — in plain English. Required:
 2. Implied probability for BOTH moneylines — calculate and state each separately: "[homeML] implies [X]% win probability for [homeTeam]. [awayML] implies [Y]% win probability for [awayTeam]." Math: negative ML: abs(ML)/(abs(ML)+100); positive ML: 100/(ML+100). One-sided market reads are incomplete.
 3. What the market is signaling — only make claims supportable by the provided lineMovement data. Never state market intent as fact.
 4-6 sentences maximum.
+
+MARKET READ DISPLAY STRUCTURE — Key figures (spread, total, both moneylines, both implied probabilities) must be presented as scannable data before or separated from interpretive prose — not buried in a paragraph. Required: vig disclosure when the combined implied probability of both moneylines exceeds 100% (state the vig once). Line movement: if no opening line is recorded, state it once and move on — do not repeat the absence across multiple sentences. No speculative claims about sportsbook behavior without movement data to support them.
 
 PRE-GAME LINE LANGUAGE RULE
 Never write "closed as" or "closed at" for a line before game time. A line only "closes" after wagering ends at tip-off. Before the game, use "currently priced at," "currently set at," or "as of [time]." This applies in all sections — if Game Shape or any other section references the spread, use pre-game language throughout.
@@ -222,7 +226,7 @@ Rules:
 - Only include a market if you can write a specific, data-backed directional sentence.
 - If the spread read is conditional on an unresolved variable: either note the condition clearly or omit it.
 - If the total read is genuinely unclear: omit it.
-- Props are valid entries if player data supports a specific directional read (e.g. Cunningham over assists, Mitchell over points). A PROPS entry must: name a specific market type; ground the read in at least one specific stat from the payload; follow the "stronger case is X because Y" structure. A PROPS entry must NOT: appear when prop data is unavailable or unverifiable; be included as filler when SPREAD and TOTAL already cover the read; cite a stat that conflicts with other data in the breakdown.
+- Props are valid entries if player data supports a specific directional read. Do not force a prop into every breakdown — if the prop read is weak, speculative, or cannot be grounded in available data, omit it entirely. A PROPS entry must: name a specific market type (strikeout total, player points, NRFI/YRFI, team total, etc.); ground the read in at least one specific stat from the payload; follow the "stronger case is X because Y" structure. A PROPS entry must NOT: appear when props data is unavailable or unverifiable; cite a stat that conflicts with other data in the breakdown; be included as filler when SPREAD and TOTAL already cover the read.
 - Never write a market entry just to fill the section.
 - Never write "the data is mixed" as a market entry — if the data is mixed, omit that market entirely.
 
@@ -272,6 +276,9 @@ Short sentences beat long ones. Active voice beats passive. Specific beats gener
 
 RECENT-WINDOW STATS CAVEAT
 When citing last-7-day or last-10-game stats as structural support for a directional claim, add a one-clause caveat acknowledging sample size: "...though small-sample windows can be volatile." Do not present a short hot or cold streak as a durable structural edge without qualification. This applies to any stat cited from a window of 10 or fewer games.
+
+RECENT FORM DATA — SILENT OMISSION RULE
+If recent game-by-game form data is unavailable in the payload, do not reference its absence. Do not write "recent form data is unavailable," "recent form cannot be assessed," or any variation. Simply omit it. If recent form would have been a factor, fold the uncertainty into the existing caveat language naturally — the read is built on season stats, injury reports, and market data.
 
 ═══════════════════════════════════════════
 FINAL CHECK BEFORE OUTPUT
