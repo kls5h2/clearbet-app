@@ -3,6 +3,75 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
+import type { AnyGame, BreakdownResult } from "@/lib/types";
+import BreakdownView from "@/components/BreakdownView";
+
+const SAMPLE_BREAKDOWN: BreakdownResult = {
+  gameShape: "Game 5 of the OKC–Memphis First Round series is a half-court game by design. Both teams prefer structured offense — OKC through SGA isolation, Memphis through Morant creation — and pace in Games 3 and 4 averaged 95.3 possessions, confirming neither team is playing fast. Memphis arrives facing elimination, adding defensive intensity but also the risk of forcing offense in situations the data doesn't support. OKC is deeper and more efficient in the half-court; this environment favors them.",
+  keyDrivers: [
+    {
+      factor: "SUPPORTS THE SCRIPT — SGA half-court dominance: Shai Gilgeous-Alexander is averaging 31.2 PPG on 52.4% shooting through four games, operating at 1.21 points per possession against Memphis's single-coverage scheme — above his season mark of 1.09 PPP. Memphis has no reliable answer for him one-on-one.",
+      weight: "primary",
+      direction: "positive",
+    },
+    {
+      factor: "WORKS AGAINST MEMPHIS — JJJ foul trouble pattern: Jaren Jackson Jr. has picked up 3+ fouls by halftime in three of four games. OKC's pick-and-roll coverage draws JJJ into early defensive commitments, removing Memphis's primary rim protection during OKC's peak isolation runs in the second and third quarters.",
+      weight: "primary",
+      direction: "negative",
+    },
+    {
+      factor: "WORKS AGAINST MEMPHIS — Ja Morant questionable (right knee contusion): Morant logged 31 minutes in Game 4 while limited — Memphis's half-court creation rate in this series drops from 1.05 PPP with him to 0.87 without him at full speed. His status for tonight remains unresolved.",
+      weight: "primary",
+      direction: "negative",
+    },
+    {
+      factor: "SUPPORTS THE SCRIPT — OKC fourth-quarter execution: OKC's fourth-quarter net rating is +8.4, best in the league, and they are 12-2 in games decided by 6 or fewer points this season. Memphis ranks 28th in fourth-quarter net rating at -4.1 — OKC's closing execution has been the margin in all three wins.",
+      weight: "secondary",
+      direction: "positive",
+    },
+  ],
+  baseScript: "OKC controls pace through three quarters — SGA operates in the mid-range and isolation, JJJ's foul trouble limits Memphis's interior defense, and Memphis cannot generate clean half-court offense against OKC's switching scheme. If Morant remains limited, Memphis has no reliable creation mechanism late and OKC closes with their fourth-quarter execution advantage. Projected range: OKC 109, Memphis 98 — combined 207, well under the posted 211.5.",
+  fragilityCheck: [
+    { item: "Morant plays 36+ minutes at full speed — if Morant is fully available tonight, Memphis's half-court creation rate climbs back toward its regular-season mark and the expected margin compresses significantly.", color: "red" },
+    { item: "Jaren Jackson Jr. availability — JJJ is listed questionable with knee inflammation. A scratched JJJ removes Memphis's primary rim protection and would push the expected total well below 211.5.", color: "amber" },
+    { item: "OKC abandons half-court structure — OKC pushed their transition rate in Game 2, a game they lost. If they leave the disciplined approach that produced wins in Games 3 and 4, Memphis generates transition buckets and the spread margin shrinks.", color: "red" },
+  ],
+  marketRead: "The spread has moved 1.5 points toward OKC since open — from OKC -7 to OKC -8.5. That movement is notable against elimination urgency, which typically drives public money toward the underdog side; the market is pricing OKC's closing execution over desperation variance. The total has held at 211.5 since open, consistent with the market accepting the half-court pace environment both teams established in Games 3 and 4.",
+  edge: [
+    "The data points toward OKC covering -8.5 based on their fourth-quarter net rating (+8.4) and SGA's 1.21 PPP efficiency against Memphis's single-coverage scheme. The stronger case is OKC covering if Morant remains limited — this read changes if he's confirmed full go at game time.",
+    "Base Script projects a combined 207. The stronger case is the under on 211.5 because pace in Games 3 and 4 has averaged 95.3 possessions and OKC's defensive structure has held Memphis to their lowest transition scoring rate of the series.",
+  ],
+  edgeClosingLine: "These are the environments the data creates. Your decision is always yours.",
+  decisionLens: "The data points toward OKC — their fourth-quarter execution margin and SGA's efficiency against Memphis's coverage scheme are the structural edges here. The condition that flips this read is Morant fully available for 36+ minutes, which is exactly why this carries a Lean and not a Clear Spot. Confirm Morant's status and JJJ's availability at game time before acting on either the spread or total. This is not a pick. This is what the data says. Your decision is always yours.",
+  cardSummary: "OKC's fourth-quarter net rating (+8.4) and SGA's isolation efficiency create a structural edge in Game 5. Morant's questionable status is the single variable that could compress the expected margin.",
+  shareHook: "OKC is 12-2 in close games this season — and Memphis is 28th in 4th-quarter net rating.",
+  confidenceLevel: 2,
+  confidenceLabel: "LEAN",
+  signalGrade: "B",
+  primaryUncertainty: "Ja Morant's availability and minutes load for Game 5",
+  glossaryTerm: "net rating",
+  glossaryDefinition: "Points scored minus points allowed per 100 possessions — the standard measure of how well a team performs on both ends, independent of pace.",
+};
+
+const SAMPLE_GAME: AnyGame = {
+  sport: "NBA",
+  gameId: "hiw-sample-okc-mem",
+  gameDate: "20260504",
+  gameTime: "9:30 PM ET",
+  gameStatus: "scheduled",
+  homeTeam: { teamId: "OKC", teamAbv: "OKC", teamName: "Oklahoma City Thunder", teamCity: "Oklahoma City" },
+  awayTeam: { teamId: "MEM", teamAbv: "MEM", teamName: "Memphis Grizzlies", teamCity: "Memphis" },
+  odds: {
+    spread: -8.5,
+    total: 211.5,
+    homeMoneyline: -375,
+    awayMoneyline: 305,
+    impliedHomeProbability: 78.9,
+    impliedAwayProbability: 24.7,
+    spreadBookmaker: "sample",
+    totalsBookmaker: "sample",
+  },
+};
 
 function HeroEyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -507,6 +576,42 @@ export default function HowItWorksPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* SAMPLE BREAKDOWN */}
+        <div className="reveal" style={{ marginTop: 48 }}>
+          {/* Prominent sample banner */}
+          <div style={{
+            background: "var(--ink)",
+            padding: "16px 20px",
+            display: "flex", alignItems: "center", gap: "14px",
+            borderBottom: "none",
+          }}>
+            <div style={{
+              background: "var(--signal)", color: "#fff",
+              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              padding: "5px 12px", flexShrink: 0,
+            }}>
+              Sample Breakdown
+            </div>
+            <div style={{
+              fontSize: "13px",
+              color: "rgba(255,255,255,0.45)",
+              lineHeight: 1.4,
+            }}>
+              This is an example breakdown — not a live game. Real breakdowns look exactly like this.
+            </div>
+            <div style={{
+              marginLeft: "auto", flexShrink: 0,
+              fontFamily: "var(--mono)", fontSize: "11px",
+              color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}>
+              OKC vs MEM · Game 5
+            </div>
+          </div>
+          <BreakdownView breakdown={SAMPLE_BREAKDOWN} game={SAMPLE_GAME} />
         </div>
 
         {/* DIVIDER */}

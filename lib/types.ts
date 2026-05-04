@@ -30,10 +30,10 @@ export interface InjuryReport {
 export interface PlayerInjury {
   playerName: string;
   position: string;
-  status: "Out" | "Doubtful" | "Questionable" | "Day-To-Day";
+  // Official NBA injury report statuses — used verbatim from the PDF.
+  // "Probable" means listed but expected to play; "Day-To-Day" is legacy/MLB fallback.
+  status: "Out" | "Doubtful" | "Questionable" | "Probable" | "Day-To-Day";
   description: string;
-  // true = authoritative source (ESPN/MLB Stats API); false/undefined = fallback source (Tank01)
-  confirmed?: boolean;
 }
 
 // ─── Breakdown (Claude output) ────────────────────────────────────────────────
@@ -180,8 +180,8 @@ export interface GameDetailData {
   awayTeamStats: TeamSeasonStats;
   homeRecentForm: RecentGame[];
   awayRecentForm: RecentGame[];
-  injuries: InjuryReport; // Tank01 — retained only as emergency fallback; NBA prompt uses ESPN
-  espnInjuries: import("./espn-nba-injuries").ESPNInjuryResult;
+  injuries: InjuryReport; // Primary source: official NBA PDF via fetchOfficialNBAInjuries()
+  espnInjuries?: import("./espn-nba-injuries").ESPNInjuryResult; // unused for NBA injuries; kept for type compat
   espnSeries: import("./espn-nba-series").ESPNSeriesResult;
   homePlayoffContext: PlayoffContext | null;
   awayPlayoffContext: PlayoffContext | null;

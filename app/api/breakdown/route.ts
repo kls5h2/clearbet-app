@@ -17,7 +17,6 @@ import {
   getMLBBullpenStats,
   getMLBUmpire,
 } from "@/lib/mlb-stats-api";
-import { fetchESPNNBAInjuries } from "@/lib/espn-nba-injuries";
 import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
@@ -393,9 +392,8 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     const t01Home = rawGame.homeTeam;
     const t01Away = rawGame.awayTeam;
 
-    // Fetch all data in parallel using Tank01's designations.
-    // ESPN injuries + series score are authoritative real-time sources.
-    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnInjuries, espnSeries, t01HomeRoster, t01AwayRoster] = await Promise.all([
+    // Fetch all data in parallel. Official NBA PDF is the sole injury source.
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnSeries, t01HomeRoster, t01AwayRoster] = await Promise.all([
       getTeamStats(t01Home.teamAbv),
       getTeamStats(t01Away.teamAbv),
       getRecentForm(t01Home.teamAbv),
@@ -404,7 +402,6 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       fetchNBAOdds().catch(() => new Map()),
       getPlayoffContext(t01Home.teamAbv, t01Away.teamAbv).catch(() => ({ home: null, away: null })),
       getH2HRecord(t01Home.teamAbv, t01Away.teamAbv).catch(() => null),
-      fetchESPNNBAInjuries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
       fetchESPNNBASeries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
       getTeamRosterNames(t01Home.teamAbv).catch(() => []),
       getTeamRosterNames(t01Away.teamAbv).catch(() => []),
@@ -430,21 +427,13 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     const injuries      = flipped
       ? { homeInjuries: t01Injuries.awayInjuries, awayInjuries: t01Injuries.homeInjuries }
       : t01Injuries;
-    const espnInjuriesFinal = flipped && espnInjuries.ok
-      ? { ok: true as const, fetchedAt: espnInjuries.fetchedAt,
-          homeInjuries: espnInjuries.awayInjuries, awayInjuries: espnInjuries.homeInjuries }
-      : espnInjuries;
-    if (espnInjuriesFinal.ok) {
-      console.log(
-        `[breakdown:NBA] ESPN injuries: home=${espnInjuriesFinal.homeInjuries.length}, ` +
-        `away=${espnInjuriesFinal.awayInjuries.length} (fetched ${espnInjuriesFinal.fetchedAt})`
-      );
-    } else {
-      console.warn("[breakdown:NBA] ESPN injuries UNAVAILABLE — prompt will flag as such");
-    }
+
+    console.log(
+      `[breakdown:NBA] official injuries: home=${injuries.homeInjuries.length} (${injuries.homeInjuries.map(p => `${p.playerName} ${p.status}`).join(", ") || "none"}), ` +
+      `away=${injuries.awayInjuries.length} (${injuries.awayInjuries.map(p => `${p.playerName} ${p.status}`).join(", ") || "none"})`
+    );
 
     // Swap home/away in the series data when the Odds API disagreed with Tank01.
-    // ESPN's own home/away resolution can stay — we just relabel the "home"/"away" sides.
     const espnSeriesFinal = flipped && espnSeries.ok
       ? {
           ok: true as const,
@@ -488,38 +477,27 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       if (!fragilityReason) fragilityReason = reason;
     };
 
-    // 1. ESPN injury source / freshness checks
-    if (!espnInjuriesFinal.ok) {
-      forceFragile(
-        "ESPN injury data unavailable — injury status unverified for both rosters",
-        "Injury data could not be verified. Treat all roster assumptions as unconfirmed.",
-      );
-    } else {
-      const injAgeMs = Date.now() - new Date(espnInjuriesFinal.fetchedAt).getTime();
-      if (injAgeMs > 4 * 3600 * 1000) {
-        forceFragile(
-          `ESPN injury data is ${Math.round(injAgeMs / 3600000)}h old — may not reflect today's availability`,
-          "Injury data freshness could not be confirmed. Lineup assumptions carry elevated uncertainty.",
-        );
-      }
+    // 1. Official NBA PDF injury check — if both rosters returned empty, flag uncertainty
+    const totalInjuries = injuries.homeInjuries.length + injuries.awayInjuries.length;
+    if (totalInjuries === 0) {
+      verificationFlags.push("Official injury report returned no entries — lineups assumed clean");
+    }
 
-      // 2. Top-player status check
+    // 2. Top-player status check (Questionable/Doubtful = genuine uncertainty → FRAGILE)
+    {
       const topPlayerNames = new Set([
         ...homeStats.topPlayers.map((p) => p.playerName.toLowerCase()),
         ...awayStats.topPlayers.map((p) => p.playerName.toLowerCase()),
       ]);
-      const WATCHED_STATUSES = new Set(["Out", "Doubtful", "Questionable", "Day-To-Day"]);
-      const allEspnEntries = [
-        ...espnInjuriesFinal.homeInjuries,
-        ...espnInjuriesFinal.awayInjuries,
-      ];
-      const impacted = allEspnEntries.find(
-        (e) => topPlayerNames.has(e.playerName.toLowerCase()) && WATCHED_STATUSES.has(e.status),
+      const FRAGILE_STATUSES = new Set(["Questionable", "Doubtful"]);
+      const allEntries = [...injuries.homeInjuries, ...injuries.awayInjuries];
+      const impacted = allEntries.find(
+        (e) => topPlayerNames.has(e.playerName.toLowerCase()) && FRAGILE_STATUSES.has(e.status),
       );
       if (impacted) {
         forceFragile(
-          `Top player ${impacted.playerName} listed as ${impacted.status}`,
-          `${impacted.playerName} is listed as ${impacted.status}. Confidence reduced pending lineup confirmation.`,
+          `Top player ${impacted.playerName} listed as ${impacted.status} on official report`,
+          `${impacted.playerName} is ${impacted.status}. Confidence reduced pending lineup confirmation.`,
         );
       }
     }
@@ -585,7 +563,6 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       homeRecentForm: homeForm,
       awayRecentForm: awayForm,
       injuries,
-      espnInjuries: espnInjuriesFinal,
       espnSeries: espnSeriesFinal,
       homePlayoffContext: playoffCtx.home,
       awayPlayoffContext: playoffCtx.away,

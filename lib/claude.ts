@@ -98,11 +98,11 @@ These players MUST appear in Game Shape as confirmed absences.
 These players MUST NOT appear in the Fragility Check under any circumstances.
 Do not write "if [confirmed OUT player] somehow plays" — a confirmed OUT is not a fragility variable.
 If you find yourself writing about a confirmed OUT player in the Fragility Check, delete it and replace with a genuine uncertainty.
-Only unconfirmed or DTD statuses belong in the Fragility Check.
+Only QUESTIONABLE or DOUBTFUL statuses belong in the Fragility Check. PROBABLE players are expected active — note the designation in Key Drivers if relevant but do not treat it as uncertainty.
 
 Color coding:
 🔴 RED: variable that would completely invalidate the read if it resolves against you
-🟡 AMBER: injury uncertainty only — a player's questionable designation, DTD status, or unconfirmed lineup availability. Do not use AMBER for score-state variables (garbage-time bleed, blowout pacing) or structural model uncertainties — those do not get color coding. If a score-state variable belongs in the Fragility Check, frame it without a color code.
+🟡 AMBER: injury uncertainty only — a player's QUESTIONABLE or DOUBTFUL status from the official NBA report. Do not use AMBER for score-state variables (garbage-time bleed, blowout pacing) or structural model uncertainties — those do not get color coding. If a score-state variable belongs in the Fragility Check, frame it without a color code.
 🟢 GREEN: variable that would strengthen the read if it resolves in your favor
 
 RULE 9 — TOTAL PROJECTION MATH
@@ -148,6 +148,13 @@ Never reconstruct a combined record from these two fields. Never state a total n
 OUTLIER RESULTS AS PLAYOFF EVIDENCE
 A single regular-season result with a margin of 20 or more points must not be cited as structural evidence for spread coverage in a playoff game. Either remove it or contextualize explicitly: "[result] was a regular-season outlier that does not predict playoff margin."
 
+HEAD-TO-HEAD COLOR CODING IN KEY DRIVERS
+H2H records used as Key Drivers must follow these color coding rules exactly:
+- A split record (2-2, 1-2, 2-3) with no dominant pattern = NEUTRAL CONTEXT. Do not label as SUPPORTS THE SCRIPT or WORKS AGAINST. Do not draw a directional conclusion from a split.
+- A split record where one team's wins came by larger margins does not override the split — present the margin context without a directional color label. Flag it as NEUTRAL CONTEXT.
+- A single blowout result within an otherwise even split must be explicitly flagged as a non-predictive outlier and cannot be the basis for a SUPPORTS THE SCRIPT driver.
+- Only label H2H as SUPPORTS THE SCRIPT or WORKS AGAINST [TEAM] when the record is clearly one-sided (e.g., 3-1 or 4-0) with consistent margins across multiple games — not when one outlier skews an otherwise split record.
+
 PLAYOFF MARGIN COMPRESSION RULE
 When the spread is 10 or more points in a playoff game: the Base Script must acknowledge that playoff environments compress scoring margins relative to regular season expectations. Defensive intensity increases, officiating tightens, and underdog offensive floors lift in playoff settings — making regular-season-style blowouts less probable even when one team is structurally superior. State this as one sentence in the Base Script. Do not use it as a Fragility point.
 
@@ -186,21 +193,23 @@ BASE SCRIPT LENGTH ENFORCEMENT — The Base Script is one tight paragraph. If th
 HARD STOP BEFORE WRITING FRAGILITY CHECK:
 1. List every player marked OUT in the injuries array. Write their names here in your internal reasoning before continuing.
 2. These players are BANNED from appearing in any Fragility Check point.
-3. Write your fragility points.
-4. Count them. Read them aloud. If any two points reference the same player, the same injury, or the same underlying condition: delete one and replace it with a genuinely different variable.
-5. You must produce exactly 2-3 DISTINCT fragility points. Distinct means: different players, different conditions, different outcomes — not the same risk stated twice.
+3. QUESTIONABLE and DOUBTFUL players ARE valid Fragility Check items (AMBER). PROBABLE players are expected active — do not list them as fragility unless their role is genuinely pivotal.
+4. Write your fragility points.
+5. Count them. Read them aloud. If any two points reference the same player, the same injury, or the same underlying condition: delete one and replace it with a genuinely different variable.
+6. You must produce exactly 2-3 DISTINCT fragility points. Distinct means: different players, different conditions, different outcomes — not the same risk stated twice.
 
 STEP 4 — FRAGILITY CHECK
 What breaks the base script? 2-3 specific named variables only. Apply color coding (RED/AMBER/GREEN) correctly. Do not list confirmed absences. Each point: [COLOR] [PLAYER/VARIABLE]: [specific condition] — [what happens to the read if this resolves against you].
 
 STEP 5 — MARKET READ
-What the betting market is saying — in plain English. Required:
-1. Explicit line movement disclosure: state direction and magnitude from open. If movement data is available: "As of [currentTime], [spread] has moved [X] from the open of [open]." If unchanged: "unchanged from open." If no opening line exists: "No line movement data available to assess direction or sharp positioning." Never omit this disclosure.
-2. Implied probability for BOTH moneylines — calculate and state each separately: "[homeML] implies [X]% win probability for [homeTeam]. [awayML] implies [Y]% win probability for [awayTeam]." Math: negative ML: abs(ML)/(abs(ML)+100); positive ML: 100/(ML+100). One-sided market reads are incomplete.
-3. What the market is signaling — only make claims supportable by the provided lineMovement data. Never state market intent as fact.
-4-6 sentences maximum.
+What the betting market is saying — in plain English. The UI automatically displays the raw figures (spread, total, both moneylines, both implied probabilities, vig) as a scannable data row — do NOT repeat these figures in the marketRead text. The marketRead field is for interpretation only.
 
-MARKET READ DISPLAY STRUCTURE — Key figures (spread, total, both moneylines, both implied probabilities) must be presented as scannable data before or separated from interpretive prose — not buried in a paragraph. Required: vig disclosure when the combined implied probability of both moneylines exceeds 100% (state the vig once). Line movement: if no opening line is recorded, state it once and move on — do not repeat the absence across multiple sentences. No speculative claims about sportsbook behavior without movement data to support them.
+Required in the marketRead text:
+1. Explicit line movement disclosure: state direction and magnitude from open. If movement data is available: "As of [currentTime], [spread] has moved [X] from the open of [open]." If unchanged: "unchanged from open." If no opening line exists: "No line movement data available to assess direction or sharp positioning." Never omit this disclosure.
+2. What the market is signaling — only make claims supportable by the provided lineMovement data. Never state market intent as fact.
+3-4 sentences maximum.
+
+MARKET READ DISPLAY STRUCTURE — Do not restate the spread, total, moneylines, implied probabilities, or vig — those are shown in the UI data row. Focus on movement context and market interpretation only. Line movement: if no opening line is recorded, state it once and move on. No speculative claims about sportsbook behavior without movement data to support them.
 
 PRE-GAME LINE LANGUAGE RULE
 Never write "closed as" or "closed at" for a line before game time. A line only "closes" after wagering ends at tip-off. Before the game, use "currently priced at," "currently set at," or "as of [time]." This applies in all sections — if Game Shape or any other section references the spread, use pre-game language throughout.
@@ -371,9 +380,6 @@ function parseLastPlayedFromDescription(description: string): { date: Date; labe
   return { date: candidate, label: `${match[1].slice(0, 3)} ${day}` };
 }
 
-// Legacy: Tank01 injury data is no longer sent to Claude for NBA — ESPN is
-// the authoritative source and is rendered inside buildUserMessage via
-// renderESPNSection(). Kept for reference only.
 const INJURY_INSTRUCTION = "";
 
 // Parse "12:45 PM ET" + "YYYYMMDD" → ISO timestamp in ET (assumes EDT, UTC-4, during sports season).
@@ -420,7 +426,7 @@ function formatVerificationSection(v: VerificationResult): string {
 }
 
 function buildUserMessage(data: GameDetailData): string {
-  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, espnInjuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement, verification, homeRoster, awayRoster } = data;
+  const { game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries, espnSeries, homePlayoffContext, awayPlayoffContext, h2h, lineMovement, verification, homeRoster, awayRoster } = data;
   const { homeTeam, awayTeam, odds } = game;
 
   // Timing context — drives hoursUntilTip ceiling in RULE 4 of the system prompt
@@ -493,33 +499,35 @@ function buildUserMessage(data: GameDetailData): string {
   const formatRecentForm = (games: typeof homeRecentForm) =>
     games.map((g) => `${g.result} ${g.teamScore}-${g.opponentScore} vs ${g.opponent} (total: ${g.total})`).join(", ");
 
-  // ESPN is the PRIMARY source for NBA injuries. Tank01 injury data is
-  // ignored entirely — if ESPN fails, we flag INJURY DATA UNAVAILABLE
-  // rather than fall back to stale Tank01 entries.
-  const formatESPNLine = (
-    p: { playerName: string; status: string; description: string; dateUpdated: string }
-  ) => {
-    const tag = p.status === "Out" || p.status === "Doubtful" ? "[WILL NOT PLAY] " : "";
-    const updated = p.dateUpdated ? ` (updated ${p.dateUpdated.slice(0, 10)})` : "";
-    return `${tag}${p.playerName} — ${p.status} — ${p.description}${updated}`;
+  // Official NBA injury report PDF is the sole injury source.
+  // Status semantics for Claude:
+  //   Out         — confirmed absent; treat as fact; mention in Game Shape
+  //   Doubtful    — likely absent; treat as probable absence; mention in Fragility Check (AMBER)
+  //   Questionable — genuine uncertainty; AMBER in Fragility Check
+  //   Probable    — listed but expected active; note designation without affecting confidence
+  const formatOfficialLine = (p: { playerName: string; status: string; description: string }) => {
+    if (p.status === "Out")      return `[OUT — WILL NOT PLAY] ${p.playerName}${p.description ? ` — ${p.description}` : ""}`;
+    if (p.status === "Doubtful") return `[DOUBTFUL — likely absent] ${p.playerName}${p.description ? ` — ${p.description}` : ""}`;
+    if (p.status === "Questionable") return `[QUESTIONABLE — genuine uncertainty, AMBER fragility trigger] ${p.playerName}${p.description ? ` — ${p.description}` : ""}`;
+    if (p.status === "Probable") return `[PROBABLE — expect to play, note designation exists] ${p.playerName}${p.description ? ` — ${p.description}` : ""}`;
+    return `${p.playerName} — ${p.status}${p.description ? ` — ${p.description}` : ""}`;
   };
 
-  const renderESPNSection = (): string => {
-    if (!espnInjuries.ok) {
-      return `━━━ INJURY REPORT ━━━
-INJURY DATA UNAVAILABLE — treat all roster assumptions as unverified. Lead the Fragility Check with lineup uncertainty and set confidence level no higher than LEAN.`;
-    }
-    const renderTeam = (name: string, list: typeof espnInjuries.homeInjuries) =>
+  const renderOfficialInjurySection = (): string => {
+    const homeList = injuries.homeInjuries;
+    const awayList  = injuries.awayInjuries;
+    const renderTeam = (name: string, list: typeof homeList) =>
       list.length === 0
-        ? `${name} injuries: No injuries reported by ESPN`
-        : `${name} injuries:\n${list.map(formatESPNLine).map((l) => `  • ${l}`).join("\n")}`;
+        ? `${name}: No players on official injury report — full roster presumed available`
+        : `${name}:\n${list.map(formatOfficialLine).map((l) => `  • ${l}`).join("\n")}`;
 
-    return `━━━ ESPN INJURY REPORT (fetched ${espnInjuries.fetchedAt}) ━━━
-This is the authoritative source for tonight's injury status. Treat it as primary — any player NOT listed here is presumed available. Do not reference any other roster or injury source.
+    return `━━━ OFFICIAL NBA INJURY REPORT ━━━
+Source: NBA official PDF (published every 15 minutes). Any player NOT listed is presumed available.
+Status guide: OUT = confirmed absent | DOUBTFUL = likely absent | QUESTIONABLE = genuine uncertainty (FRAGILE trigger) | PROBABLE = expected active
 
-${renderTeam(homeTeam.teamName, espnInjuries.homeInjuries)}
+${renderTeam(homeTeam.teamName, homeList)}
 
-${renderTeam(awayTeam.teamName, espnInjuries.awayInjuries)}`;
+${renderTeam(awayTeam.teamName, awayList)}`;
   };
 
   // Render a SERIES CONTEXT block when we're in the playoff window. If the
@@ -638,7 +646,7 @@ ${formatPlayoffContext(homePlayoffContext, homeTeam.teamAbv, homeTeamStats.wins,
 
 ${formatPlayoffContext(awayPlayoffContext, awayTeam.teamAbv, awayTeamStats.wins, awayTeamStats.losses)}
 
-${renderESPNSection()}
+${renderOfficialInjurySection()}
 ${renderSeriesSection()}
 
 ${(homeRoster ?? []).length > 0 && (awayRoster ?? []).length > 0
@@ -755,11 +763,7 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
   // ─── END DEBUG LOGGING ────────────────────────────────────────────────────
 
   // ── Confirmed-OUT names for structural dedup ────────────────────────────────
-  // ESPN is authoritative for NBA injuries; fall back to Tank01 if ESPN failed.
-  const injurySource = data.espnInjuries.ok
-    ? [...data.espnInjuries.homeInjuries, ...data.espnInjuries.awayInjuries]
-    : [...data.injuries.homeInjuries, ...data.injuries.awayInjuries];
-  const confirmedOutNames = injurySource
+  const confirmedOutNames = [...data.injuries.homeInjuries, ...data.injuries.awayInjuries]
     .filter((p) => p.status === "Out")
     .map((p) => p.playerName);
 

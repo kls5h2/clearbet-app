@@ -123,6 +123,13 @@ The H2H payload is pre-split into two explicitly labeled fields — do not combi
 
 Never reconstruct a combined record from these two fields.
 
+HEAD-TO-HEAD COLOR CODING IN KEY DRIVERS
+H2H records used as Key Drivers must follow these color coding rules exactly:
+- A split record (2-2, 1-2, 2-3) with no dominant pattern = NEUTRAL CONTEXT. Do not label as SUPPORTS THE SCRIPT or WORKS AGAINST. Do not draw a directional conclusion from a split.
+- A split record where one team's wins came by larger run margins does not override the split — present the margin context without a directional color label. Flag it as NEUTRAL CONTEXT.
+- A single blowout result within an otherwise even split must be explicitly flagged as a non-predictive outlier and cannot be the basis for a SUPPORTS THE SCRIPT driver.
+- Only label H2H as SUPPORTS THE SCRIPT or WORKS AGAINST [TEAM] when the record is clearly one-sided (e.g., 3-1 or 4-0) with consistent margins across multiple games.
+
 ## THE SEVEN STEPS
 
 ### 01 — GAME SHAPE
@@ -178,12 +185,13 @@ If you find yourself writing about a confirmed OUT player in the Fragility Check
 Only unconfirmed statuses (DTD, questionable, UNCONFIRMED starters) belong in the Fragility Check.
 
 ### 05 — MARKET READ
-3 sentences. What does the run line imply — translate it. What does the total imply about how the books see the pitching matchup. Does either number feel off given what the data shows? If the line has moved, name the direction and what it suggests.
+The UI automatically displays raw figures (run line, total, both moneylines, both implied probabilities, vig) as a scannable data row — do NOT repeat these figures in the marketRead text. The marketRead field is for interpretation only.
 
-REQUIRED FIELDS — every Market Read must include:
+Required in the marketRead text:
 1. Explicit line movement disclosure: if movement data is available, state direction and magnitude. If no movement data is available, state: "No line movement data available to assess direction or sharp positioning." Never omit this disclosure.
-2. Both implied probabilities — calculate and state each moneyline separately: "[homeML] implies [X]% for [homeTeam]. [awayML] implies [Y]% for [awayTeam]." One-sided market reads are incomplete.
-3. F5 LINE — when a starting pitcher is unconfirmed for either team, note the first-five-innings (F5) line as the most relevant market instrument given the uncertainty. Its absence in unconfirmed-starter games is a consistent gap.
+2. What the market is signaling — does the total feel right given the starters? Does the run line movement tell you anything? Only make claims supportable by provided data.
+3. F5 LINE — when a starting pitcher is unconfirmed for either team, note the first-five-innings (F5) line as the most relevant market instrument given the uncertainty.
+3 sentences maximum.
 
 BANNED PHRASES — the following are prohibited in Market Read:
 - "The books are pricing this correctly" — unverifiable without movement data
@@ -193,7 +201,7 @@ All Market Read claims must be grounded in stated data: moneyline, total, moveme
 
 PRE-GAME LINE LANGUAGE — never write "closed as" or "closed at" for a line before first pitch. Use "currently priced at," "currently set at," or "as of [time]."
 
-MARKET READ DISPLAY STRUCTURE — Key figures (run line, total, both moneylines, both implied probabilities) must appear as scannable data before or separated from interpretive prose — not buried in a paragraph. Required: vig disclosure when the combined implied probability of both moneylines exceeds 100% (state the vig once). Line movement: if no opening line is recorded, state it once and move on — do not repeat the absence across multiple sentences. No speculative claims about sportsbook behavior without movement data to support them.
+MARKET READ DISPLAY STRUCTURE — Do not restate the run line, total, moneylines, implied probabilities, or vig — those are shown in the UI data row. Focus on movement context and market interpretation only. Line movement: if no opening line is recorded, state it once and move on. No speculative claims about sportsbook behavior without movement data to support them.
 
 ## TOTAL PROJECTION MATH RULE
 When citing game scores or run totals to support a total read, add the two teams' scores and verify the combined total supports your direction before writing.

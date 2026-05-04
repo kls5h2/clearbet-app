@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { BreakdownResult, AnyGame, FragilityColor, MLBGame } from "@/lib/types";
+import type { BreakdownResult, AnyGame, FragilityColor, MLBGame, GameOdds, MLBGameOdds } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 import GlossaryCallout from "./GlossaryCallout";
 
@@ -171,13 +171,71 @@ function FragilityItem({ item, color: fc }: { item: string; color: FragilityColo
   );
 }
 
-// Market Read block
+// Market data row — structured figures displayed above the prose interpretation
+function MarketDataRow({ odds, homeAbv, awayAbv, isMLB }: { odds: GameOdds | MLBGameOdds; homeAbv: string; awayAbv: string; isMLB: boolean }) {
+  const fmtML = (ml: number | null): string | null => {
+    if (ml === null) return null;
+    return ml > 0 ? `+${ml}` : `${ml}`;
+  };
+  const fmtPct = (p: number | null): string | null =>
+    p !== null ? `${p.toFixed(1)}%` : null;
+
+  const vigVal = (odds.impliedHomeProbability !== null && odds.impliedAwayProbability !== null)
+    ? odds.impliedHomeProbability + odds.impliedAwayProbability - 100
+    : null;
+
+  let spreadStr: string | null = null;
+  if (!isMLB && "spread" in odds && odds.spread !== null) {
+    const v = odds.spread;
+    if (v === 0) {
+      spreadStr = "Spread: Pick 'em";
+    } else if (v < 0) {
+      spreadStr = `Spread: ${homeAbv} ${v}`;
+    } else {
+      spreadStr = `Spread: ${awayAbv} -${v}`;
+    }
+  } else if (isMLB && "runLine" in odds && odds.runLine !== null) {
+    const v = odds.runLine;
+    spreadStr = v < 0 ? `Run Line: ${homeAbv} ${v}` : `Run Line: ${awayAbv} -${v}`;
+  }
+
+  const totalStr = odds.total !== null ? `Total: ${odds.total}` : null;
+  const homeStr = (odds.homeMoneyline !== null && odds.impliedHomeProbability !== null)
+    ? `${homeAbv} ${fmtML(odds.homeMoneyline)} (${fmtPct(odds.impliedHomeProbability)})`
+    : null;
+  const awayStr = (odds.awayMoneyline !== null && odds.impliedAwayProbability !== null)
+    ? `${awayAbv} ${fmtML(odds.awayMoneyline)} (${fmtPct(odds.impliedAwayProbability)})`
+    : null;
+  const vigStr = vigVal !== null ? `Vig: ${vigVal.toFixed(1)}%` : null;
+
+  const items = [spreadStr, totalStr, homeStr, awayStr, vigStr].filter((x): x is string => x !== null);
+  if (items.length === 0) return null;
+
+  return (
+    <div style={{
+      marginTop: "14px", padding: "10px 14px",
+      background: "var(--cream)", borderRadius: 0,
+      borderLeft: "3px solid var(--signal)",
+      fontFamily: "var(--mono)", fontSize: "12px", lineHeight: 1.6,
+      color: "var(--ink-2)", letterSpacing: "0.01em",
+      display: "flex", flexWrap: "wrap",
+    }}>
+      {items.map((item, i) => (
+        <span key={i} style={{ whiteSpace: "nowrap" }}>
+          {i > 0 && <span style={{ margin: "0 8px", opacity: 0.25 }}>|</span>}
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// Market Read prose block — interpretation only, italic to signal editorial read
 function MarketLine({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      marginTop: "14px", padding: "16px 18px",
-      background: "var(--cream)", borderRadius: 0,
-      borderLeft: "3px solid var(--signal)",
+      marginTop: "10px", padding: "14px 18px",
+      background: "rgba(17,17,16,0.03)", borderRadius: 0,
       fontSize: "15px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
     }}>
       {children}
@@ -281,6 +339,14 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
           {/* 05 — Market Read */}
           <StepBlock stepLabel="Market Read">
             <StepText>What the betting market is saying — in plain English.</StepText>
+            {odds && (
+              <MarketDataRow
+                odds={odds}
+                homeAbv={homeTeam.teamAbv}
+                awayAbv={awayTeam.teamAbv}
+                isMLB={isMLB}
+              />
+            )}
             <MarketLine>
               {odds
                 ? breakdown.marketRead

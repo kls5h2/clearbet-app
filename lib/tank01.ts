@@ -16,6 +16,7 @@ import type {
   H2HRecord,
   H2HGame,
 } from "./types";
+import { fetchOfficialNBAInjuries } from "./nba-official-injuries";
 
 const BASE_URL = "https://tank01-fantasy-stats.p.rapidapi.com";
 
@@ -257,7 +258,7 @@ async function getRoster(teamAbv: string): Promise<RawRosterPlayer[]> {
 async function getTopPlayers(teamAbv: string): Promise<PlayerStat[]> {
   try {
     const roster = await getRoster(teamAbv);
-    const officialReport = await fetchOfficialNBAInjuries([teamAbv]);
+    const officialReport = await fetchOfficialNBAInjuries();
     return roster
       .filter((p) => {
         if (p.stats?.pts === undefined) return false;
@@ -325,11 +326,9 @@ export async function getRecentForm(teamAbv: string): Promise<RecentGame[]> {
 }
 
 /**
- * Fetch injury report for both teams.
- * Three-layer enrichment:
- *   1. Official NBA injury report (most current, overrides Tank01)
- *   2. Tank01 roster designation (standard source)
- *   3. Absent-player detection (lastGamePlayed 7+ days, gamesPlayed < 50%)
+ * Fetch injury report for both teams from the official NBA PDF.
+ * Tank01 designation data is NOT used — the official PDF is the sole source.
+ * Players not on the official report are presumed available.
  */
 export async function getInjuryReport(
   homeAbv: string,
@@ -337,77 +336,41 @@ export async function getInjuryReport(
 ): Promise<InjuryReport> {
   function enrichRoster(
     roster: RawRosterPlayer[],
-    officialReport: Map<string, { status: string; comment: string }>,
-    teamWins: number,
-    teamLosses: number
+    officialReport: Map<string, { status: string; comment: string }>
   ): PlayerInjury[] {
     const result: PlayerInjury[] = [];
-    const teamGames = teamWins + teamLosses;
 
     for (const p of roster) {
-      const designation = (p.injury?.designation ?? "").trim();
       const official = officialReport.get(p.longName.toLowerCase());
-      let status: PlayerInjury["status"] | null = null;
-      let description = p.injury?.description ?? "";
+      if (!official) continue; // not on official report = presumed available
 
-      // Layer 1: Official NBA injury report (highest priority)
-      if (official) {
-        const s = official.status.toLowerCase();
-        if (s.includes("out")) status = "Out";
-        else if (s.includes("doubtful")) status = "Doubtful";
-        else if (s.includes("questionable")) status = "Questionable";
-        else status = "Day-To-Day";
-        if (official.comment) description = official.comment;
-      }
-      // Layer 2: Tank01 designation
-      else if (designation) {
-        status = normalizeInjuryStatus(designation);
-      }
-
-      // Layer 3: Absent 7+ days with no active designation
-      const daysAway = daysSinceLastGame(p.lastGamePlayed);
-      if (!status && daysAway !== null && daysAway >= 7) {
-        status = "Out";
-        description = `Availability unconfirmed — last played ${formatLastPlayedDate(p.lastGamePlayed)}`;
-      }
-
-      if (!status) continue;
-
-      // Append games-missed note if < 50% of team games
-      const gp = parseInt(p.stats?.gamesPlayed ?? "0", 10);
-      if (teamGames > 20 && gp > 0 && gp < teamGames * 0.5) {
-        const note = `Has missed significant time this season (${gp} of ${teamGames} games)`;
-        description = description ? `${description}. ${note}` : note;
-      }
+      const s = official.status.toLowerCase();
+      let status: PlayerInjury["status"];
+      if (s === "out") status = "Out";
+      else if (s === "doubtful") status = "Doubtful";
+      else if (s === "questionable") status = "Questionable";
+      else if (s === "probable") status = "Probable";
+      else status = "Day-To-Day";
 
       result.push({
         playerName: p.longName,
         position: p.pos ?? "?",
         status,
-        description,
+        description: official.comment,
       });
     }
     return result;
   }
 
   try {
-    const [homeRoster, awayRoster, officialReport, teamMap] = await Promise.all([
+    const [homeRoster, awayRoster, officialReport] = await Promise.all([
       getRoster(homeAbv),
       getRoster(awayAbv),
-      fetchOfficialNBAInjuries([homeAbv, awayAbv]),
-      getTeamMap(),
+      fetchOfficialNBAInjuries(),
     ]);
 
-    const homeInfo = teamMap[homeAbv];
-    const awayInfo = teamMap[awayAbv];
-    const homeInjuries = enrichRoster(
-      homeRoster, officialReport,
-      parseInt(homeInfo?.wins ?? "0", 10), parseInt(homeInfo?.loss ?? "0", 10)
-    );
-    const awayInjuries = enrichRoster(
-      awayRoster, officialReport,
-      parseInt(awayInfo?.wins ?? "0", 10), parseInt(awayInfo?.loss ?? "0", 10)
-    );
+    const homeInjuries = enrichRoster(homeRoster, officialReport);
+    const awayInjuries = enrichRoster(awayRoster, officialReport);
 
     console.log(`[injuries] ${homeAbv}: ${homeInjuries.map((p) => `${p.playerName} (${p.status})`).join(", ") || "none"}`);
     console.log(`[injuries] ${awayAbv}: ${awayInjuries.map((p) => `${p.playerName} (${p.status})`).join(", ") || "none"}`);
@@ -676,50 +639,5 @@ function formatLastPlayedDate(lastGamePlayed: string | undefined): string {
   return `${months[m - 1]} ${d}`;
 }
 
-/**
- * Fetch the official NBA injury report and return a map of
- * lowercased player name → { status, comment } for the given teams.
- * Gracefully returns empty map on any failure (endpoint may be access-restricted).
- */
-async function fetchOfficialNBAInjuries(
-  teamAbvs: string[]
-): Promise<Map<string, { status: string; comment: string }>> {
-  const result = new Map<string, { status: string; comment: string }>();
-  try {
-    const res = await fetch(
-      "https://cdn.nba.com/static/json/liveData/injuryreport/injuryreport.json",
-      {
-        next: { revalidate: 900 },
-        headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://www.nba.com/" },
-      }
-    );
-    if (!res.ok) return result;
-    const data = await res.json();
-
-    // Defensive parsing: try common NBA API response shapes
-    const players: Record<string, unknown>[] =
-      data?.payload?.injuredPlayers ??
-      data?.resultSets?.[0]?.rowSet ??
-      (Array.isArray(data) ? data : []);
-
-    const abvSet = new Set(teamAbvs.map((a) => a.toUpperCase()));
-
-    for (const p of players) {
-      const tricode = String(p.TeamTricode ?? p.teamTricode ?? p.Team ?? "").toUpperCase();
-      if (!abvSet.has(tricode)) continue;
-
-      const name = String(
-        p.PlayerName ?? p.playerName ??
-        `${p.FirstName ?? p.firstName ?? ""} ${p.LastName ?? p.lastName ?? ""}`.trim()
-      );
-      if (!name) continue;
-
-      const status = String(p.GameStatus ?? p.Status ?? p.status ?? "");
-      const comment = String(p.Comment ?? p.comment ?? p.Reason ?? p.reason ?? "");
-      result.set(name.toLowerCase(), { status, comment });
-    }
-  } catch {
-    // Non-critical — options 1 & 2 still protect against stale data
-  }
-  return result;
-}
+// fetchOfficialNBAInjuries is now in lib/nba-official-injuries.ts
+// (replaced the broken CDN JSON endpoint with the official PDF source)
