@@ -35,7 +35,7 @@ async function fetchTank01<T>(path: string, params: Record<string, string> = {})
 
   const res = await fetch(url.toString(), {
     headers: getHeaders(),
-    next: { revalidate: 900 }, // cache 15 min
+    next: { revalidate: 3600 }, // cache 1 hour — season stats update at most once per day
   });
 
   if (!res.ok) {

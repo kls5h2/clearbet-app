@@ -393,7 +393,9 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     const t01Away = rawGame.awayTeam;
 
     // Fetch all data in parallel. Official NBA PDF is the sole injury source.
-    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnSeries, t01HomeRoster, t01AwayRoster] = await Promise.all([
+    // getOpeningLine is included here so it runs concurrently with the data fan-out
+    // rather than sequentially after it.
+    const [t01HomeStats, t01AwayStats, t01HomeForm, t01AwayForm, t01Injuries, oddsMap, t01Playoff, t01H2H, espnSeries, t01HomeRoster, t01AwayRoster, openingLine] = await Promise.all([
       getTeamStats(t01Home.teamAbv),
       getTeamStats(t01Away.teamAbv),
       getRecentForm(t01Home.teamAbv),
@@ -405,6 +407,7 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       fetchESPNNBASeries(t01Home.teamAbv, t01Away.teamAbv, t01Home.teamName, t01Away.teamName),
       getTeamRosterNames(t01Home.teamAbv).catch(() => []),
       getTeamRosterNames(t01Away.teamAbv).catch(() => []),
+      getOpeningLine(gameId).catch(() => null),
     ]);
 
     // Cross-validate home/away with The Odds API (authoritative for Play-In / Playoff)
@@ -527,7 +530,7 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
     const nbaVerification: VerificationResult = { verificationFlags, confidenceLevelPreset, fragilityReason };
     // ─── End NBA Data Verification ────────────────────────────────────────────
 
-    // Record opening line (insert-only, non-blocking) then fetch it for movement calc
+    // Record opening line (insert-only, non-blocking). openingLine already fetched in Promise.all above.
     recordOpeningLine(
       gameId, today,
       homeTeam.teamAbv, awayTeam.teamAbv, "NBA",
@@ -536,7 +539,6 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null):
       odds?.homeMoneyline ?? null,
       odds?.awayMoneyline ?? null,
     );
-    const openingLine = await getOpeningLine(gameId);
     const lineMovement = calcLineMovement(
       openingLine,
       odds?.spread ?? null,
@@ -619,7 +621,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     const [
       homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap,
       mlbStatsPitchers, playoffCtx, h2h, homeBullpen, awayBullpen, umpire,
-      homeRoster, awayRoster,
+      homeRoster, awayRoster, openingLine,
     ] = await Promise.all([
       getMLBTeamStats(homeTeam.teamAbv),
       getMLBTeamStats(awayTeam.teamAbv),
@@ -635,6 +637,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       getMLBUmpire(today, homeTeam.teamAbv).catch(() => null),
       getMLBTeamRosterNames(homeTeam.teamAbv).catch(() => []),
       getMLBTeamRosterNames(awayTeam.teamAbv).catch(() => []),
+      getOpeningLine(gameId).catch(() => null),
     ]);
 
     const statsEntry =
@@ -645,8 +648,10 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     // MLB Stats API probablePitcher is the authoritative source. When it's
     // present, mark the pitcher confirmed=true. When we fall back to Tank01's
     // roster data, mark confirmed=false so the prompt can flag UNCONFIRMED.
-    const homeFallback = await getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null);
-    const awayFallback = await getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null);
+    const [homeFallback, awayFallback] = await Promise.all([
+      getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null),
+      getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null),
+    ]);
     const homePitcher = statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null);
     const awayPitcher = statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null);
     console.log(
@@ -712,7 +717,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     };
     const parkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
 
-    // Record opening line (insert-only, non-blocking) then fetch it for movement calc
+    // Record opening line (insert-only, non-blocking). openingLine already fetched in Promise.all above.
     recordOpeningLine(
       gameId, today,
       homeTeam.teamAbv, awayTeam.teamAbv, "MLB",
@@ -721,7 +726,6 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       mlbOdds?.homeMoneyline ?? null,
       mlbOdds?.awayMoneyline ?? null,
     );
-    const openingLine = await getOpeningLine(gameId);
     const lineMovement = calcLineMovement(
       openingLine,
       mlbOdds?.runLine ?? null,
