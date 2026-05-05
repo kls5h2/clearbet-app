@@ -21,16 +21,16 @@ export const viewport: Viewport = {
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://rawintelsports.com";
-const OG_IMAGE = `${SITE_URL}/api/og?type=home`;
+const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export const metadata: Metadata = {
-  title: "RawIntel — What the data says. Your decision to make.",
+  title: "RawIntel — Raw data. Clear read. Your call.",
   description:
-    "RawIntel turns raw game data into plain-English analysis so you can make informed betting decisions in under 60 seconds.",
+    "Structured game breakdowns in plain English. No picks. Your decision, always.",
   openGraph: {
     title: "RawIntel — Raw data. Clear read. Your call.",
     description:
-      "Six-step breakdown on every game. Plain-English reasoning. Never picks — your decision is always yours.",
+      "Structured game breakdowns in plain English. No picks. Your decision, always.",
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "RawIntel — Raw data. Clear read. Your call." }],
     type: "website",
     siteName: "RawIntel",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "RawIntel — Raw data. Clear read. Your call.",
     description:
-      "Six-step breakdown on every game. Plain-English reasoning. Never picks — your decision is always yours.",
+      "Structured game breakdowns in plain English. No picks. Your decision, always.",
     images: [OG_IMAGE],
   },
 };
