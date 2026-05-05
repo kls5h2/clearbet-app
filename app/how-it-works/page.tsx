@@ -421,65 +421,13 @@ export default function HowItWorksPage() {
             maxWidth: 520,
           }}
         >
-          RawIntel doesn't tell you what to bet. It gives you the same
-          structured analysis on every game — so you can make an informed
-          decision yourself.
+          RawIntel takes the data through the same structured framework on every game and hands you the read in plain English.
         </p>
       </div>
 
       <div
         style={{ maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}
       >
-        {/* PHILOSOPHY */}
-        <div
-         
-          className="reveal"
-          style={{
-            background: "var(--ink)",
-            borderRadius: 0,
-            padding: "36px 40px",
-            marginBottom: 56,
-          }}
-        >
-          <div
-            style={{
-              fontSize: "clamp(18px, 3vw, 24px)",
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.45,
-              color: "rgba(255,255,255,0.7)",
-            }}
-          >
-            <em style={{ fontStyle: "normal", color: "#fff" }}>
-              There's a lot of noise in sports betting.
-            </em>{" "}
-            <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>
-              Picks services tell you what to do. Data tools overwhelm you with
-              numbers. Neither one actually helps you think.
-            </span>
-            <br />
-            <br />
-            <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>
-              RawIntel takes the data, runs it through the same structured
-              framework on every game, and hands you the read in plain English.
-            </span>
-            <br />
-            <br />
-            <span style={{ color: "var(--signal)" }}>
-              What you do with it is always yours.
-            </span>
-          </div>
-          <div
-            style={{
-              width: 32,
-              height: 2,
-              background: "var(--signal)",
-              margin: "24px 0",
-              opacity: 0.6,
-            }}
-          />
-        </div>
-
         {/* SIX STEPS HEADER */}
         <div
          
@@ -797,84 +745,32 @@ export default function HowItWorksPage() {
           ))}
         </div>
 
-        {/* CTA BLOCK */}
-        <div
-         
-          className="reveal"
+      </div>
+
+      {/* ── CTA ──────────────────────────────────────────────────────── */}
+      <div style={{ textAlign: "center", padding: "56px 40px", background: "var(--warm-white)" }}>
+        <Link
+          href="/"
           style={{
-            background: "var(--ink)",
-            borderRadius: 0,
-            padding: 40,
-            textAlign: "center",
-            marginTop: 56,
+            fontSize: "15px", fontWeight: 700, color: "var(--ink)",
+            textDecoration: "none", borderBottom: "2px solid var(--signal)",
+            paddingBottom: "3px",
           }}
         >
-          <div
-            style={{
-              fontSize: "clamp(20px, 3.5vw, 28px)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "#fff",
-              marginBottom: 10,
-              lineHeight: 1.2,
-            }}
-          >
-            Ready to read tonight's intel?
-          </div>
-          <p
-            style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.4)",
-              marginBottom: 28,
-              lineHeight: 1.55,
-            }}
-          >
-            Every game on tonight's slate has a breakdown ready. Start with
-            one, free.
-          </p>
-          <Link
-            href="/intel"
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#fff",
-              textDecoration: "none",
-              padding: "13px 32px",
-              borderRadius: 0,
-              background: "var(--signal)",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-              boxShadow: "0 2px 8px rgba(201,53,42,0.3)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#b02e24";
-              (e.currentTarget as HTMLElement).style.transform =
-                "translateY(-2px)";
-              (e.currentTarget as HTMLElement).style.boxShadow =
-                "0 6px 20px rgba(201,53,42,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "var(--signal)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLElement).style.boxShadow =
-                "0 2px 8px rgba(201,53,42,0.3)";
-            }}
-          >
-            See today's slate →
-          </Link>
-          <div
-            style={{
-              fontFamily: "var(--mono)",
-              fontSize: 11,
-              color: "rgba(255,255,255,0.2)",
-              marginTop: 16,
-              letterSpacing: "0.04em",
-            }}
-          >
-            Free account required · No card needed to start
-          </div>
+          See today's slate →
+        </Link>
+      </div>
+
+      {/* ── Closing line ─────────────────────────────────────────────── */}
+      <div style={{ background: "var(--ink)", padding: "80px 40px", textAlign: "center" }}>
+        <div style={{
+          maxWidth: "560px", margin: "0 auto",
+          fontSize: "clamp(22px, 4vw, 34px)",
+          fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.3,
+          color: "rgba(255,255,255,0.4)",
+        }}>
+          This is not a pick. This is what the data says.{" "}
+          <span style={{ color: "#fff" }}>Your decision is always yours.</span>
         </div>
       </div>
 
@@ -888,10 +784,9 @@ export default function HowItWorksPage() {
         }}
       >
         For informational purposes only. RawIntel does not provide financial,
-        betting, or investment advice. Bet responsibly.
-        <br />
+        betting, or investment advice. Problem gambling resources:{" "}
         <a
-          href="https://ncpgambling.org"
+          href="https://www.ncpgambling.org"
           target="_blank"
           rel="noopener noreferrer"
           style={{
