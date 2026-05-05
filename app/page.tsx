@@ -352,11 +352,7 @@ export default function HomePage() {
             fontSize: "17px", fontWeight: 400, color: "rgba(255,255,255,0.5)",
             lineHeight: 1.65, maxWidth: "520px", margin: "28px 0 40px",
           }}>
-            RawIntel turns game data into straight talk —{" "}
-            <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>
-              simple enough for a rookie, deep enough for a pro.
-            </strong>{" "}
-            Never picks. Just everything you need to decide for yourself.
+            RawIntel turns game data into straight talk — numbers explained, nothing removed. Never picks. Just everything you need to decide for yourself.
           </p>
 
           <div className="hp-hero-ctas" style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", marginBottom: "72px" }}>
