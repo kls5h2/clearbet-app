@@ -52,6 +52,25 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error";
 
+const SECTION_STEPS: Array<{ key: string; label: string }> = [
+  { key: '"gameShape"',      label: "Analyzing game shape" },
+  { key: '"keyDrivers"',     label: "Identifying key drivers" },
+  { key: '"baseScript"',     label: "Building base script" },
+  { key: '"fragilityCheck"', label: "Running fragility check" },
+  { key: '"marketRead"',     label: "Reading the market" },
+  { key: '"decisionLens"',   label: "Writing final summary" },
+];
+
+// Returns the index of the furthest detected section key in the accumulated stream text.
+// -1 = no section detected yet (Claude is producing the opening JSON brace).
+function getStreamingStep(text: string): number {
+  let idx = -1;
+  for (let i = 0; i < SECTION_STEPS.length; i++) {
+    if (text.includes(SECTION_STEPS[i].key)) idx = i;
+  }
+  return idx;
+}
+
 function formatML(ml: number | null | undefined): string {
   if (ml == null) return "—";
   return ml > 0 ? `+${ml}` : `${ml}`;
@@ -362,33 +381,60 @@ export default function BreakdownPage() {
           </div>
         )}
 
-        {/* Streaming — raw token output from Claude as it generates */}
-        {status === "streaming" && (
-          <div style={{ paddingTop: "8px" }}>
-            <div style={{
-              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "var(--muted)", marginBottom: "12px",
-              display: "flex", alignItems: "center", gap: "8px",
-            }}>
-              <span style={{
-                display: "inline-block", width: "6px", height: "6px",
-                borderRadius: "50%", background: "var(--signal)",
-                animation: "pulse 1.4s ease-in-out infinite",
-              }} />
-              Generating your breakdown
+        {/* Streaming — section progress indicator */}
+        {status === "streaming" && (() => {
+          const step = getStreamingStep(streamingText);
+          return (
+            <div style={{ paddingTop: "24px", paddingBottom: "8px" }}>
+              <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }`}</style>
+              <div style={{
+                fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--muted)", marginBottom: "28px",
+              }}>
+                Generating your breakdown
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {step === -1 ? (
+                  // Pre-first-section: Claude is writing the opening brace
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{
+                      display: "inline-block", width: "7px", height: "7px", borderRadius: "50%",
+                      background: "var(--signal)", flexShrink: 0,
+                      animation: "pulse 1.4s ease-in-out infinite",
+                    }} />
+                    <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>
+                      Starting…
+                    </span>
+                  </div>
+                ) : (
+                  SECTION_STEPS.slice(0, step + 1).map((s, i) => {
+                    const isCurrent = i === step;
+                    return (
+                      <div key={s.key} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <span style={{
+                          display: "inline-block", width: "7px", height: "7px", borderRadius: "50%",
+                          background: isCurrent ? "var(--signal)" : "var(--muted)",
+                          opacity: isCurrent ? 1 : 0.4,
+                          flexShrink: 0,
+                          animation: isCurrent ? "pulse 1.4s ease-in-out infinite" : "none",
+                        }} />
+                        <span style={{
+                          fontSize: "15px",
+                          fontWeight: isCurrent ? 600 : 400,
+                          color: isCurrent ? "var(--ink)" : "var(--muted)",
+                          opacity: isCurrent ? 1 : 0.5,
+                        }}>
+                          {s.label}{isCurrent ? "…" : ""}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-            <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
-            <pre style={{
-              fontFamily: "var(--mono)", fontSize: "12px", lineHeight: 1.7,
-              color: "var(--ink)", whiteSpace: "pre-wrap", wordBreak: "break-word",
-              background: "none", border: "none", padding: 0, margin: 0,
-              maxHeight: "65vh", overflowY: "auto",
-            }}>
-              {streamingText}
-            </pre>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Error */}
         {status === "error" && (
