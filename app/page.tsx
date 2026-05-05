@@ -73,6 +73,56 @@ const SAMPLE_GAME: AnyGame = {
   },
 };
 
+function SlateOptIn() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // TODO: wire to email provider
+    console.log("Slate opt-in:", email);
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <p style={{ fontSize: "14px", color: "var(--muted)", marginTop: "4px" }}>
+        You&apos;re on the list. Check your inbox before tonight&apos;s slate.
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
+      <input
+        type="email"
+        required
+        placeholder="your@email.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{
+          flex: "1 1 220px", maxWidth: "320px",
+          padding: "11px 14px", fontSize: "14px",
+          border: "1px solid var(--border-med)", borderRadius: 0,
+          background: "#fff", color: "var(--ink)",
+          outline: "none", fontFamily: "inherit",
+        }}
+      />
+      <button
+        type="submit"
+        style={{
+          padding: "11px 20px", fontSize: "13px", fontWeight: 600,
+          background: "var(--ink)", color: "#fff",
+          border: "none", borderRadius: 0, cursor: "pointer",
+          whiteSpace: "nowrap", fontFamily: "inherit",
+        }}
+      >
+        Send it →
+      </button>
+    </form>
+  );
+}
+
 function parseGameTime(time: string): number {
   const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return 9999;
@@ -610,6 +660,27 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Slate email opt-in ───────────────────────────────────────── */}
+      <section className="hp-section-pad" style={{ background: "var(--warm-white)", padding: "72px 64px" }}>
+        <div style={{ maxWidth: "520px", margin: "0 auto", textAlign: "center" }}>
+          <div style={{
+            fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "var(--signal)", marginBottom: "12px",
+          }}>
+            Daily Slate
+          </div>
+          <p style={{
+            fontSize: "clamp(20px, 4vw, 26px)", fontWeight: 700,
+            letterSpacing: "-0.025em", color: "var(--ink)",
+            lineHeight: 1.25, margin: "0 0 24px",
+          }}>
+            Get the daily slate in your inbox.<br />Free.
+          </p>
+          <SlateOptIn />
+        </div>
+      </section>
+
       {/* ── Today's slate teaser ─────────────────────────────────────── */}
       <section className="hp-section-pad" style={{ background: "var(--surface)", color: "var(--ink)", padding: "96px 64px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
@@ -776,7 +847,7 @@ export default function HomePage() {
         </div>
         <div style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.15)", textAlign: "right", lineHeight: 1.6 }}>
           For informational purposes only. Not financial or betting advice.<br />
-          Bet responsibly &middot;{" "}
+          Problem gambling resources:{" "}
           <a href="https://www.ncpgambling.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>
             ncpgambling.org
           </a>
