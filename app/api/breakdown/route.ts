@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGamesForDate, getTeamStats, getRecentForm, getInjuryReport, getPlayoffContext, getH2HRecord, getTeamRosterNames } from "@/lib/tank01";
 import { fetchNBAOdds, buildMatchupKey, fetchMLBOdds, type OddsMatchup } from "@/lib/odds-api";
-import { streamNBABreakdown } from "@/lib/claude";
+import { generateBreakdown } from "@/lib/claude";
 import {
   getMLBGamesForDate,
   getMLBTeamStats,
@@ -254,11 +254,12 @@ export async function POST(req: NextRequest) {
 
   const response = sport === "MLB"
     ? await handleMLBBreakdown(gameId, user.id)
-    : await handleNBABreakdown(gameId, user.id, tier);
+    : await handleNBABreakdown(gameId, user.id);
 
   if (response.status !== 200) return response;
 
-  // Record usage fire-and-forget.
+  // Record usage and re-wrap body so the client gets `tier` alongside the
+  // generated breakdown — the UI uses it to gate Share / Regenerate.
   authClient
     .from("breakdown_usage")
     .insert({ user_id: user.id })
@@ -266,11 +267,6 @@ export async function POST(req: NextRequest) {
       if (error) console.error("[breakdown] usage insert failed:", error.message);
     });
 
-  // NBA returns a streaming NDJSON response — tier is embedded in the meta
-  // message. MLB still returns JSON, so inject tier into the body.
-  if (response.headers.get("content-type")?.includes("application/x-ndjson")) {
-    return response;
-  }
   const bodyJson = await response.json();
   return NextResponse.json({ ...bodyJson, tier });
 }
@@ -376,7 +372,7 @@ function isHomeAwayFlipped(tank01HomeName: string, tank01AwayName: string, oddsM
   return false; // indeterminate — trust Tank01
 }
 
-async function handleNBABreakdown(gameId: string, userId: string | null = null, tier = "free"): Promise<Response> {
+async function handleNBABreakdown(gameId: string, userId: string | null = null): Promise<NextResponse> {
   try {
     const today = getTodayDateString();
     console.log(`[breakdown:NBA] gameId=${gameId} date=${today}`);
@@ -579,55 +575,25 @@ async function handleNBABreakdown(gameId: string, userId: string | null = null, 
       awayRoster,
     };
 
-    // Build streaming response — sends NDJSON lines to the client as Claude generates.
-    // Protocol: {t:"m"} meta (first), {t:"c"} token chunks, {t:"r"} final result, {t:"e"} error.
-    const encoder = new TextEncoder();
-    const send = (msg: object, ctrl: ReadableStreamDefaultController) =>
-      ctrl.enqueue(encoder.encode(JSON.stringify(msg) + "\n"));
+    console.log("[breakdown:NBA] calling Claude...");
+    const breakdown = await generateBreakdown(detailData);
+    console.log(`[breakdown:NBA] confidenceLevel=${breakdown.confidenceLevel}`);
 
-    const stream = new ReadableStream({
-      async start(ctrl) {
-        try {
-          // Metadata first — client can render the page header immediately
-          send({ t: "m", game, tier, fromCache: false, generatedAt: null }, ctrl);
+    // Archive (non-blocking)
+    archiveBreakdown({
+      sport: "NBA",
+      gameId: game.gameId,
+      gameDate: today,
+      homeAbv: homeTeam.teamAbv,
+      awayAbv: awayTeam.teamAbv,
+      breakdown,
+      game,
+      userId,
+    }).catch((err) => console.error("[breakdown:NBA:archive] threw:", err instanceof Error ? err.message : err));
 
-          console.log("[breakdown:NBA] streaming Claude...");
-          const breakdown = await streamNBABreakdown(detailData, (token) => {
-            send({ t: "c", d: token }, ctrl);
-          });
-          console.log(`[breakdown:NBA] confidenceLevel=${breakdown.confidenceLevel}`);
-
-          const generatedAt = new Date().toISOString();
-          send({ t: "r", d: breakdown, generatedAt }, ctrl);
-
-          archiveBreakdown({
-            sport: "NBA",
-            gameId: game.gameId,
-            gameDate: today,
-            homeAbv: homeTeam.teamAbv,
-            awayAbv: awayTeam.teamAbv,
-            breakdown,
-            game,
-            userId,
-          }).catch((err) => console.error("[breakdown:NBA:archive] threw:", err instanceof Error ? err.message : err));
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to generate breakdown";
-          console.error("[breakdown:NBA] streaming error:", message);
-          send({ t: "e", message }, ctrl);
-        } finally {
-          ctrl.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/x-ndjson; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    const generatedAt = new Date().toISOString();
+    const response: BreakdownApiResponse = { breakdown, game, sport: "NBA", fromCache: false, generatedAt };
+    return NextResponse.json(response);
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
     console.error("[breakdown:NBA] FAILED:", error.message, error.stack);

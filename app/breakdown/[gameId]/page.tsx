@@ -50,7 +50,43 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
   "PASS":       { color: "var(--pass)",  label: "Pass" },
 };
 
-type Status = "idle" | "loading" | "streaming" | "done" | "error";
+type Status = "idle" | "loading" | "done" | "error";
+
+const LOADING_MESSAGES = [
+  "Pulling live data...",
+  "Reading the injury report so you don't have to.",
+  "Checking if anyone important is actually playing tonight.",
+  "Running the numbers. Ignoring the hot takes.",
+  "Cross-referencing the odds against the data.",
+  "Almost there. This is the part where the picture gets clear.",
+  "Asking the right questions about tonight's game.",
+  "Separating signal from noise.",
+  "Building your breakdown. Not picking your bet.",
+  "The data is talking. We're listening.",
+  "Checking who's actually suiting up tonight.",
+  "Sorting signal from noise.",
+  "No hot takes. Just data.",
+  "Almost ready. Worth the wait.",
+  "The market has opinions. So does the data.",
+  "One moment. Making sure this is right.",
+];
+
+function useRotatingMessage(active: boolean) {
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * LOADING_MESSAGES.length));
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    if (!active) return;
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+        setVisible(true);
+      }, 400);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [active]);
+  return { message: LOADING_MESSAGES[index], visible };
+}
 
 function formatML(ml: number | null | undefined): string {
   if (ml == null) return "—";
@@ -73,12 +109,13 @@ export default function BreakdownPage() {
   const [breakdown, setBreakdown] = useState<BreakdownResult | null>(null);
   const [game, setGame] = useState<AnyGame | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [streamingText, setStreamingText] = useState("");
   const [fromCache, setFromCache] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [tier, setTier] = useState<Tier | null>(null);
   const [gated, setGated] = useState<GatedReason | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+
+  const { message, visible } = useRotatingMessage(status === "loading");
 
   function fetchBreakdown(regenerate = false) {
     setStatus("loading");
@@ -86,8 +123,6 @@ export default function BreakdownPage() {
     setGame(null);
     setGated(null);
     setGameStarted(false);
-    setStreamingText("");
-    setError(null);
 
     fetch("/api/breakdown", {
       method: "POST",
@@ -95,57 +130,16 @@ export default function BreakdownPage() {
       body: JSON.stringify({ gameId, sport, regenerate }),
     })
       .then(async (r) => {
+        const body = await r.json().catch(() => ({}));
         if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
           const err = new Error(body?.error ?? "Failed to generate breakdown") as Error & { status?: number; gameStarted?: boolean };
           err.status = r.status;
           err.gameStarted = body?.gameStarted === true;
           throw err;
         }
-
-        // Streaming NDJSON — fresh NBA generation
-        if (r.headers.get("content-type")?.includes("application/x-ndjson")) {
-          const reader = r.body!.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              let msg: { t: string; [key: string]: unknown };
-              try { msg = JSON.parse(line); } catch { continue; }
-
-              if (msg.t === "m") {
-                // Meta: game + tier arrive before Claude starts — render header immediately
-                setGame(msg.game as AnyGame);
-                setTier((msg.tier as Tier | undefined) ?? "free");
-                setFromCache((msg.fromCache as boolean | undefined) ?? false);
-                setGeneratedAt((msg.generatedAt as string | null) ?? null);
-                setStatus("streaming");
-              } else if (msg.t === "c") {
-                setStreamingText((prev) => prev + (msg.d as string));
-              } else if (msg.t === "r") {
-                setBreakdown(msg.d as BreakdownResult);
-                setGeneratedAt((msg.generatedAt as string | null) ?? null);
-                setStatus("done");
-              } else if (msg.t === "e") {
-                setError((msg.message as string | undefined) ?? "Failed to generate breakdown");
-                setStatus("error");
-              }
-            }
-          }
-          return;
-        }
-
-        // JSON response — cache hit, gated, or MLB
-        const data = await r.json();
+        return body;
+      })
+      .then((data) => {
         if (data.gated) {
           setBreakdown(PLACEHOLDER_BREAKDOWN);
           setGame(data.game);
@@ -351,68 +345,19 @@ export default function BreakdownPage() {
       {/* Content area */}
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "32px 20px 80px" }}>
 
-        {/* Loading — brief while data is being fetched, before stream starts */}
+        {/* Loading */}
         {status === "loading" && (
           <div style={{
             minHeight: "55vh", display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: "10px", textAlign: "center",
           }}>
-            <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>Pulling live data</p>
-            <p style={{ fontSize: "13px", color: "var(--muted)" }}>Odds, injuries, recent form…</p>
-          </div>
-        )}
-
-        {/* Streaming — skeleton while Claude generates */}
-        {status === "streaming" && (
-          <div style={{ paddingTop: "8px" }}>
-            <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }`}</style>
-            <div style={{
-              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "var(--muted)", marginBottom: "20px",
-              display: "flex", alignItems: "center", gap: "8px",
+            <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>Building your breakdown</p>
+            <p style={{
+              fontSize: "13px", color: "var(--muted)",
+              transition: "opacity 0.4s ease", opacity: visible ? 1 : 0, minHeight: "1.4rem",
             }}>
-              <span style={{
-                display: "inline-block", width: "6px", height: "6px", borderRadius: "50%",
-                background: "var(--signal)", flexShrink: 0,
-                animation: "pulse 1.4s ease-in-out infinite",
-              }} />
-              Generating your breakdown
-            </div>
-            {[
-              { label: "Game Shape",      contentHeight: 52, dark: false },
-              { label: "Key Drivers",     contentHeight: 72, dark: false },
-              { label: "Base Script",     contentHeight: 64, dark: false },
-              { label: "Fragility Check", contentHeight: 56, dark: false },
-              { label: "Market Read",     contentHeight: 52, dark: false },
-              { label: "What This Means", contentHeight: 64, dark: true  },
-            ].map(({ label, contentHeight, dark }) => (
-              <div key={label} style={{
-                marginBottom: "8px",
-                background: dark ? "var(--ink)" : "var(--surface)",
-                border: dark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(17,17,16,0.06)",
-                overflow: "hidden",
-                boxShadow: "var(--shadow-sm)",
-              }}>
-                <div style={{ height: "3px", background: dark ? "rgba(255,255,255,0.12)" : "var(--signal)" }} />
-                <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{
-                    fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
-                    color: dark ? "rgba(255,255,255,0.35)" : "var(--signal)",
-                  }}>
-                    {label}
-                  </span>
-                  <div style={{ flex: 1, height: "1px", background: dark ? "rgba(255,255,255,0.08)" : "var(--border)" }} />
-                </div>
-                <div style={{ padding: "12px 20px 20px" }}>
-                  <div
-                    style={{ height: `${contentHeight}px`, background: dark ? "rgba(255,255,255,0.06)" : "var(--cream)", borderRadius: 0 }}
-                    className="animate-pulse"
-                  />
-                </div>
-              </div>
-            ))}
+              {message}
+            </p>
           </div>
         )}
 
@@ -420,50 +365,30 @@ export default function BreakdownPage() {
         {status === "error" && (
           <div style={{
             background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)",
-            borderRadius: 0, padding: "32px",
+            borderRadius: 0, padding: "32px", textAlign: "center",
             boxShadow: "var(--shadow-sm)",
           }}>
             {gameStarted ? (
               <>
-                <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "10px", textAlign: "center" }}>
+                <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "10px" }}>
                   This game is already underway.
                 </p>
-                <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px", textAlign: "center" }}>
+                <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px" }}>
                   Breakdowns are generated before tip-off. Check back tomorrow for a fresh slate.
                 </p>
-                <div style={{ textAlign: "center" }}>
-                  <Link href="/intel" style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", textDecoration: "none" }}>
-                    ← Back to slate
-                  </Link>
-                </div>
               </>
             ) : (
               <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                  <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", margin: 0 }}>Something went wrong</p>
-                  <button
-                    onClick={() => fetchBreakdown()}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap", padding: 0, marginLeft: "16px" }}
-                  >
-                    Regenerate →
-                  </button>
-                </div>
-                <p style={{ fontSize: "13px", color: "var(--signal)", marginBottom: streamingText ? "16px" : "20px" }}>{error}</p>
-                {streamingText && (
-                  <pre style={{
-                    fontFamily: "var(--mono)", fontSize: "11px", lineHeight: 1.6,
-                    color: "var(--muted)", whiteSpace: "pre-wrap", wordBreak: "break-word",
-                    background: "var(--warm-white)", border: "1px solid var(--border)",
-                    padding: "12px", margin: "0 0 20px", maxHeight: "40vh", overflowY: "auto",
-                  }}>
-                    {streamingText}
-                  </pre>
-                )}
-                <Link href="/intel" style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", textDecoration: "none" }}>
-                  ← Back to slate
-                </Link>
+                <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>Something went wrong</p>
+                <p style={{ fontSize: "13px", color: "var(--signal)", marginBottom: "20px" }}>{error}</p>
               </>
             )}
+            <Link
+              href="/intel"
+              style={{ fontSize: "12px", fontWeight: 700, color: "var(--signal)", textDecoration: "none" }}
+            >
+              ← Back to slate
+            </Link>
           </div>
         )}
 
