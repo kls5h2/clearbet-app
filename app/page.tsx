@@ -422,7 +422,7 @@ export default function HomePage() {
               How it works
             </Link>
             <span style={{ fontFamily: "var(--mono)", fontSize: "10.5px", color: "rgba(255,255,255,0.25)", letterSpacing: "0.04em" }}>
-              No account needed to start
+              Free to start. No card required.
             </span>
           </div>
 
