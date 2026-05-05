@@ -76,14 +76,18 @@ function useRotatingMessage(active: boolean) {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     if (!active) return;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     const interval = setInterval(() => {
       setVisible(false);
-      setTimeout(() => {
+      timeout = setTimeout(() => {
         setIndex((i) => (i + 1) % LOADING_MESSAGES.length);
         setVisible(true);
       }, 400);
     }, 6000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
   }, [active]);
   return { message: LOADING_MESSAGES[index], visible };
 }
@@ -121,6 +125,7 @@ export default function BreakdownPage() {
     setStatus("loading");
     setBreakdown(null);
     setGame(null);
+    setError(null);
     setGated(null);
     setGameStarted(false);
 
@@ -245,7 +250,6 @@ export default function BreakdownPage() {
   const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
   const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
 
-  const confColor = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.color ?? "var(--clear)") : "var(--clear)";
   const confLabel = breakdown ? (CONF_COLORS[breakdown.confidenceLabel]?.label ?? "") : "";
 
   return (

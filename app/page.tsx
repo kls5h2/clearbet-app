@@ -79,8 +79,7 @@ function SlateOptIn() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire to email provider
-    console.log("Slate opt-in:", email);
+    setEmail("");
     setSubmitted(true);
   }
 
