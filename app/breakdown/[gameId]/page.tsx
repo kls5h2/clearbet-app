@@ -52,25 +52,6 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error";
 
-const SECTION_STEPS: Array<{ key: string; label: string }> = [
-  { key: '"gameShape"',      label: "Analyzing game shape" },
-  { key: '"keyDrivers"',     label: "Identifying key drivers" },
-  { key: '"baseScript"',     label: "Building base script" },
-  { key: '"fragilityCheck"', label: "Running fragility check" },
-  { key: '"marketRead"',     label: "Reading the market" },
-  { key: '"decisionLens"',   label: "Writing final summary" },
-];
-
-// Returns the index of the furthest detected section key in the accumulated stream text.
-// -1 = no section detected yet (Claude is producing the opening JSON brace).
-function getStreamingStep(text: string): number {
-  let idx = -1;
-  for (let i = 0; i < SECTION_STEPS.length; i++) {
-    if (text.includes(SECTION_STEPS[i].key)) idx = i;
-  }
-  return idx;
-}
-
 function formatML(ml: number | null | undefined): string {
   if (ml == null) return "—";
   return ml > 0 ? `+${ml}` : `${ml}`;
@@ -381,60 +362,59 @@ export default function BreakdownPage() {
           </div>
         )}
 
-        {/* Streaming — section progress indicator */}
-        {status === "streaming" && (() => {
-          const step = getStreamingStep(streamingText);
-          return (
-            <div style={{ paddingTop: "24px", paddingBottom: "8px" }}>
-              <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }`}</style>
-              <div style={{
-                fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                color: "var(--muted)", marginBottom: "28px",
-              }}>
-                Generating your breakdown
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {step === -1 ? (
-                  // Pre-first-section: Claude is writing the opening brace
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{
-                      display: "inline-block", width: "7px", height: "7px", borderRadius: "50%",
-                      background: "var(--signal)", flexShrink: 0,
-                      animation: "pulse 1.4s ease-in-out infinite",
-                    }} />
-                    <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>
-                      Starting…
-                    </span>
-                  </div>
-                ) : (
-                  SECTION_STEPS.slice(0, step + 1).map((s, i) => {
-                    const isCurrent = i === step;
-                    return (
-                      <div key={s.key} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <span style={{
-                          display: "inline-block", width: "7px", height: "7px", borderRadius: "50%",
-                          background: isCurrent ? "var(--signal)" : "var(--muted)",
-                          opacity: isCurrent ? 1 : 0.4,
-                          flexShrink: 0,
-                          animation: isCurrent ? "pulse 1.4s ease-in-out infinite" : "none",
-                        }} />
-                        <span style={{
-                          fontSize: "15px",
-                          fontWeight: isCurrent ? 600 : 400,
-                          color: isCurrent ? "var(--ink)" : "var(--muted)",
-                          opacity: isCurrent ? 1 : 0.5,
-                        }}>
-                          {s.label}{isCurrent ? "…" : ""}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+        {/* Streaming — skeleton while Claude generates */}
+        {status === "streaming" && (
+          <div style={{ paddingTop: "8px" }}>
+            <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }`}</style>
+            <div style={{
+              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--muted)", marginBottom: "20px",
+              display: "flex", alignItems: "center", gap: "8px",
+            }}>
+              <span style={{
+                display: "inline-block", width: "6px", height: "6px", borderRadius: "50%",
+                background: "var(--signal)", flexShrink: 0,
+                animation: "pulse 1.4s ease-in-out infinite",
+              }} />
+              Generating your breakdown
             </div>
-          );
-        })()}
+            {[
+              { label: "Game Shape",      contentHeight: 52, dark: false },
+              { label: "Key Drivers",     contentHeight: 72, dark: false },
+              { label: "Base Script",     contentHeight: 64, dark: false },
+              { label: "Fragility Check", contentHeight: 56, dark: false },
+              { label: "Market Read",     contentHeight: 52, dark: false },
+              { label: "What This Means", contentHeight: 64, dark: true  },
+            ].map(({ label, contentHeight, dark }) => (
+              <div key={label} style={{
+                marginBottom: "8px",
+                background: dark ? "var(--ink)" : "var(--surface)",
+                border: dark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(17,17,16,0.06)",
+                overflow: "hidden",
+                boxShadow: "var(--shadow-sm)",
+              }}>
+                <div style={{ height: "3px", background: dark ? "rgba(255,255,255,0.12)" : "var(--signal)" }} />
+                <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{
+                    fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: dark ? "rgba(255,255,255,0.35)" : "var(--signal)",
+                  }}>
+                    {label}
+                  </span>
+                  <div style={{ flex: 1, height: "1px", background: dark ? "rgba(255,255,255,0.08)" : "var(--border)" }} />
+                </div>
+                <div style={{ padding: "12px 20px 20px" }}>
+                  <div
+                    style={{ height: `${contentHeight}px`, background: dark ? "rgba(255,255,255,0.06)" : "var(--cream)", borderRadius: 0 }}
+                    className="animate-pulse"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Error */}
         {status === "error" && (
