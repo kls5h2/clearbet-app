@@ -261,7 +261,7 @@ export default function BreakdownPage() {
 
       {/* Dark hero band */}
       <div className="f2" style={{
-        background: "var(--ink)", padding: "28px 20px",
+        background: "var(--ink)", padding: "20px 20px 24px",
         position: "relative", overflow: "hidden",
       }}>
         <span aria-hidden="true" style={{
@@ -271,14 +271,12 @@ export default function BreakdownPage() {
           lineHeight: 1, pointerEvents: "none", userSelect: "none",
         }}>R</span>
 
-        <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1, textAlign: "center" }}>
           <div style={{
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase",
             color: "rgba(255,255,255,0.35)", marginBottom: "10px",
-            display: "flex", alignItems: "center", gap: "10px",
           }}>
-            <span style={{ width: "16px", height: "1px", background: "var(--signal)", display: "block" }} />
             {heroMetaLine || "Breakdown"}
           </div>
 
@@ -297,21 +295,20 @@ export default function BreakdownPage() {
             )}
           </div>
 
-          {/* Confidence block — shown once breakdown loads */}
+          {/* Confidence badge — pill + subtitle */}
           {status === "done" && breakdown && !gated && (
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: "8px",
-              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 0, padding: "10px 16px",
-            }}>
-              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: confColor, display: "block", flexShrink: 0 }} />
-              <div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: confColor }}>
-                  {confLabel}
-                </div>
-                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
-                  {CONF_SUBTITLES[breakdown.confidenceLabel] ?? "One of the cleaner reads tonight"}
-                </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center",
+                background: "var(--signal)", color: "#F7F5F0",
+                fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.12em",
+                padding: "7px 20px", borderRadius: "4px",
+              }}>
+                {confLabel}
+              </div>
+              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
+                {CONF_SUBTITLES[breakdown.confidenceLabel] ?? "One of the cleaner reads tonight"}
               </div>
             </div>
           )}
