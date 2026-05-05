@@ -102,6 +102,12 @@ function StepTip({ children, dark }: { children: React.ReactNode; dark?: boolean
   );
 }
 
+function boldLead(text: string): React.ReactNode {
+  const idx = text.indexOf(":");
+  if (idx === -1) return text;
+  return <><strong style={{ fontWeight: 600 }}>{text.slice(0, idx)}</strong>{text.slice(idx)}</>;
+}
+
 // Driver item (Key Drivers)
 function DriverItem({ direction, factor }: { direction: string; factor: string }) {
   const color = direction === "positive" ? "var(--clear)" : direction === "negative" ? "var(--signal)" : direction === "neutral" ? "var(--lean)" : "var(--fragile)";
@@ -142,7 +148,7 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: color }} />
       <div>
         <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "3px", color }}>{label}</div>
-        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{body}</div>
+        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{boldLead(body)}</div>
       </div>
     </div>
   );
@@ -166,7 +172,7 @@ function FragilityItem({ item, color: fc }: { item: string; color: FragilityColo
       borderLeft: `2px solid ${dotColor}`,
     }}>
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "5px", background: dotColor }} />
-      <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{cleanItem}</div>
+      <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{boldLead(cleanItem)}</div>
     </div>
   );
 }
@@ -236,7 +242,7 @@ function MarketLine({ children }: { children: React.ReactNode }) {
     <div style={{
       marginTop: "10px", padding: "14px 18px",
       background: "rgba(17,17,16,0.03)", borderRadius: 0,
-      fontSize: "15px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
+      fontSize: "15px", lineHeight: 1.65, color: "var(--ink-2)",
     }}>
       {children}
     </div>
@@ -339,14 +345,6 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
           {/* 05 — Market Read */}
           <StepBlock stepLabel="Market Read">
             <StepText>What the betting market is saying — in plain English.</StepText>
-            {odds && (
-              <MarketDataRow
-                odds={odds}
-                homeAbv={homeTeam.teamAbv}
-                awayAbv={awayTeam.teamAbv}
-                isMLB={isMLB}
-              />
-            )}
             <MarketLine>
               {odds
                 ? breakdown.marketRead
