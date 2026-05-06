@@ -836,6 +836,7 @@ export default function HomePage() {
             { href: "/how-it-works", label: "How It Works" },
             { href: "/glossary", label: "Glossary" },
             { href: "/tools/line-translator", label: "Line Translator" },
+            { href: "/about", label: "About" },
             { href: "/terms", label: "Terms of Service" },
             { href: "/privacy", label: "Privacy Policy" },
           ].map(l => (
