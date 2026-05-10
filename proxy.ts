@@ -1,5 +1,5 @@
 /**
- * Auth middleware — refreshes the Supabase session cookie and gates
+ * Auth proxy — refreshes the Supabase session cookie and gates
  * non-public routes. When an unauthenticated user hits a protected route
  * they're redirected to /login?next=<original-path>.
  */
@@ -36,7 +36,7 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(

@@ -104,7 +104,7 @@ export default function TermsPage() {
           </Section>
 
           <Section n="3" title="Eligibility">
-            You must be at least 18 years old to use RawIntel. By using this service you confirm you meet this requirement and that you are permitted to access sports analysis content in your jurisdiction.
+            You must be at least 18 years old to use RawIntel. You must also be of legal gambling age in your jurisdiction. By using this service you confirm you meet both requirements.
           </Section>
 
           <Section n="4" title="Your Account">

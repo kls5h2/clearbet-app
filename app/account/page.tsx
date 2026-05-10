@@ -45,6 +45,7 @@ function Toast({ toast }: { toast: ToastState | null }) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(unixSec: number): string {
+  if (!unixSec || unixSec <= 0) return "";
   return new Date(unixSec * 1000).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",

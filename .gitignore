@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Claude Code local state (worktrees, settings, memory)
 .claude/
+.env*.local
+
+# Generated visual PNGs (created by /api/content/visuals/generate-all)
+/public/generated

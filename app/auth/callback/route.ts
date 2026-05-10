@@ -25,5 +25,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, req.url));
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.email && process.env.LOOPS_API_KEY) {
+    try {
+      await fetch("https://app.loops.so/api/v1/contacts/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.LOOPS_API_KEY}`,
+        },
+        body: JSON.stringify({
+          email: user.email,
+          firstName: user.user_metadata?.first_name ?? "",
+          source: "supabase-signup",
+        }),
+      });
+    } catch (err) {
+      console.error("[loops] contact create failed:", err instanceof Error ? err.message : err);
+    }
+  }
+
   return NextResponse.redirect(new URL(next, req.url));
 }

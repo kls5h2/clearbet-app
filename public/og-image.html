@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200" />
+  <title>RawIntel OG Image</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: #0E0E0E;
+      color: #F7F5F0;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .frame {
+      width: 1200px;
+      height: 630px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wordmark {
+      position: absolute;
+      top: 48px;
+      left: 48px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #F7F5F0;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .wordmark .dot { color: #D93B3A; }
+
+    .center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 80px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: #8A8A86;
+      margin-bottom: 20px;
+    }
+
+    .matchup {
+      font-size: 48px;
+      font-weight: 700;
+      color: #F7F5F0;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+    }
+    .matchup .at {
+      font-weight: 400;
+      color: #8A8A86;
+    }
+
+    .game-time {
+      font-size: 13px;
+      color: #8A8A86;
+      margin-top: 12px;
+      letter-spacing: 0.01em;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 32px;
+      margin-top: 32px;
+      align-items: flex-start;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8A8A86;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #F7F5F0;
+      letter-spacing: -0.01em;
+    }
+    .stat-value.signal { color: #D93B3A; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 20px;
+      background: #D93B3A;
+      color: #F7F5F0;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 3px;
+    }
+
+    .bottom-bar {
+      flex-shrink: 0;
+      width: 100%;
+      border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+      padding: 20px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bottom-url {
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.06em;
+    }
+
+    .bottom-tagline {
+      font-size: 11px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+
+    <div class="wordmark">RawIntel<span class="dot">.</span></div>
+
+    <div class="center">
+      <div class="eyebrow">NBA · Game Breakdown</div>
+
+      <div class="matchup">
+        Cleveland Cavaliers <span class="at">at</span> Detroit Pistons
+      </div>
+
+      <div class="game-time">Tuesday, May 5 · 7:00 PM ET</div>
+
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-label">Spread</div>
+          <div class="stat-value">DET -3.5</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total</div>
+          <div class="stat-value">215.5</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Signal Grade</div>
+          <div class="stat-value signal">B</div>
+        </div>
+      </div>
+
+      <div class="badge">Lean</div>
+    </div>
+
+    <div class="bottom-bar">
+      <span class="bottom-url">rawintelsports.com</span>
+      <span class="bottom-tagline">Raw data. Clear read. Your call.</span>
+    </div>
+
+  </div>
+</body>
+</html>

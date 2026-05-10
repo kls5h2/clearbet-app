@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Keep pdf-parse out of the Next.js bundle — it uses Node.js fs APIs
-  // that aren't available in Edge Runtime or the webpack build pipeline.
-  serverExternalPackages: ["pdf-parse"],
+  // Keep these out of the Next.js webpack bundle — they use native Node.js APIs
+  // and/or ship their own native binaries that must run outside the bundler.
+  serverExternalPackages: ["pdf-parse", "@sparticuz/chromium", "puppeteer-core"],
 };
 
 export default nextConfig;

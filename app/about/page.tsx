@@ -7,8 +7,8 @@ export const metadata = {
 };
 
 const BODY_PARAGRAPHS = [
-  "I'm not a lifelong sports fan. I love the NFL — always have — but other sports? I came to them late, mostly because I wanted to understand what I was betting and why.",
-  "For a long time I just tailed my partner. He'd say bet this, I'd bet it. When it lost, I had no idea what went wrong. I couldn't fix anything because I didn't understand anything. That's a terrible feeling — especially if you're someone who needs to know why.",
+  "I'm not a lifelong sports fan. I love the NFL, always have, but other sports? I came to them late, mostly because I wanted to understand what I was betting and why.",
+  "For a long time I just tailed my partner. He'd say bet this, I'd bet it. When it lost, I had no idea what went wrong. I couldn't fix anything because I didn't understand anything. That's a terrible feeling, especially if you're someone who needs to know why.",
   "I'm a lifetime learner. I don't follow blindly. So I started digging.",
   "The tools I found either threw data at me with no context or just told me what to bet. Neither helped. The picks services felt like outsourcing my thinking to someone with no accountability. The data sites assumed I already knew what I was looking at.",
   "There was nothing in the middle. Nothing that said: here's what the data actually says, in plain English, and the decision is yours.",
@@ -43,8 +43,8 @@ export default function AboutPage() {
             About
           </div>
           <h1 style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 400,
+            fontFamily: "var(--sans)",
+            fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 700,
             letterSpacing: "-0.02em", color: "#fff", lineHeight: 1.15,
             margin: 0,
           }}>

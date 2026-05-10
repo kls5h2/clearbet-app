@@ -1,6 +1,5 @@
 /**
  * Stripe checkout session creator. Requires an authenticated Supabase user.
- * Body: { interval: "monthly" | "annual" }
  * Returns: { url } — the Stripe-hosted checkout URL
  */
 
@@ -18,36 +17,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  let interval: "monthly" | "annual";
-  try {
-    const body = await req.json();
-    interval = body?.interval === "annual" ? "annual" : "monthly";
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
   // Upfront env check with presence logging (never log the actual values).
   const secret = process.env.STRIPE_SECRET_KEY;
-  const monthlyPriceId = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
-  const annualPriceId = process.env.STRIPE_PRO_ANNUAL_PRICE_ID;
+  const priceId = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
   console.log(
     `[stripe:checkout] env: STRIPE_SECRET_KEY=${!!secret}, ` +
-    `STRIPE_PRO_MONTHLY_PRICE_ID=${!!monthlyPriceId}, ` +
-    `STRIPE_PRO_ANNUAL_PRICE_ID=${!!annualPriceId}, ` +
-    `interval=${interval}, user=${user.id}`
+    `STRIPE_PRO_MONTHLY_PRICE_ID=${!!priceId}, user=${user.id}`
   );
 
   const missing: string[] = [];
   if (!secret) missing.push("STRIPE_SECRET_KEY");
-  if (interval === "monthly" && !monthlyPriceId) missing.push("STRIPE_PRO_MONTHLY_PRICE_ID");
-  if (interval === "annual" && !annualPriceId) missing.push("STRIPE_PRO_ANNUAL_PRICE_ID");
+  if (!priceId) missing.push("STRIPE_PRO_MONTHLY_PRICE_ID");
   if (missing.length > 0) {
     const msg = `Missing Stripe environment variables: ${missing.join(", ")}`;
     console.error(`[stripe:checkout] ${msg}`);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const priceId = interval === "annual" ? annualPriceId! : monthlyPriceId!;
 
   const stripe = new Stripe(secret!);
 
