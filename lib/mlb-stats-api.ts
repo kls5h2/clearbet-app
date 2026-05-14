@@ -457,6 +457,69 @@ export async function getMLBUmpire(
   }
 }
 
+/**
+ * Check whether confirmed lineups have been posted for a specific game.
+ * Uses /api/v1/game/{gamePk}/lineups — the gamePk comes from today's schedule.
+ * Returns { home: boolean, away: boolean } — false means lineup not yet posted.
+ * Never throws; returns false/false on any error.
+ */
+export async function getMLBLineupConfirmed(
+  dateStr: string,    // YYYYMMDD
+  homeAbv: string,
+  awayAbv: string,
+): Promise<{ home: boolean; away: boolean }> {
+  const fallback = { home: false, away: false };
+  try {
+    const date = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+
+    // Step 1 — find the gamePk from today's schedule
+    const schedRes = await fetch(
+      `${BASE}/schedule?sportId=1&date=${date}&hydrate=probablePitcher`,
+      { next: { revalidate: 300 } }
+    );
+    if (!schedRes.ok) return fallback;
+
+    const schedData: RawScheduleResponse = await schedRes.json();
+
+    let gamePk: number | null = null;
+    for (const d of schedData.dates ?? []) {
+      for (const g of d.games) {
+        const gHomeAbv = MLB_STATS_ID_TO_ABV[(g.teams.home.team as { id: number }).id] ?? "";
+        const gAwayAbv = MLB_STATS_ID_TO_ABV[(g.teams.away.team as { id: number }).id] ?? "";
+        if (
+          (gHomeAbv === homeAbv && gAwayAbv === awayAbv) ||
+          (gHomeAbv === awayAbv && gAwayAbv === homeAbv) // flipped match
+        ) {
+          gamePk = (g as unknown as { gamePk: number }).gamePk ?? null;
+          break;
+        }
+      }
+      if (gamePk) break;
+    }
+
+    if (!gamePk) return fallback;
+
+    // Step 2 — fetch lineup for this specific game
+    const lineupRes = await fetch(
+      `${BASE}/game/${gamePk}/lineups`,
+      { next: { revalidate: 300 } }
+    );
+    if (!lineupRes.ok) return fallback;
+
+    const lineupData = await lineupRes.json() as {
+      homePlayers?: unknown[];
+      awayPlayers?: unknown[];
+    };
+
+    return {
+      home: Array.isArray(lineupData.homePlayers) && lineupData.homePlayers.length > 0,
+      away: Array.isArray(lineupData.awayPlayers) && lineupData.awayPlayers.length > 0,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 async function fetchMLBTeamId(abv: string): Promise<number | null> {
   try {
     const res = await fetch(`${BASE}/teams?sportId=1`, {

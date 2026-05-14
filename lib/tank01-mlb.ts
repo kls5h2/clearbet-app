@@ -552,6 +552,52 @@ async function getMLBRoster(teamAbv: string): Promise<RawMLBRosterPlayer[]> {
   return raw.body?.roster ?? [];
 }
 
+export interface MLBBatterData {
+  playerName: string;
+  bats: "L" | "R" | "S" | null;
+  hr: number;
+  ab: number;
+  pa: number;       // approximated as AB + BB (PA not directly available from Tank01)
+  slg: number | null; // derived from TB/AB (SLG not directly available from Tank01)
+}
+
+/**
+ * Fetch active batter stats for the scoring function.
+ * Excludes pitchers and players on IL/Out. PA approximated as AB + BB.
+ * SLG derived from TB/AB.
+ */
+export async function getMLBBatterStats(teamAbv: string): Promise<MLBBatterData[]> {
+  try {
+    const roster = await getMLBRoster(teamAbv);
+    return roster
+      .filter((p) => {
+        const isHitter = !["SP", "RP", "P"].includes(p.pos ?? "");
+        const hasStats = p.stats?.Hitting?.HR !== undefined;
+        const designation = (p.injury?.designation ?? "").toLowerCase();
+        if (designation.includes("out") || designation.includes("il")) return false;
+        if (!designation && mlbDaysSinceLastGame(p.lastGamePlayed) !== null && mlbDaysSinceLastGame(p.lastGamePlayed)! >= 7) return false;
+        return isHitter && hasStats;
+      })
+      .map((p) => {
+        const hitting = p.stats?.Hitting;
+        const ab = parseInt(hitting?.AB ?? "0", 10);
+        const bb = parseInt(hitting?.BB ?? "0", 10);
+        const tb = parseInt(hitting?.TB ?? "0", 10);
+        const bats = p.bats === "L" || p.bats === "R" || p.bats === "S" ? p.bats : null;
+        return {
+          playerName: p.longName,
+          bats,
+          hr: parseInt(hitting?.HR ?? "0", 10),
+          ab,
+          pa: ab + bb,
+          slg: ab > 0 ? tb / ab : null,
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
 export async function getMLBTeamRosterNames(teamAbv: string): Promise<string[]> {
   try {
     const roster = await getMLBRoster(teamAbv);

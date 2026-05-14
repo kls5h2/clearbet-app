@@ -282,6 +282,20 @@ export interface MLBUmpire {
   tendency: "pitcher-friendly" | "hitter-friendly" | null; // null = no data / neutral
 }
 
+// Batter signal — output of the scoring function, surfaced to Claude and UI
+export interface BatterSignal {
+  playerName: string;
+  teamAbv: string;
+  hr: number;
+  bats: "L" | "R" | "S" | null;
+  pitcherThrows: "L" | "R" | null;
+  barrelRate: number | null;   // 0.0–1.0
+  hardHitPct: number | null;   // 0.0–1.0
+  score: number;
+  flags: string[];
+  lineupConfirmed: boolean;
+}
+
 export interface MLBGameDetailData {
   game: MLBGame;
   homeTeamStats: MLBTeamStats;
@@ -300,6 +314,8 @@ export interface MLBGameDetailData {
   verification: VerificationResult;
   homeRoster?: string[];
   awayRoster?: string[];
+  batterSignals?: BatterSignal[];    // top scoring batters (score >= 5), max 2
+  lineupConfirmed?: { home: boolean; away: boolean };
 }
 
 // ─── Union type used by GameCard and BreakdownView ────────────────────────────

@@ -203,6 +203,65 @@ nav {
 }
 .prop-text { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5; }
 .prop-text strong { color: rgba(255,255,255,0.9); font-weight: 600; }
+
+/* batters block (MLB only — scored matchup signals) */
+.batters-block-section {
+  margin: 0 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.batters-block-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.batters-block-label {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.batters-block-label::before { content: ''; width: 14px; height: 1px; background: var(--signal); }
+.batters-block-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fragile); background: var(--fragile-bg);
+  padding: 2px 7px; border-radius: 3px; margin-left: auto;
+}
+.batters-list { display: flex; flex-direction: column; padding: 12px 16px; gap: 8px; }
+.batter-row {
+  padding: 16px;
+  background: var(--warm-white);
+  border-left: 3px solid var(--signal);
+  border-radius: 0 6px 6px 0;
+}
+.batter-row-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+}
+.batter-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.batter-team {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); background: var(--cream);
+  padding: 2px 6px; border-radius: 3px;
+}
+.batter-lineup-tag {
+  font-size: 11px; color: var(--muted-light); margin-left: auto;
+}
+.batter-meta {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted); letter-spacing: 0.02em; line-height: 1.5;
+  margin-bottom: 6px;
+}
+.batter-signal-phrase {
+  font-size: 13px; color: var(--fragile); font-weight: 600;
+  display: flex; align-items: center; gap: 5px;
+}
+.batter-signal-phrase::before { content: '▲'; font-size: 8px; opacity: 0.65; }
+
 .step-header-line {
   flex: 1; height: 1px; background: var(--border);
 }
@@ -477,6 +536,40 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
         <span class="step-tip-icon">💡</span>
         Line movement matters. When a line moves toward the underdog, informed money is usually driving it. It doesn't mean bet the underdog — it means the market knows something worth factoring in.
       </div>
+    </div>
+  </div>
+
+  <!-- BATTERS TO WATCH (MLB only) — rendered between Market Read and What This Means -->
+  <!-- Replace placeholder data with live BatterSignal[] from MLBGameDetailData.batterSignals -->
+  <div class="batters-block-section f3">
+    <div class="batters-block-header">
+      <div class="batters-block-label">Batters to Watch</div>
+      <div class="batters-block-badge">MLB Signal</div>
+    </div>
+    <div class="batters-list">
+
+      <!-- Batter row: score >= 7 (primary signal) -->
+      <div class="batter-row">
+        <div class="batter-row-top">
+          <div class="batter-name">Yordan Alvarez</div>
+          <div class="batter-team">HOU</div>
+          <div class="batter-lineup-tag">lineup confirmed</div>
+        </div>
+        <div class="batter-meta">26 HR &nbsp;·&nbsp; bats R vs LHP &nbsp;·&nbsp; 68% barrel rate</div>
+        <div class="batter-signal-phrase">HR pace: 38 HR/162 vs starter's 1.8 HR/9</div>
+      </div>
+
+      <!-- Batter row: score >= 5 (secondary signal) -->
+      <div class="batter-row">
+        <div class="batter-row-top">
+          <div class="batter-name">Kyle Tucker</div>
+          <div class="batter-team">HOU</div>
+          <div class="batter-lineup-tag">lineup unconfirmed</div>
+        </div>
+        <div class="batter-meta">14 HR &nbsp;·&nbsp; bats L vs RHP &nbsp;·&nbsp; 52% barrel rate</div>
+        <div class="batter-signal-phrase">park factor: Minute Maid HR index 115</div>
+      </div>
+
     </div>
   </div>
 

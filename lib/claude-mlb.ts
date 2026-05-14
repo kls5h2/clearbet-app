@@ -11,6 +11,7 @@ import type {
   MLBBullpenStats,
   MLBParkFactor,
   MLBUmpire,
+  BatterSignal,
   BreakdownResult,
   ConfidenceLevel,
   ConfidenceLabel,
@@ -96,7 +97,7 @@ For every breakdown, Where the Data Points should address prop environments usin
 - Total bases: batter ISO and SLG vs pitcher HR/FB rate and hard-contact allowed.
 - RBIs: lineup position, runners-on-base tendencies ahead of the batter, pitcher strand rate.
 - Walks: pitcher BB/9 vs batter walk rate — flag especially when a wild pitcher faces a patient hitter.
-- Home runs: batter HR rate vs pitcher HR/9, park factor, wind direction for outdoor stadiums.
+- Home runs: When the BATTERS TO WATCH payload contains a batter with score >= 7, that batter's HR prop is the first batting prop to evaluate. Ground the read in at least two of: pitcher HR/9, batter barrel rate, park factor, platoon handedness advantage. Do not surface a batter HR prop for any batter scoring below 7. If no batter scores >= 7, home run props may still be evaluated using traditional data (HR rate vs pitcher HR/9, park factor) but only when the case is genuinely clear.
 
 Same rule applies to every category: only flag a prop market when the data creates a genuinely clear read. If the data is thin or conflicting, omit it. Always frame as: "the data points toward" — never "bet X" or "take X."
 
@@ -142,6 +143,17 @@ LEAD WITH ENVIRONMENT — Game Shape must open with the game environment: park, 
 
 For pitchers include: ERA, K/9 (calculated from SO/IP), WHIP, HR allowed rate
 For batters include: relevant stats for tonight's matchup specifically
+
+BATTER DRIVERS (MLB only)
+If the BATTERS TO WATCH payload contains a batter with score >= 7, include that batter as one of the Key Drivers. Treat it exactly like a pitcher driver — same format, same length, same tone.
+
+Format:
+[BATTER NAME]'s [specific matchup condition] — [why it matters in this specific game, not generically]. [One sentence on what limits it.]
+
+Example:
+"Yordan Alvarez's right-handed pull profile vs Imai's 2.08 WHIP and 7 HR allowed this season creates a legitimate damage environment at Minute Maid's 315-foot left field line. The condition that limits it: Imai exiting before the fifth inning and Alvarez facing the bullpen in a lower-leverage situation."
+
+Do not include a batter driver if no batter in the payload scores >= 7. Do not include more than one batter driver in Key Drivers.
 
 DIRECTION ACCURACY — each driver's color label must match the actual direction of the factor relative to the expected outcome. A confirmed elite starter for the favored team is GREEN (supports the script), not "Works against." A data point that helps the home team cannot be labeled "Works against home team." Verify each label before writing.
 
@@ -209,6 +221,16 @@ PRE-GAME LINE LANGUAGE — never write "closed as" or "closed at" for a line bef
 
 MARKET READ DISPLAY STRUCTURE — Do not restate the run line, total, moneylines, implied probabilities, or vig — those are shown in the UI data row. Focus on movement context and market interpretation only. Line movement: if no opening line is recorded, state it once and move on. No speculative claims about sportsbook behavior without movement data to support them.
 
+### BATTERS TO WATCH PAYLOAD (MLB only)
+The payload includes a scored list of batter matchups computed from each batter's HR pace, handedness platoon advantage, park factor, barrel rate, and the opposing pitcher's HR/9 rate. This section is rendered automatically in the UI as structured data rows between Market Read and Where the Data Points — you do not write a BATTERS TO WATCH section yourself. Your role with this data:
+
+1. KEY DRIVERS: If a batter scores >= 7, include that batter as one Key Driver per the BATTER DRIVERS rule in Step 02.
+2. WHERE THE DATA POINTS / PROPS: If a batter scores >= 7 and their matchup factors create a clear HR or total bases environment, evaluate a PROPS entry for that batter. Reference the specific factors — do not use generic batting prop language.
+3. WHAT THIS MEANS: You may reference a high-scoring batter once if it is the primary angle. Do not repeat Key Driver content verbatim.
+4. Never cite the numeric batter score (e.g., "scores 9 of 12") in any output field. Reference the underlying factors only: pitcher HR rate, barrel rate, platoon matchup, park factor.
+5. If no batter in the payload scores >= 5, do not reference the BATTERS TO WATCH payload anywhere in your output.
+6. A batter marked [lineup unconfirmed] may be included in Key Drivers but must be flagged: "If [name] is in the lineup, …" Treat unconfirmed lineup status the same as an unconfirmed starter — name the uncertainty once, do not build the script around it.
+
 ## TOTAL PROJECTION MATH RULE
 When citing game scores or run totals to support a total read, add the two teams' scores and verify the combined total supports your direction before writing.
 
@@ -251,6 +273,8 @@ Consider these markets and include only the ones the data genuinely supports:
 Labels must be exactly: RUN LINE, TOTAL, PROPS (optional). The label must match the content — RUN LINE entries contain run line directional claims, TOTAL entries contain over/under directional claims, PROPS entries contain player or team prop reads. LABEL ALIGNMENT CHECK: verify each label correctly describes its entry content before outputting. Swapping RUN LINE and TOTAL is a product error that actively misleads users. If no prop environment exists, omit PROPS rather than forcing one in.
 
 PROPS QUALITY GATE — Do not force a prop into every breakdown. If the prop read is weak, speculative, or cannot be grounded in available data, omit it entirely. A PROPS entry must: name a specific market type (strikeout total, player hits, NRFI/YRFI, team total, etc.); ground the read in at least one specific stat from the payload; follow the "stronger case is X because Y" structure. A PROPS entry must NOT: appear when props data is unavailable or unverifiable; cite a stat that conflicts with other data in the breakdown; be included as filler when RUN LINE and TOTAL already cover the read.
+
+BATTER SIGNAL PRIORITY — When a batter in the BATTERS TO WATCH payload scores >= 7 and the specific matchup factors align clearly (pitcher HR/9, park factor, barrel rate, platoon advantage), a PROPS entry for that batter should be evaluated first before any other prop. This is the most data-grounded prop signal in the payload and takes priority over generic lineup matchup analysis. If the batter is unconfirmed in the lineup, note the condition explicitly.
 
 End with exactly: "These are the environments the data creates. Your decision is always yours."
 
@@ -376,7 +400,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   const {
     game, homeTeamStats, awayTeamStats, homeRecentForm, awayRecentForm, injuries,
     homePlayoffContext, awayPlayoffContext, homeBullpen, awayBullpen, h2h, parkFactor, umpire, lineMovement,
-    verification, homeRoster, awayRoster,
+    verification, homeRoster, awayRoster, batterSignals, lineupConfirmed,
   } = data;
   const { homeTeam, awayTeam, odds, homePitcher, awayPitcher } = game;
 
@@ -523,6 +547,21 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
 
   const parkSection = formatParkFactor(parkFactor);
 
+  const formatBatterSignals = (signals: BatterSignal[] | undefined): string => {
+    if (!signals || signals.length === 0) {
+      return "No batter matchups met the minimum signal threshold (score >= 5) for this game.";
+    }
+    return signals.map((b) => {
+      const pitcher = b.teamAbv === homeTeam.teamAbv ? awayPitcher : homePitcher;
+      const pitcherThrows = pitcher?.hand ?? "?";
+      const batSide = b.bats ?? "?";
+      const barrelStr = b.barrelRate !== null ? `${(b.barrelRate * 100).toFixed(0)}% barrel rate` : "barrel rate unavailable";
+      const primaryFlag = b.flags[0] ?? "no signal flag";
+      const lineupTag = b.lineupConfirmed ? "[lineup confirmed]" : "[lineup unconfirmed]";
+      return `${b.playerName} · ${b.teamAbv} · ${b.hr} HR · bats ${batSide} vs ${pitcherThrows}HP · ${barrelStr} · ${primaryFlag} ${lineupTag} · score: ${b.score}/12`;
+    }).join("\n");
+  };
+
   const formatMovement = (val: number | null, label: string): string => {
     if (val === null) return "";
     if (val === 0) return `${label}: no movement`;
@@ -607,6 +646,10 @@ ${homeTeam.teamAbv} (${(homeRoster ?? []).length} players): ${(homeRoster ?? [])
 
 ${awayTeam.teamAbv} (${(awayRoster ?? []).length} players): ${(awayRoster ?? []).join(", ")}`
   : `━━━ ROSTER ━━━\n${homeTeam.teamAbv}: UNAVAILABLE — do not name specific players beyond what appears in top hitters / pitcher data above.\n${awayTeam.teamAbv}: UNAVAILABLE — do not name specific players beyond what appears in top hitters / pitcher data above.`}
+
+━━━ BATTERS TO WATCH ━━━
+Lineup confirmed — Home (${homeTeam.teamAbv}): ${lineupConfirmed?.home ? "yes" : "no"} | Away (${awayTeam.teamAbv}): ${lineupConfirmed?.away ? "yes" : "no"}
+${formatBatterSignals(batterSignals)}
 
 ${formatVerificationSection(verification)}
 

@@ -18,6 +18,8 @@ Not a picks service. Not a prediction engine. Never tells users what to bet.
 - **Database:** Supabase
 - **Odds:** The Odds API
 - **Game/player data:** Tank01 (RapidAPI) — separate NBA and MLB subscriptions
+- **MLB authoritative starters:** MLB Stats API (no auth) — `statsapi.mlb.com/api/v1/...`
+- **MLB Statcast (batter signals):** Baseball Savant CSV endpoint — barrel rate, hard-hit %, exit velo; cached daily via `next: { revalidate: 86400 }` + in-process singleton; see `lib/baseball-savant.ts`
 - **Analysis:** Claude API (claude-sonnet-4-20250514)
 - **Payments:** Stripe
 - **GitHub:** kls5h2

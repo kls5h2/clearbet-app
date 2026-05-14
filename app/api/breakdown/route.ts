@@ -10,13 +10,18 @@ import {
   getMLBStartingPitcher,
   getMLBH2HRecord,
   getMLBTeamRosterNames,
+  getMLBBatterStats,
 } from "@/lib/tank01-mlb";
 import {
   fetchMLBProbableStarters,
   getMLBPlayoffContext,
   getMLBBullpenStats,
   getMLBUmpire,
+  getMLBLineupConfirmed,
 } from "@/lib/mlb-stats-api";
+import { getStatcastBatters, lookupStatcast } from "@/lib/baseball-savant";
+import { scoreBatter, calcHrPer9, TEAM_TO_PARK_FACTOR, DEFAULT_PARK_FACTOR } from "@/lib/batter-scoring";
+import type { BatterSignal } from "@/lib/types";
 import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
 import { supabase } from "@/lib/supabase";
@@ -622,6 +627,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       homeStats, awayStats, homeForm, awayForm, injuryReport, oddsMap,
       mlbStatsPitchers, playoffCtx, h2h, homeBullpen, awayBullpen, umpire,
       homeRoster, awayRoster, openingLine,
+      homeBatters, awayBatters, statcastMap, lineupConfirmed,
     ] = await Promise.all([
       getMLBTeamStats(homeTeam.teamAbv),
       getMLBTeamStats(awayTeam.teamAbv),
@@ -638,6 +644,10 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       getMLBTeamRosterNames(homeTeam.teamAbv).catch(() => []),
       getMLBTeamRosterNames(awayTeam.teamAbv).catch(() => []),
       getOpeningLine(gameId).catch(() => null),
+      getMLBBatterStats(homeTeam.teamAbv).catch(() => []),
+      getMLBBatterStats(awayTeam.teamAbv).catch(() => []),
+      getStatcastBatters().catch(() => new Map()),
+      getMLBLineupConfirmed(today, homeTeam.teamAbv, awayTeam.teamAbv).catch(() => ({ home: false, away: false })),
     ]);
 
     const statsEntry =
@@ -658,6 +668,64 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       `[breakdown:MLB] pitchers: home=${homePitcher?.name ?? "none"} (confirmed=${homePitcher?.confirmed ?? false}), ` +
       `away=${awayPitcher?.name ?? "none"} (confirmed=${awayPitcher?.confirmed ?? false})`
     );
+
+    // ─── Batter scoring ───────────────────────────────────────────────────────
+    const parkFactor = TEAM_TO_PARK_FACTOR[homeTeam.teamAbv] ?? DEFAULT_PARK_FACTOR;
+
+    const scoreBattersForTeam = (
+      batters: Awaited<ReturnType<typeof getMLBBatterStats>>,
+      teamAbv: string,
+      opposingPitcher: typeof homePitcher,
+      isLineupConfirmed: boolean,
+    ): BatterSignal[] => {
+      const pitcherThrows = opposingPitcher?.hand ?? null;
+      const hrPer9 = calcHrPer9(opposingPitcher?.seasonHR ?? null, opposingPitcher?.seasonIP ?? null);
+
+      return batters
+        .filter((b) => b.hr >= 1 || b.pa >= 50) // minimum meaningful sample
+        .map((b) => {
+          const statcast = lookupStatcast(b.playerName, statcastMap);
+          const { score, flags } = scoreBatter(
+            {
+              playerName: b.playerName,
+              bats: b.bats,
+              hr: b.hr,
+              ab: b.ab,
+              pa: b.pa,
+              barrel_rate: statcast?.barrelRate ?? null,
+              hard_hit_pct: statcast?.hardHitPct ?? null,
+            },
+            { throws: pitcherThrows, hr_per_9: hrPer9 },
+            parkFactor,
+          );
+          return {
+            playerName: b.playerName,
+            teamAbv,
+            hr: b.hr,
+            bats: b.bats,
+            pitcherThrows,
+            barrelRate: statcast?.barrelRate ?? null,
+            hardHitPct: statcast?.hardHitPct ?? null,
+            score,
+            flags,
+            lineupConfirmed: isLineupConfirmed,
+          } satisfies BatterSignal;
+        });
+    };
+
+    const allBatterScores: BatterSignal[] = [
+      ...scoreBattersForTeam(homeBatters, homeTeam.teamAbv, awayPitcher, lineupConfirmed.home),
+      ...scoreBattersForTeam(awayBatters, awayTeam.teamAbv, homePitcher, lineupConfirmed.away),
+    ]
+      .sort((a, b) => b.score - a.score)
+      .filter((b) => b.score >= 5)
+      .slice(0, 2); // max 2 per spec
+
+    console.log(
+      `[breakdown:MLB] batter signals: ${allBatterScores.length} qualified (score>=5) ` +
+      allBatterScores.map((b) => `${b.playerName} score=${b.score}`).join(", ")
+    );
+    // ─── End batter scoring ───────────────────────────────────────────────────
 
     // Derive odds early so verification can check whether lines are posted
     const oddsKey = buildMatchupKey(homeTeam.teamName, awayTeam.teamName);
@@ -715,7 +783,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       SF:  { parkName: "Oracle Park", factor: "low" },
       CIN: { parkName: "Great American Ball Park", factor: "high" },
     };
-    const parkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
+    const mlbParkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
 
     // Record opening line (insert-only, non-blocking). openingLine already fetched in Promise.all above.
     recordOpeningLine(
@@ -763,12 +831,14 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       homeBullpen,
       awayBullpen,
       h2h,
-      parkFactor,
+      parkFactor: mlbParkFactor,
       umpire,
       lineMovement,
       verification: mlbVerification,
       homeRoster,
       awayRoster,
+      batterSignals: allBatterScores,
+      lineupConfirmed,
     };
 
     console.log("[breakdown:MLB] calling Claude...");
