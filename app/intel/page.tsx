@@ -749,7 +749,7 @@ function HomePageContent() {
           <div style={{
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.4)", marginBottom: "10px",
+            color: "rgba(255,255,255,0.5)", marginBottom: "10px",
             display: "flex", alignItems: "center", gap: "10px",
           }}>
             <span style={{ width: "20px", height: "1px", background: "var(--signal)", display: "block", flexShrink: 0 }} />
@@ -763,7 +763,7 @@ function HomePageContent() {
               : games.length === 0 ? `No ${activeSport} games today.`
               : `${games.length} game${games.length === 1 ? "" : "s"} on tonight's slate.`}
           </div>
-          <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.45)", lineHeight: 1.55, maxWidth: "480px" }}>
+          <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.65)", lineHeight: 1.55, maxWidth: "480px" }}>
             {activeSport === "NBA"
               ? "Every game analyzed. Your decision to make."
               : "Pitcher matchups, bullpen depth, and park factors — all in plain English."}
@@ -884,8 +884,8 @@ function HomePageContent() {
             display: "grid", gridTemplateColumns: "1fr 1fr",
           }}>
             {[
-              { eyebrow: "Tonight", headline: "The breakdown is yours.\nThe decision is too.", sub: "Every game on tonight's slate. Analyzed. Ready. No noise — just what the data says." },
-              { eyebrow: "Tomorrow", headline: "Come back tomorrow.\nThe board resets.", sub: "New games. New breakdowns. Same standard." },
+              { eyebrow: "Tonight", headline: "The breakdown is yours.\nThe decision is too.", sub: "These reads are only good tonight. The slate clears at midnight." },
+              { eyebrow: "Tomorrow", headline: "Come back tomorrow.\nThe board resets.", sub: "New games. New reads. Every night, a fresh slate — same standard, same structure." },
             ].map((panel, i) => (
               <div key={panel.eyebrow} style={{ padding: "32px 36px", borderRight: i === 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
                 <div style={{
@@ -902,7 +902,7 @@ function HomePageContent() {
                 }}>
                   {panel.headline}
                 </div>
-                <div style={{ fontSize: "13.5px", color: "rgba(255,255,255,0.38)", lineHeight: 1.55 }}>
+                <div style={{ fontSize: "13.5px", color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
                   {panel.sub}
                 </div>
               </div>

@@ -39,7 +39,13 @@ If you find yourself writing any of these: delete the entire sentence and replac
 The closing line "This is not a pick. This is what the data says. Your decision is always yours." is not optional. It is the last line of every breakdown. No exceptions.
 
 ## THE VOICE
-Same as NBA — sharp, direct, specific. Every sentence frames, prioritizes, interprets, or points toward value. If it does none of these — cut it.
+Sharp, direct, specific. Every sentence frames, prioritizes, interprets, or points toward value. If it does none of these — cut it.
+
+BASEBALL-SPECIFIC VOICE RULES:
+- The pitching matchup is always the anchor. Establish it first, before any team-level or lineup context.
+- Every stat that appears in output must carry a plain-English consequence clause explaining what it means for tonight — not a definition, a consequence. Format: "[stat] — [what it means in this game]." Example: "Imai's 4.2 BB/9 — he gives free baserunners to a lineup that punishes them."
+- Write for someone who watches baseball but doesn't track advanced stats. ERA and WHIP are fine without translation. BABIP, FIP, xFIP, barrel rate, hard-hit rate, and exit velocity need a plain-English clause every time they appear.
+- Lead with the implication, follow with the number — not the other way around. "The lineup struggles against left-handed pitching (.238 AVG)" beats ".238 AVG against left-handed pitching."
 
 ## RECENT FORM DATA — SILENT OMISSION RULE
 If recent game-by-game form data is unavailable in the payload, do not reference its absence. Do not write "recent form data is unavailable," "recent form cannot be assessed," or any variation. Simply omit it. If recent form would have been a factor, fold the uncertainty into the existing caveat language naturally — the read is built on season stats, injury reports, and market data.
@@ -61,6 +67,14 @@ Bad: "Barnes and Barrett work hard but face defensive attention from Mobley and 
 Good: "Barnes and Barrett carry Toronto's offense but run into Mobley's length on every drive — Cleveland's interior defense erases the secondary scoring options Toronto needs without Ingram."
 
 Short sentences beat long ones. Active voice beats passive. Specific beats general every time.
+
+Never use markdown formatting of any kind inside JSON string values. No **bold**, no *italic*, no # headers. Plain text only. If you need to emphasize something, restructure the sentence so the emphasis is built into the word order, not the formatting.
+
+## JARGON RULE
+- ERA, WHIP, K/9, OPS, AVG — use freely. No translation needed.
+- BB/9, HR/9, BABIP, FIP, xFIP, barrel rate, hard-hit rate, exit velocity — always follow with a plain-English clause. Example: "15% barrel rate — he makes hard contact at an elite rate."
+- Never use slash line format (AVG/OBP/SLG) in running prose. Write stats individually.
+- Never use more than 4 acronyms in a single bullet or sentence.
 
 ## THE STARTING PITCHER RULE — NON-NEGOTIABLE
 The starting pitcher is the most important variable in baseball. Period. If both starters are confirmed, lead with the matchup and what it means for the run environment. If one or both are unconfirmed, say so once clearly, then immediately pivot to what IS known — don't fill space with uncertainty.
@@ -139,10 +153,14 @@ H2H records used as Key Drivers must follow these color coding rules exactly:
 LEAD WITH ENVIRONMENT — Game Shape must open with the game environment: park, run context, pitching matchup structure, or ballpark factor. Player status updates (unconfirmed starter, injury) may appear in Game Shape but cannot be the lead sentence. If an unconfirmed starter is the dominant variable, state the park and run environment first, then note the status.
 
 ### 02 — KEY DRIVERS
-2-4 bullets. Ranked by importance. Lead with the pitching matchup if starters are confirmed. Each bullet states the factor, its direction, and why it matters tonight for the outcome or a specific market.
+2-3 bullets maximum. Ranked by importance. Lead with the pitching matchup if starters are confirmed. Each bullet states the factor, its direction, and why it matters tonight for the outcome or a specific market.
 
 For pitchers include: ERA, K/9 (calculated from SO/IP), WHIP, HR allowed rate
-For batters include: relevant stats for tonight's matchup specifically
+For batters:
+- Lead with OPS or AVG — the most readable single indicator of overall offensive value.
+- Follow with one power or contact indicator relevant to tonight's matchup: HR total, hard-hit rate, barrel rate, or exit velocity.
+- End with one sentence on the specific matchup implication — why does this batter's profile create or lose an edge against tonight's pitcher?
+- Never list more than 3 stats per batter. If you cannot explain why each one matters tonight, cut it.
 
 BATTER DRIVERS (MLB only)
 If the BATTERS TO WATCH payload contains a batter with score >= 7, include that batter as one of the Key Drivers. Treat it exactly like a pitcher driver — same format, same length, same tone.
@@ -154,6 +172,13 @@ Example:
 "Yordan Alvarez's right-handed pull profile vs Imai's 2.08 WHIP and 7 HR allowed this season creates a legitimate damage environment at Minute Maid's 315-foot left field line. The condition that limits it: Imai exiting before the fifth inning and Alvarez facing the bullpen in a lower-leverage situation."
 
 Do not include a batter driver if no batter in the payload scores >= 7. Do not include more than one batter driver in Key Drivers.
+
+PLAYER LAYER — REQUIRED IN EVERY BREAKDOWN:
+WHO CARRIES IT: Name the 1–2 players (pitcher or batter) most likely to determine the outcome tonight. For pitchers: cite at least two of ERA, K/9, WHIP, or recent form and why they create or suppress runs tonight specifically. For batters: use tonight-specific matchup reasoning, not just season AVG.
+WHO'S AT RISK: Name the player most likely to underperform tonight — a starter facing a lineup that attacks their weakness, a batter in a cold stretch against this handedness, or a closer with a high blown-save rate entering a save opportunity. One sentence on why tonight specifically.
+Embed both within existing drivers. Both must appear somewhere in Key Drivers.
+
+KEY DRIVERS HARD LIMIT: Each bullet is two sentences maximum. Sentence 1: the stat and what it means tonight. Sentence 2: the one condition that limits or flips it. If you need a third sentence, cut the bullet down or split it into two drivers. No exceptions.
 
 DIRECTION ACCURACY — each driver's color label must match the actual direction of the factor relative to the expected outcome. A confirmed elite starter for the favored team is GREEN (supports the script), not "Works against." A data point that helps the home team cannot be labeled "Works against home team." Verify each label before writing.
 
@@ -201,6 +226,9 @@ These confirmed facts MUST NOT appear in the Fragility Check under any circumsta
 Do not write "if [confirmed OUT player] somehow plays" — a confirmed absence is not a fragility variable.
 If you find yourself writing about a confirmed OUT player in the Fragility Check, delete it and replace with a genuine uncertainty.
 Only unconfirmed statuses (DTD, questionable, UNCONFIRMED starters) belong in the Fragility Check.
+
+### WILDCARD (optional — between Fragility Check and Market Read)
+One bullet only. A single player or factor that could swing the game in either direction in a way the current line does not appear to price. Only include if a genuinely strong wildcard exists and it is not already captured in Key Drivers or Fragility Check. Omit entirely if none exists. Format: [NAME/FACTOR]: [specific condition] — [what it does to the outcome and in which direction].
 
 ### 05 — MARKET READ
 The UI automatically displays raw figures (run line, total, both moneylines, both implied probabilities, vig) as a scannable data row — do NOT repeat these figures in the marketRead text. The marketRead field is for interpretation only.
@@ -298,14 +326,22 @@ cardSummary: Exactly 2 sentences. This appears on the game card before the user 
 ## SHARE HOOK
 shareHook: One sentence. The single most interesting or surprising data point from this breakdown. Something that makes someone who hasn't read it want to click through. No pick implied. Max 120 characters.
 
+## STAT CONTAINMENT
+Raw stats belong in Key Drivers only.
+- Base Script: use outcomes and player names, not raw numbers. "Cole keeps the lineup quiet through six" not "Cole's 2.85 ERA suggests six clean innings."
+- Fragility Check: name the scenario and the impact. Include a raw stat only when it is essential to understanding the specific risk — if the risk is clear without the number, omit it.
+- What This Means: no raw stats. Prose only — reference players and conditions, not figures.
+
 ## LENGTH RULES — HARD LIMITS
 These are enforced limits, not guidelines. Violating them degrades the product.
 - Game Shape: 2-3 sentences maximum. No exceptions.
-- Key Drivers: one sentence per bullet. Hard limit. If you need two sentences, cut one.
+- Key Drivers: two sentences maximum per bullet. Sentence 1: the stat and what it means tonight. Sentence 2: the one condition that limits or flips it. If you need a third sentence, cut the bullet down or split it into two drivers. No exceptions.
 - Base Script: 3 sentences maximum. Name players, name margin range, name what must hold.
 - Fragility Check: one sentence per bullet. Name the player, the scenario, the impact — in that order.
 - Market Read: 3 sentences maximum.
 - What This Means: 3 sentences exactly. No more.
+
+TOTAL BREAKDOWN LENGTH: 350 words maximum. Hard ceiling. If the breakdown exceeds 350 words, cut in this order: (1) the weakest Key Driver bullet, (2) the longest Fragility Check bullet, (3) any sentence in What This Means that restates something already said in Key Drivers or Base Script. Never cut Game Shape, Wildcard, or Where the Data Points.
 
 ## FINAL CHECK BEFORE OUTPUT
 
@@ -354,6 +390,7 @@ Return valid JSON only. No markdown, no preamble.
   "shareHook": "string (one sentence, max 120 chars per SHARE HOOK rule — used on share cards)",
   "confidenceLevel": 1 | 2 | 3 | 4,
   "confidenceLabel": "CLEAR SPOT" | "LEAN" | "FRAGILE" | "PASS",
+  "wildcard": "string | null (single bullet per WILDCARD rule — null if no strong wildcard exists)",
   "glossaryTerm": "string",
   "glossaryDefinition": "string"
 }`;
@@ -703,6 +740,11 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
      .replace(/\s{2,}/g, " ")
      .trim();
 
+  const stripMarkdown = (s: string): string =>
+    s.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1");
+
+  const clean = (s: string) => stripMarkdown(stripFlags(s));
+
   // ── Inner: call Claude once and apply all standard post-processing ───────────
   async function callOnce(): Promise<BreakdownResult> {
     const message = await client.messages.create({
@@ -714,6 +756,8 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
 
     const raw = message.content[0];
     if (raw.type !== "text") throw new Error("Unexpected Claude response type");
+
+    console.log("[breakdown:MLB:debug] RAW CLAUDE RESPONSE (first 2000 chars):", raw.text.slice(0, 2000));
 
     const json = raw.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     let p: BreakdownResult;
@@ -735,6 +779,7 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
     if (typeof p.cardSummary !== "string") p.cardSummary = "";
     if (typeof p.shareHook !== "string") p.shareHook = "";
     if (p.shareHook.length > 120) p.shareHook = p.shareHook.slice(0, 117).trimEnd() + "…";
+    if (typeof p.wildcard !== "string") p.wildcard = null;
 
     p.confidenceLevel = Math.max(1, Math.min(4, p.confidenceLevel)) as ConfidenceLevel;
     p.confidenceLabel = labelMap[p.confidenceLevel];
@@ -751,19 +796,24 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
       }
     }
 
-    // Strip internal data flags
-    p.gameShape = stripFlags(p.gameShape);
-    p.baseScript = stripFlags(p.baseScript);
-    p.marketRead = stripFlags(p.marketRead);
-    p.decisionLens = stripFlags(p.decisionLens);
-    p.edgeClosingLine = stripFlags(p.edgeClosingLine);
-    p.cardSummary = stripFlags(p.cardSummary);
-    p.shareHook = stripFlags(p.shareHook);
-    p.glossaryTerm = stripFlags(p.glossaryTerm);
-    p.glossaryDefinition = stripFlags(p.glossaryDefinition);
-    p.edge = p.edge.map(stripFlags);
-    p.keyDrivers = p.keyDrivers.map((d) => ({ ...d, factor: stripFlags(d.factor) }));
-    p.fragilityCheck = p.fragilityCheck.map((f) => ({ ...f, item: stripFlags(f.item) }));
+    // Strip internal data flags and markdown formatting from all string output fields
+    p.gameShape = clean(p.gameShape);
+    p.baseScript = clean(p.baseScript);
+    p.marketRead = clean(p.marketRead);
+    p.decisionLens = clean(p.decisionLens);
+    p.edgeClosingLine = clean(p.edgeClosingLine);
+    p.cardSummary = clean(p.cardSummary);
+    p.shareHook = clean(p.shareHook);
+    p.glossaryTerm = clean(p.glossaryTerm);
+    p.glossaryDefinition = clean(p.glossaryDefinition);
+    if (p.wildcard) p.wildcard = clean(p.wildcard);
+    if (p.primaryUncertainty) p.primaryUncertainty = clean(p.primaryUncertainty);
+    p.edge = p.edge.map(clean);
+    p.keyDrivers = p.keyDrivers.map((d) => ({ ...d, factor: clean(d.factor) }));
+    p.fragilityCheck = p.fragilityCheck.map((f) => ({ ...f, item: clean(f.item) }));
+
+    // Hard cap: 3 drivers maximum — drop weakest (last) if over
+    if (p.keyDrivers.length > 3) p.keyDrivers = p.keyDrivers.slice(0, 3);
 
     return p;
   }

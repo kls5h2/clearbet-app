@@ -184,20 +184,37 @@ export default function LineTranslatorClient() {
           WebkitTextStroke: "1px rgba(255,255,255,0.03)", lineHeight: 1,
           pointerEvents: "none", userSelect: "none", fontFamily: "var(--sans)",
         }}>R</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: "12px" }}>
           <span style={{ width: "20px", height: "1px", background: "var(--signal)", flexShrink: 0, display: "inline-block" }} />
           Line Translator
         </div>
         <div style={{ fontSize: "clamp(22px,4vw,34px)", fontWeight: 800, letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.15, marginBottom: "8px", fontFamily: "var(--sans)" }}>
           What does that line<br />actually mean?
         </div>
-        <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.42)", lineHeight: 1.6, maxWidth: "480px", fontFamily: "var(--sans)" }}>
+        <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.65)", lineHeight: 1.6, maxWidth: "480px", fontFamily: "var(--sans)" }}>
           Paste any betting line — spread, moneyline, total, or prop. Get a plain-English translation, implied probability, and context read back.
         </div>
       </div>
 
       {/* Page content */}
       <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px clamp(16px, 4vw, 40px) 80px" }}>
+
+        {/* Trust-building strip */}
+        <div style={{ marginBottom: "20px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          {[
+            { label: "Plain English", detail: "What the number actually means" },
+            { label: "Implied probability", detail: "Converted to a win percentage" },
+            { label: "What to watch", detail: "Key factors before you decide" },
+          ].map((item) => (
+            <div key={item.label} style={{ display: "flex", alignItems: "flex-start", gap: "8px", flex: "1 1 160px", minWidth: 0 }}>
+              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--signal)", flexShrink: 0, marginTop: "6px" }} />
+              <div>
+                <div style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--ink)", lineHeight: 1.3 }}>{item.label}</div>
+                <div style={{ fontSize: "11.5px", color: "var(--muted)", lineHeight: 1.4 }}>{item.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Input card */}
         <div style={{ background: "#fff", borderRadius: 0, border: "1px solid rgba(17,17,16,0.15)", overflow: "hidden", boxShadow: "0 1px 2px rgba(17,17,16,0.04), 0 2px 6px rgba(17,17,16,0.04), 0 0 0 1px rgba(17,17,16,0.03), inset 0 1px 0 rgba(255,255,255,0.7)", marginBottom: "16px" }}>

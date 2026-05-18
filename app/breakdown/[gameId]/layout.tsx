@@ -95,8 +95,8 @@ export async function generateMetadata({
   }
 
   if (homeTeam && awayTeam) {
-    title       = `${awayTeam} at ${homeTeam} — RawIntel Breakdown`;
-    description = baseScript || `${sport || "Game"} breakdown for ${awayTeam} at ${homeTeam}${gameDate ? ` · ${gameDate}` : ""}.`;
+    title       = `${awayTeam} vs ${homeTeam} Breakdown — RawIntel`;
+    description = baseScript || `${sport || "Game"} breakdown for ${awayTeam} vs ${homeTeam}${gameDate ? ` · ${gameDate}` : ""}.`;
   }
 
   const ogParams = new URLSearchParams();

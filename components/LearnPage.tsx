@@ -5,9 +5,10 @@ import { getLearnArticle } from "@/lib/learn-content";
 
 interface Props {
   article: LearnArticle;
+  relatedGlossaryTerms?: { slug: string; name: string }[];
 }
 
-export default function LearnPage({ article }: Props) {
+export default function LearnPage({ article, relatedGlossaryTerms = [] }: Props) {
   const { title, directAnswer, explanation, example, decisionContext, faqs, relatedSlugs } = article;
 
   const related = relatedSlugs
@@ -179,6 +180,31 @@ export default function LearnPage({ article }: Props) {
                     textDecoration: "none",
                   }}>
                     {r.title} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* 8. In the glossary */}
+        {relatedGlossaryTerms.length > 0 && (
+          <section style={{ borderTop: "0.5px solid var(--border)", paddingTop: "24px" }}>
+            <p style={{
+              fontSize: "11px", fontWeight: 500,
+              textTransform: "uppercase", letterSpacing: "0.1em",
+              color: "var(--ink)", opacity: 0.5, marginBottom: "12px",
+            }}>
+              In the glossary
+            </p>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+              {relatedGlossaryTerms.map((t) => (
+                <li key={t.slug}>
+                  <Link href={`/glossary/${t.slug}`} style={{
+                    fontSize: "15px", color: "var(--signal)",
+                    textDecoration: "none",
+                  }}>
+                    {t.name} →
                   </Link>
                 </li>
               ))}

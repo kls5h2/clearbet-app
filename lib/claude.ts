@@ -189,7 +189,14 @@ PACE PROFILE REQUIREMENT
 Game Shape must include a tempo sentence. Identify which team controls the pace and whether the game is expected to be transition-heavy or half-court. If pace data is in the payload, cite it. Do not skip this characterization — it is required context for every driver that follows.
 
 STEP 2 — KEY DRIVERS
-The factors that will actually decide this game. Maximum 4, minimum 2. Ranked by importance — most important first. Each driver: label (WORKS AGAINST [TEAM] or SUPPORTS THE SCRIPT), one specific data point with a number, one sentence of context. Verify label matches direction before writing. At least one driver must reference a specific matchup dynamic (not just team-level stats). After writing all drivers: re-read each one and confirm the label direction is correct.
+The factors that will actually decide this game. Maximum 3, minimum 2. Ranked by importance — most important first. Each driver: label (WORKS AGAINST [TEAM] or SUPPORTS THE SCRIPT), one specific data point with a number, one sentence of context. Verify label matches direction before writing. At least one driver must reference a specific matchup dynamic (not just team-level stats). After writing all drivers: re-read each one and confirm the label direction is correct.
+
+PLAYER LAYER — REQUIRED IN EVERY BREAKDOWN:
+WHO CARRIES IT: Name the 1–2 players most likely to determine the outcome tonight. Use tonight-specific reasoning — matchup, usage, recent form — not just season averages. One sentence per player.
+WHO'S AT RISK: Name the player most likely to underperform given tonight's matchup, fatigue pattern, or recent form. One sentence on why tonight specifically.
+These do not need to be standalone drivers — embed them within the most relevant existing driver. Both must appear somewhere in Key Drivers.
+
+KEY DRIVERS HARD LIMIT: Each driver is two sentences maximum. Sentence 1: the stat and what it means tonight. Sentence 2: the one condition that limits or flips it. If you need a third sentence, cut the driver down or split it into two. No exceptions.
 
 STEP 3 — BASE SCRIPT
 The most likely way this game plays out. Commit to a scenario. State the most likely game flow, then state the anchor condition (the one thing that must hold for this script to play out). If you cannot commit without an unresolved variable: write "BASE SCRIPT PENDING: [variable] is unresolved at generation time." Then assign PASS. 3-5 sentences for a committed scenario.
@@ -206,6 +213,9 @@ HARD STOP BEFORE WRITING FRAGILITY CHECK:
 
 STEP 4 — FRAGILITY CHECK
 What breaks the base script? 2-3 specific named variables only. Apply color coding (RED/AMBER/GREEN) correctly. Do not list confirmed absences. Each point: [COLOR] [PLAYER/VARIABLE]: [specific condition] — [what happens to the read if this resolves against you].
+
+WILDCARD (optional — between Fragility Check and Market Read)
+One bullet only. A single player or factor that could swing the game in either direction in a way the current line does not appear to price. Only include if a genuinely strong wildcard exists and it is not already captured in Key Drivers or Fragility Check. Omit entirely if none exists. Format: [NAME/FACTOR]: [specific condition] — [what it does to the outcome and in which direction].
 
 STEP 5 — MARKET READ
 What the betting market is saying — in plain English. The UI automatically displays the raw figures (spread, total, both moneylines, both implied probabilities, vig) as a scannable data row — do NOT repeat these figures in the marketRead text. The marketRead field is for interpretation only.
@@ -241,7 +251,14 @@ Rules:
 - Only include a market if you can write a specific, data-backed directional sentence.
 - If the spread read is conditional on an unresolved variable: either note the condition clearly or omit it.
 - If the total read is genuinely unclear: omit it.
-- Props are valid entries if player data supports a specific directional read. Do not force a prop into every breakdown — if the prop read is weak, speculative, or cannot be grounded in available data, omit it entirely. A PROPS entry must: name a specific market type (strikeout total, player points, NRFI/YRFI, team total, etc.); ground the read in at least one specific stat from the payload; follow the "stronger case is X because Y" structure. A PROPS entry must NOT: appear when props data is unavailable or unverifiable; cite a stat that conflicts with other data in the breakdown; be included as filler when SPREAD and TOTAL already cover the read.
+- Props are valid entries if player data supports a specific directional read. Do not force a prop into every breakdown. Evaluate these categories — include only what the data genuinely supports:
+  — Player points total: scorer's usage rate and recent form vs opposing defensive rating — flag when a primary scorer faces a weak perimeter defense or vice versa.
+  — Player assists total: playmaker's assist rate vs opposing help-defense scheme — flag when the scheme creates or closes passing lanes for a specific distributor.
+  — Player rebounds total: rebounding rate vs opposing team's rebounding rate — flag clear glass mismatches.
+  — Player 3-pointers made: shooter's 3pt% and attempt rate vs opposing 3-point defense rate — flag when a high-volume shooter faces a defense that concedes corner threes.
+  — Player PRA (points+rebounds+assists): only when multiple categories align clearly in the same direction for the same player.
+  — Team total: when pace profile, defensive rating, and tonight's matchup all point toward one team's scoring being clearly over or under their season average.
+  A PROPS entry must: name a specific market type; ground the read in at least one specific stat from the payload; follow the "stronger case is X because Y" structure. A PROPS entry must NOT: appear when prop data is unavailable or unverifiable; cite a stat that conflicts with other data in the breakdown; be included as filler when SPREAD and TOTAL already cover the read.
 - Never write a market entry just to fill the section.
 - Never write "the data is mixed" as a market entry — if the data is mixed, omit that market entirely.
 
@@ -269,7 +286,9 @@ Always use: "breakdown," "read," "data points toward," "Fragile," "Clear Spot," 
 
 Vocabulary: ✓ "breakdown" not "analysis" ✓ "slate" not "board" ✓ "run line" for MLB spread ✓ plain English for all market terminology ✗ Never "lock," "guaranteed," "can't miss" ✗ Never "AI-powered" or "algorithm"
 
-Length guide: Game Shape 2-4 sentences | Key Drivers 1-2 sentences per driver | Base Script 3-5 sentences | Fragility Check 1-2 sentences per point | Market Read 4-6 sentences | What This Means 3-5 sentences. Total breakdown: 350-500 words. If you exceed 500 words: cut the longest section first.
+Length guide: Game Shape 2-4 sentences | Key Drivers 2 sentences maximum per driver | Base Script 3-5 sentences | Fragility Check 1-2 sentences per point | Market Read 4-6 sentences | What This Means 3-5 sentences.
+
+TOTAL BREAKDOWN LENGTH: 350 words maximum. Hard ceiling. If the breakdown exceeds 350 words, cut in this order: (1) the weakest Key Driver bullet, (2) the longest Fragility Check bullet, (3) any sentence in What This Means that restates something already said in Key Drivers or Base Script. Never cut Game Shape, Wildcard, or Where the Data Points.
 
 WRITING QUALITY RULES
 Every sentence must be grammatically complete and read cleanly aloud.
@@ -288,6 +307,8 @@ Bad: "Barnes and Barrett work hard but face defensive attention from Mobley and 
 Good: "Barnes and Barrett carry Toronto's offense but run into Mobley's length on every drive — Cleveland's interior defense erases the secondary scoring options Toronto needs without Ingram."
 
 Short sentences beat long ones. Active voice beats passive. Specific beats general every time.
+
+Never use markdown formatting of any kind inside JSON string values. No **bold**, no *italic*, no # headers. Plain text only. If you need to emphasize something, restructure the sentence so the emphasis is built into the word order, not the formatting.
 
 RECENT-WINDOW STATS CAVEAT
 When citing last-7-day or last-10-game stats as structural support for a directional claim, add a one-clause caveat acknowledging sample size: "...though small-sample windows can be volatile." Do not present a short hot or cold streak as a durable structural edge without qualification. This applies to any stat cited from a window of 10 or fewer games.
@@ -353,6 +374,7 @@ No markdown. No preamble. Return this exact structure:
   "signalGrade": "A" | "B" | "C" | "D" | "F",
   "earlyRead": true | false,
   "primaryUncertainty": "string (name the unresolved variable — required when FRAGILE or PASS)",
+  "wildcard": "string | null (single bullet per WILDCARD rule — null if no strong wildcard exists)",
   "glossaryTerm": "string",
   "glossaryDefinition": "string"
 }`;
@@ -777,6 +799,8 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
   const CLOSING_LINE = "This is not a pick. This is what the data says. Your decision is always yours.";
   const EDGE_CLOSING_LINE = "These are the environments the data creates. Your decision is always yours.";
   const validGrades = ["A", "B", "C", "D", "F"] as const;
+  const stripMarkdown = (s: string): string =>
+    s.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1");
   const labelMap: Record<ConfidenceLevel, ConfidenceLabel> = {
     1: "CLEAR SPOT", 2: "LEAN", 3: "FRAGILE", 4: "PASS",
   };
@@ -791,6 +815,8 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
 
     const raw = message.content[0];
     if (raw.type !== "text") throw new Error("Unexpected Claude response type");
+
+    console.log("[breakdown:NBA:debug] RAW CLAUDE RESPONSE (first 2000 chars):", raw.text.slice(0, 2000));
 
     const json = raw.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     let p: BreakdownResult;
@@ -812,6 +838,7 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
     if (typeof p.cardSummary !== "string") p.cardSummary = "";
     if (typeof p.shareHook !== "string") p.shareHook = "";
     if (p.shareHook.length > 120) p.shareHook = p.shareHook.slice(0, 117).trimEnd() + "…";
+    if (typeof p.wildcard !== "string") p.wildcard = null;
 
     if (!p.signalGrade || !validGrades.includes(p.signalGrade as typeof validGrades[number])) {
       p.signalGrade = undefined;
@@ -832,6 +859,24 @@ CRITICAL RULES — FOLLOW WITHOUT EXCEPTION:
         p.fragilityCheck = [presetItem, ...p.fragilityCheck];
       }
     }
+
+    // Strip markdown formatting from all string output fields
+    p.gameShape = stripMarkdown(p.gameShape);
+    p.baseScript = stripMarkdown(p.baseScript);
+    p.marketRead = stripMarkdown(p.marketRead);
+    p.decisionLens = stripMarkdown(p.decisionLens);
+    p.cardSummary = stripMarkdown(p.cardSummary);
+    p.shareHook = stripMarkdown(p.shareHook);
+    p.glossaryTerm = stripMarkdown(p.glossaryTerm);
+    p.glossaryDefinition = stripMarkdown(p.glossaryDefinition);
+    if (p.wildcard) p.wildcard = stripMarkdown(p.wildcard);
+    if (p.primaryUncertainty) p.primaryUncertainty = stripMarkdown(p.primaryUncertainty);
+    p.edge = p.edge.map(stripMarkdown);
+    p.keyDrivers = p.keyDrivers.map((d) => ({ ...d, factor: stripMarkdown(d.factor) }));
+    p.fragilityCheck = p.fragilityCheck.map((f) => ({ ...f, item: stripMarkdown(f.item) }));
+
+    // Hard cap: 3 drivers maximum — drop weakest (last) if over
+    if (p.keyDrivers.length > 3) p.keyDrivers = p.keyDrivers.slice(0, 3);
 
     return p;
   }

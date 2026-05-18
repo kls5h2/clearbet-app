@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import type { AnyGame, BreakdownResult } from "@/lib/types";
@@ -341,6 +341,8 @@ const DNA_TAGS = [
 ];
 
 export default function HowItWorksPage() {
+  const [breakdownExpanded, setBreakdownExpanded] = useState(false);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) =>
@@ -416,7 +418,7 @@ export default function HowItWorksPage() {
         <p
           style={{
             fontSize: 15,
-            color: "rgba(255,255,255,0.45)",
+            color: "rgba(255,255,255,0.65)",
             lineHeight: 1.6,
             maxWidth: 520,
           }}
@@ -511,10 +513,10 @@ export default function HowItWorksPage() {
                   style={{
                     background: "var(--cream)",
                     borderRadius: 0,
-                    borderLeft: "2px solid var(--border-strong)",
-                    padding: "12px 14px",
-                    fontSize: 13.5,
-                    color: "var(--muted)",
+                    borderLeft: "2px solid var(--border)",
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: "var(--muted-light)",
                     lineHeight: 1.55,
                     fontStyle: "italic",
                   }}
@@ -545,7 +547,7 @@ export default function HowItWorksPage() {
             </div>
             <div style={{
               fontSize: "13px",
-              color: "rgba(255,255,255,0.45)",
+              color: "rgba(255,255,255,0.6)",
               lineHeight: 1.4,
             }}>
               This is an example breakdown — not a live game. Real breakdowns look exactly like this.
@@ -559,7 +561,30 @@ export default function HowItWorksPage() {
               OKC vs MEM · Game 5
             </div>
           </div>
-          <BreakdownView breakdown={SAMPLE_BREAKDOWN} game={SAMPLE_GAME} />
+          <div style={{ position: "relative", overflow: breakdownExpanded ? "visible" : "hidden", maxHeight: breakdownExpanded ? "none" : "400px" }}>
+            <BreakdownView breakdown={SAMPLE_BREAKDOWN} game={SAMPLE_GAME} />
+            {!breakdownExpanded && (
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "180px",
+                background: "linear-gradient(to bottom, transparent, var(--warm-white))",
+                pointerEvents: "none",
+              }} />
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: "16px" }}>
+            <button
+              onClick={() => setBreakdownExpanded(e => !e)}
+              style={{
+                fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "var(--signal)", background: "none",
+                border: "1px solid var(--border-med)", padding: "9px 20px",
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              {breakdownExpanded ? "Collapse ↑" : "See full breakdown ↓"}
+            </button>
+          </div>
         </div>
 
         {/* DIVIDER */}

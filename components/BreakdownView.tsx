@@ -148,7 +148,7 @@ function DriverItem({ direction, factor }: { direction: string; factor: string }
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: color }} />
       <div>
         <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "3px", color }}>{label}</div>
-        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{boldLead(body)}</div>
+        <div style={{ fontSize: "14px", color: "var(--ink-2)", lineHeight: 1.55 }}>{body}</div>
       </div>
     </div>
   );
@@ -283,6 +283,16 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
             <StepTip>Read the fragility check before deciding anything. If one of these is already true at game time, the base script changes.</StepTip>
           </StepBlock>
 
+          {/* Wildcard — optional, between Fragility Check and Market Read */}
+          {breakdown.wildcard && (
+            <StepBlock stepLabel="Wildcard">
+              <StepText>A factor that could swing this game in either direction — not fully priced by the current line.</StepText>
+              <div style={{ marginTop: "14px" }}>
+                <FragilityItem item={breakdown.wildcard} color="green" />
+              </div>
+            </StepBlock>
+          )}
+
           {/* 05 — Market Read */}
           <StepBlock stepLabel="Market Read">
             <StepText>What the betting market is saying — in plain English.</StepText>
@@ -335,18 +345,34 @@ export default function BreakdownView({ breakdown, game, tier = "free", gated }:
 
       {/* Closing line */}
       <div style={{
-        marginTop: "32px", padding: "24px 20px",
-        textAlign: "center", borderTop: "1px solid var(--border-med)",
+        marginTop: "40px",
+        background: "var(--ink)",
+        padding: "40px 32px",
+        textAlign: "center",
+        borderTop: "3px solid var(--signal)",
       }}>
         <div style={{
-          fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.04em",
-          color: "var(--muted)", lineHeight: 1.7,
+          fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "rgba(255,255,255,0.4)", marginBottom: "16px",
         }}>
-          This is not a pick. This is what the data says.{" "}
-          <strong style={{ color: "var(--ink)", fontWeight: 600, display: "block", marginTop: "4px" }}>
-            Your decision is always yours.
-          </strong>
+          Remember
         </div>
+        <p style={{
+          fontSize: "clamp(17px, 2.5vw, 21px)", fontWeight: 700,
+          letterSpacing: "-0.02em", color: "#fff",
+          lineHeight: 1.4, margin: "0 auto 10px",
+          maxWidth: "480px",
+        }}>
+          This is not a pick. This is what the data says.
+        </p>
+        <p style={{
+          fontSize: "clamp(15px, 2vw, 17px)", fontWeight: 400,
+          color: "rgba(255,255,255,0.65)", lineHeight: 1.5,
+          margin: 0,
+        }}>
+          Your decision is always yours.
+        </p>
       </div>
     </div>
   );

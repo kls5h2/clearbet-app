@@ -72,6 +72,7 @@ export interface BreakdownResult {
   signalGrade?: "A" | "B" | "C" | "D" | "F"; // data environment quality, separate from confidence
   earlyRead?: boolean;           // true when hoursUntilTip > 6 at generation time
   primaryUncertainty?: string;   // named variable for FRAGILE/PASS confidence levels
+  wildcard?: string | null;      // single swing factor not priced by the line; null = omit section
 }
 
 // ─── NBA ──────────────────────────────────────────────────────────────────────

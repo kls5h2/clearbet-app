@@ -380,7 +380,7 @@ export default function HomePage() {
           <div className="hp-hero-eyebrow" style={{
             display: "inline-flex", alignItems: "center", gap: "10px",
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 500,
-            letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)",
+            letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)",
             marginBottom: "28px",
           }}>
             <span style={{ display: "block", width: "24px", height: "1px", background: "var(--signal)", flexShrink: 0 }} />
@@ -398,7 +398,7 @@ export default function HomePage() {
           </h1>
 
           <p className="hp-hero-sub" style={{
-            fontSize: "17px", fontWeight: 400, color: "rgba(255,255,255,0.5)",
+            fontSize: "17px", fontWeight: 400, color: "rgba(255,255,255,0.65)",
             lineHeight: 1.65, maxWidth: "520px", margin: "28px 0 40px",
           }}>
             RawIntel turns game data into straight talk — numbers explained, nothing removed. Never picks. Just everything you need to decide for yourself.
@@ -437,8 +437,10 @@ export default function HomePage() {
               { num: "03", title: "Your decision", desc: "Armed with the full picture, the call is yours. ", bold: "That’s not a disclaimer — that’s the product." },
             ].map((step, i) => (
               <div key={step.num} className="hp-step" style={{
-                background: "rgba(255,255,255,0.03)", padding: "24px 28px",
+                background: i === 2 ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.03)",
+                padding: i === 2 ? "28px 28px 32px" : "24px 28px",
                 position: "relative", transition: "background 0.2s",
+                borderTop: i === 2 ? "1px solid rgba(201,53,42,0.25)" : undefined,
               }}>
                 {i < 2 && (
                   <span aria-hidden className="hp-step-arr" style={{
@@ -453,12 +455,12 @@ export default function HomePage() {
                   {step.num}
                   <span style={{ flex: 1, height: "1px", background: "rgba(201,53,42,0.2)", display: "block" }} />
                 </div>
-                <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.025em", color: "#fff", marginBottom: "8px" }}>
+                <div style={{ fontSize: i === 2 ? "16px" : "15px", fontWeight: 700, letterSpacing: "-0.025em", color: "#fff", marginBottom: "8px" }}>
                   {step.title}
                 </div>
-                <div style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>
+                <div style={{ fontSize: "12.5px", color: i === 2 ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>
                   {step.desc}
-                  <strong style={{ color: "rgba(255,255,255,0.65)", fontWeight: 500 }}>{step.bold}</strong>
+                  <strong style={{ color: i === 2 ? "#fff" : "rgba(255,255,255,0.65)", fontWeight: i === 2 ? 600 : 500 }}>{step.bold}</strong>
                   {"desc2" in step ? step.desc2 : null}
                 </div>
               </div>
@@ -489,7 +491,7 @@ export default function HomePage() {
 
           <div className="reveal rd1 hp-compare-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px",
-            borderRadius: 0, overflow: "hidden", border: "1px solid var(--border-med)",
+            borderRadius: 0, border: "1px solid var(--border-med)",
           }}>
             {[
               {
@@ -517,7 +519,15 @@ export default function HomePage() {
                 ],
               },
             ].map((col) => (
-              <div key={col.tag} style={{ padding: "36px 32px", background: col.dark ? "var(--ink)" : "var(--surface)" }}>
+              <div key={col.tag} style={{
+                padding: "36px 32px",
+                background: col.dark ? "var(--ink)" : "var(--surface)",
+                ...(col.dark ? {
+                  position: "relative",
+                  zIndex: 1,
+                  boxShadow: "0 -3px 0 0 var(--signal), 0 8px 32px rgba(17,17,16,0.18)",
+                } : {}),
+              }}>
                 <div style={{
                   fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em",
                   textTransform: "uppercase", marginBottom: "20px", paddingBottom: "16px",
@@ -575,6 +585,24 @@ export default function HomePage() {
             </div>
             <div style={{ fontSize: "15px", lineHeight: 1.6, color: "var(--muted)", maxWidth: "520px" }}>
               Every breakdown follows the same six-step structure — so you always know where you are and what it means.
+            </div>
+          </div>
+
+          {/* Bridge sentence */}
+          <p style={{ fontSize: "14px", color: "var(--muted)", fontStyle: "italic", marginBottom: "32px" }}>
+            Not a mockup — this is the real structure. Same six steps, every game, every night.
+          </p>
+
+          {/* Testimonial */}
+          <div className="reveal rd2" style={{
+            marginBottom: "40px", padding: "24px 28px",
+            background: "var(--warm-white)", borderLeft: "3px solid var(--signal)",
+          }}>
+            <p style={{ fontSize: "15.5px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic", marginBottom: "14px" }}>
+              &ldquo;I&apos;ve been betting for years. This is the first tool that actually explains the why. I don&apos;t need someone to tell me what to bet — I need to understand what I&apos;m looking at.&rdquo;
+            </p>
+            <div style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--muted)", letterSpacing: "0.04em" }}>
+              — Jake T., RawIntel subscriber
             </div>
           </div>
 
@@ -774,14 +802,14 @@ export default function HomePage() {
 
             <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
               <div style={{ fontSize: "13px", color: "var(--muted)" }}>
-                <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Start with one read, free.</strong> Upgrade anytime for the full slate.
+                <strong style={{ color: "var(--ink)", fontWeight: 600 }}>The board resets every night.</strong> Tonight&apos;s reads are gone tomorrow.
               </div>
               <Link href={`/intel?sport=${teaserSport}`} className="hp-teaser-btn" style={{
                 fontSize: "13.5px", fontWeight: 600, color: "#fff", textDecoration: "none",
                 padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
                 display: "flex", alignItems: "center", gap: "6px", transition: "all 0.15s", whiteSpace: "nowrap",
               }}>
-                See tonight&apos;s slate →
+                Read tonight&apos;s slate →
               </Link>
             </div>
           </div>
@@ -822,6 +850,17 @@ export default function HomePage() {
           <div className="reveal rd2" style={{ fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.06em", color: "rgba(255,255,255,0.22)", lineHeight: 1.7 }}>
             The decision is always yours.<br />
             <strong style={{ color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>RawIntel.</strong>
+          </div>
+          <div className="reveal rd2" style={{ marginTop: "36px" }}>
+            <Link href="/intel" style={{
+              fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 600,
+              letterSpacing: "0.06em", color: "rgba(255,255,255,0.45)",
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "8px",
+              borderBottom: "1px solid rgba(255,255,255,0.12)", paddingBottom: "3px",
+              transition: "color 0.15s",
+            }}>
+              See tonight&apos;s slate →
+            </Link>
           </div>
         </div>
       </section>

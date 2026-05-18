@@ -279,7 +279,7 @@ export default function BreakdownPage() {
           <div style={{
             fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.35)", marginBottom: "10px",
+            color: "rgba(255,255,255,0.5)", marginBottom: "10px",
           }}>
             {heroMetaLine || "Breakdown"}
           </div>
@@ -311,7 +311,7 @@ export default function BreakdownPage() {
               }}>
                 {confLabel}
               </div>
-              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
+              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
                 {CONF_SUBTITLES[breakdown.confidenceLabel] ?? "One of the cleaner reads tonight"}
               </div>
             </div>
