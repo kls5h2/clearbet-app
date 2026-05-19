@@ -50,6 +50,13 @@ const CONF_COLORS: Record<string, { color: string; label: string }> = {
   "PASS":       { color: "var(--pass)",  label: "Pass" },
 };
 
+const SIGNAL_PANEL_COLORS: Record<string, string> = {
+  "CLEAR SPOT": "#166534",
+  "LEAN":       "#854d0e",
+  "FRAGILE":    "#C9352A",
+  "PASS":       "#2a2a2a",
+};
+
 type Status = "idle" | "loading" | "done" | "error";
 
 const LOADING_MESSAGES = [
@@ -255,102 +262,133 @@ export default function BreakdownPage() {
   return (
     <>
     <style>{`
-      @media (max-width: 768px) {
-        .bd-away-ml { display: none !important; }
-        .bd-odds-grid { grid-template-columns: repeat(3, 1fr) !important; min-width: 0 !important; }
+      @media (max-width: 600px) {
+        .bd-hero-right { display: none !important; }
       }
     `}</style>
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       <Nav backHref={`/intel?sport=${sport}`} backLabel="Today's Intel" />
 
-      {/* Dark hero band */}
+      {/* Dark hero band — two-column */}
       <div className="f2" style={{
-        background: "var(--ink)", padding: "20px 20px 24px",
+        background: "var(--ink)",
         position: "relative", overflow: "hidden",
       }}>
         <span aria-hidden="true" style={{
-          content: "R", position: "absolute", right: "-5%", top: "50%", transform: "translateY(-50%)",
+          position: "absolute", right: "-5%", top: "50%", transform: "translateY(-50%)",
           fontSize: "clamp(120px, 30vw, 220px)", fontWeight: 900,
           color: "transparent", WebkitTextStroke: "1px rgba(255,255,255,0.03)",
           lineHeight: 1, pointerEvents: "none", userSelect: "none",
         }}>R</span>
 
-        <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1, textAlign: "center" }}>
-          <div style={{
-            fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.5)", marginBottom: "10px",
-          }}>
-            {heroMetaLine || "Breakdown"}
-          </div>
-
-          <div style={{
-            fontSize: "clamp(22px, 6vw, 32px)", fontWeight: 800,
-            letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.1, marginBottom: "20px",
-          }}>
-            {resolvedNames.away && resolvedNames.home ? (
-              <>
-                {resolvedNames.away}
-                <span style={{ fontSize: "0.55em", fontWeight: 400, color: "rgba(255,255,255,0.4)", margin: "0 8px" }}>at</span>
-                {resolvedNames.home}
-              </>
-            ) : (
-              "Breakdown"
+        <div style={{ maxWidth: "900px", margin: "0 auto", position: "relative", zIndex: 1, display: "flex", alignItems: "stretch", minHeight: "120px" }}>
+          {/* Left: matchup info */}
+          <div style={{ flex: 1, padding: "28px 24px 28px 20px" }}>
+            <div style={{
+              fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 600,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "rgba(255,255,255,0.45)", marginBottom: "10px",
+            }}>
+              {sport} · Breakdown
+            </div>
+            <div style={{
+              fontSize: "22px", fontWeight: 800,
+              letterSpacing: "-0.03em", color: "#fff", lineHeight: 1.15, marginBottom: "10px",
+            }}>
+              {resolvedNames.away && resolvedNames.home ? (
+                <>
+                  {resolvedNames.away}
+                  <span style={{ fontSize: "0.75em", fontWeight: 400, color: "rgba(255,255,255,0.35)", margin: "0 8px" }}>at</span>
+                  {resolvedNames.home}
+                </>
+              ) : (
+                "Breakdown"
+              )}
+            </div>
+            {(game?.gameTime || formattedDate) && (
+              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "var(--mono)" }}>
+                {[game?.gameTime, formattedDate].filter(Boolean).join(" · ")}
+              </div>
             )}
           </div>
 
-          {/* Confidence badge — pill + subtitle */}
-          {status === "done" && breakdown && !gated && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+          {/* Right: Signal Grade panel */}
+          {status === "done" && breakdown && !gated ? (
+            <div style={{
+              width: "200px", flexShrink: 0,
+              background: SIGNAL_PANEL_COLORS[breakdown.confidenceLabel] ?? "#2a2a2a",
+              padding: "28px 20px",
+              display: "flex", flexDirection: "column",
+              justifyContent: "center", alignItems: "center", textAlign: "center",
+            }}>
               <div style={{
-                display: "inline-flex", alignItems: "center",
-                background: "var(--signal)", color: "#F7F5F0",
-                fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.12em",
-                padding: "7px 20px", borderRadius: "4px",
+                fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600,
+                letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "rgba(255,255,255,0.55)", marginBottom: "8px",
+              }}>
+                Signal Grade
+              </div>
+              <div style={{
+                fontSize: "clamp(18px, 2.5vw, 26px)", fontWeight: 900,
+                color: "#fff", letterSpacing: "-0.02em",
+                lineHeight: 1.1, marginBottom: "8px",
+                wordBreak: "break-word",
               }}>
                 {confLabel}
               </div>
-              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
-                {CONF_SUBTITLES[breakdown.confidenceLabel] ?? "One of the cleaner reads tonight"}
+              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>
+                {CONF_SUBTITLES[breakdown.confidenceLabel] ?? ""}
               </div>
             </div>
+          ) : (
+            <div style={{ width: "200px", flexShrink: 0, background: "rgba(255,255,255,0.02)" }} />
           )}
         </div>
       </div>
 
-      {/* Stats bar — shown when game data available */}
+      {/* Stats bar — three cells */}
       {game && odds && (
-        <div className="f2" style={{ overflowX: "auto", background: "var(--surface)", borderBottom: "1px solid var(--border-med)", boxShadow: "var(--shadow-sm)" }}>
-          <div className="bd-odds-grid" style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "440px",
-          }}>
-            {[
-              { label: sport === "MLB" ? "Run Line" : "Spread", value: sport === "MLB" ? (runLine ?? "—") : spread, cls: "" },
-              { label: "Total", value: total, cls: "" },
-              { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "bd-away-ml" },
-              { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "" },
-            ].map((s, i) => (
-              <div key={s.label} className={s.cls} style={{
-                padding: "14px 16px", textAlign: "center",
-                borderRight: i < 3 ? "1px solid var(--border)" : "none",
-              }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{s.label}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
+        <div className="f2" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border-med)", boxShadow: "var(--shadow-sm)" }}>
+          <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+            <div style={{ padding: "16px 20px", textAlign: "center", borderRight: "1px solid var(--border)" }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "8px" }}>
+                {sport === "MLB" ? "Run Line" : "Spread"}
               </div>
-            ))}
+              <div style={{ fontFamily: "var(--mono)", fontSize: "28px", fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>
+                {sport === "MLB" ? (runLine ?? "—") : spread}
+              </div>
+            </div>
+            <div style={{ padding: "16px 20px", textAlign: "center", borderRight: "1px solid var(--border)" }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "8px" }}>Total</div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "28px", fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>{total}</div>
+            </div>
+            <div style={{ padding: "16px 20px", textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "8px" }}>Moneyline</div>
+              <div style={{ display: "flex", justifyContent: "center", gap: "16px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", color: "var(--muted)", marginBottom: "2px" }}>{game.awayTeam.teamAbv}</div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 800, color: awayML.startsWith("-") ? "var(--signal)" : "var(--ink)" }}>{awayML}</div>
+                </div>
+                <div style={{ width: "1px", background: "var(--border)", alignSelf: "stretch" }} />
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", color: "var(--muted)", marginBottom: "2px" }}>{game.homeTeam.teamAbv}</div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 800, color: homeML.startsWith("-") ? "var(--signal)" : "var(--ink)" }}>{homeML}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Content area */}
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "32px 20px 80px" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
 
         {/* Loading */}
         {status === "loading" && (
           <div style={{
             minHeight: "55vh", display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: "10px", textAlign: "center",
+            padding: "32px 20px",
           }}>
             <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>Building your breakdown</p>
             <p style={{
@@ -364,6 +402,7 @@ export default function BreakdownPage() {
 
         {/* Error */}
         {status === "error" && (
+          <div style={{ padding: "32px 20px 80px" }}>
           <div style={{
             background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)",
             borderRadius: 0, padding: "32px", textAlign: "center",
@@ -391,11 +430,14 @@ export default function BreakdownPage() {
               ← Back to slate
             </Link>
           </div>
+          </div>
         )}
 
         {/* Done */}
         {status === "done" && breakdown && game && (
           <>
+            {/* Banners — padded container */}
+            <div style={{ padding: "16px 20px 0" }}>
             {/* Cache/generation banner */}
             {!gated && fromCache && generatedAt && (
               <div style={{
@@ -449,11 +491,13 @@ export default function BreakdownPage() {
                 </div>
               ) : null;
             })()}
+            </div>{/* end banners */}
 
             <BreakdownView breakdown={breakdown} game={game} tier={tier ?? "free"} gated={gated ?? undefined} />
 
             {/* Breakdown Chat upsell — free users only, not gated */}
             {!gated && tier === "free" && (
+              <div style={{ padding: "0 20px 80px" }}>
               <div style={{
                 marginTop: "32px",
                 border: "1px solid var(--border-med)",
@@ -507,7 +551,9 @@ export default function BreakdownPage() {
                   </div>
                 </div>
               </div>
+              </div>
             )}
+            {(gated || tier !== "free") && <div style={{ paddingBottom: "80px" }} />}
 
           </>
         )}
