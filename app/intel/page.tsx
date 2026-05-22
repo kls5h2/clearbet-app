@@ -10,13 +10,13 @@ import { getStartOfDayET } from "@/lib/usage-window";
 import type { AnyGame, ConfidenceLabel, ConfidenceLevel, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 
-// ─── Confidence config ────────────────────────────────────────────────────────
+// ─── Confidence config (dark-background palette) ──────────────────────────────
 
-const CONF: Record<string, { bar: string; badgeBg: string; badgeText: string; label: string; cls: string }> = {
-  "CLEAR SPOT": { bar: "var(--clear)", badgeBg: "var(--clear-bg)", badgeText: "var(--clear)", label: "Clear Spot", cls: "cb-clear" },
-  "LEAN":       { bar: "var(--lean)",  badgeBg: "var(--lean-bg)",  badgeText: "var(--lean)",  label: "Lean",       cls: "cb-lean" },
-  "FRAGILE":    { bar: "var(--fragile)", badgeBg: "var(--fragile-bg)", badgeText: "var(--fragile)", label: "Fragile", cls: "cb-fragile" },
-  "PASS":       { bar: "var(--pass)",  badgeBg: "var(--pass-bg)",  badgeText: "var(--pass)",  label: "Pass",       cls: "cb-pass" },
+const CONF: Record<string, { label: string; color: string; bgColor: string }> = {
+  "CLEAR SPOT": { label: "Clear Spot", color: "#4DB87A", bgColor: "rgba(26,122,72,0.2)"  },
+  "LEAN":       { label: "Lean",       color: "#6B9FE8", bgColor: "rgba(24,82,168,0.2)"  },
+  "FRAGILE":    { label: "Fragile",    color: "#D4913A", bgColor: "rgba(181,106,18,0.2)" },
+  "PASS":       { label: "Pass",       color: "#9B9790", bgColor: "rgba(110,107,102,0.2)" },
 };
 
 const CONF_RANK: Record<string, number> = { "CLEAR SPOT": 1, "LEAN": 2, "FRAGILE": 3, "PASS": 4 };
@@ -71,16 +71,11 @@ function isStarted(game: AnyGame): boolean {
   return ch * 60 + cm >= gh * 60 + gm;
 }
 
-// Returns true when the game should be labelled FINAL.
-// Tank01 confirmation (gameStatus === "final") is the authoritative signal.
-// The time-based fallback only applies for same-day games where Tank01 may lag —
-// never infer final from a past date alone (games can be postponed).
 function isFinalByTime(game: AnyGame): boolean {
   if (game.gameStatus === "final") return true;
   if (game.gameStatus === "postponed") return false;
   const today = getTodayDateString();
   if (game.gameDate > today) return false;
-  // Same-day only: treat as final if >3 hours past scheduled start (stale status fallback).
   if (game.gameDate < today) return false;
   const m = (game.gameTime ?? "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
   if (!m) return false;
@@ -121,99 +116,48 @@ function getCtaLabel(
   return "Upgrade to read →";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── ConfBadge ────────────────────────────────────────────────────────────────
 
 function ConfBadge({ label }: { label: ConfidenceLabel | null }) {
   if (!label) return null;
   const c = CONF[label] ?? CONF["LEAN"];
   return (
-    <span className={`conf-badge ${c.cls}`}>
-      <span className="dot" />
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: "5px",
+      padding: "3px 8px", background: c.bgColor,
+      fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em",
+      textTransform: "uppercase", color: c.color, whiteSpace: "nowrap",
+    }}>
+      <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
       {c.label}
     </span>
   );
 }
 
-function SectionLabel({ icon, text }: { icon: "star" | "grid" | "calendar"; text: string }) {
-  const icons = {
-    star: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-    grid: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
-    calendar: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  };
-  return (
-    <div style={{
-      fontFamily: "var(--mono)", fontSize: "11.5px", letterSpacing: "0.1em", textTransform: "uppercase",
-      color: "var(--muted)", marginBottom: "16px",
-      display: "flex", alignItems: "center", gap: "10px",
-    }}>
-      <span style={{ color: "var(--signal)", display: "flex" }}>{icons[icon]}</span>
-      {text}
-      <span style={{ flex: 1, height: "1px", background: "var(--border-med)", display: "block" }} />
-    </div>
-  );
-}
+// ─── GameRow ──────────────────────────────────────────────────────────────────
 
-// ─── Murky slate card ─────────────────────────────────────────────────────────
-
-function MurkyCard() {
-  return (
-    <div style={{
-      background: "var(--surface)", borderRadius: 0,
-      border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-      marginBottom: "32px",
-    }}>
-      <div style={{ height: "3px", background: "var(--border-strong)" }} />
-      <div style={{
-        background: "var(--ink)", padding: "12px 24px",
-        display: "flex", alignItems: "center",
-      }}>
-        <span style={{ fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
-          The Cleanest Read Tonight
-        </span>
-      </div>
-      <div style={{ padding: "32px 26px 30px" }}>
-        <div style={{
-          fontSize: "clamp(17px, 3.5vw, 22px)", fontWeight: 700,
-          letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.2,
-          marginBottom: "12px",
-        }}>
-          Tonight&apos;s slate is murky.
-        </div>
-        <p style={{
-          fontSize: "15.5px", color: "var(--muted)", lineHeight: 1.65, margin: 0,
-        }}>
-          Every game has meaningful uncertainty — read the fragility checks before deciding anything.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Headliner card ───────────────────────────────────────────────────────────
-
-function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed, started }: {
-  game: AnyGame; bd: SlateBreakdown | null; onRead: () => void;
-  authReady: boolean; userId: string | null | undefined; proUser: boolean; dailyUsed: boolean; started: boolean;
+function GameRow({
+  game, bd, featured, onRead, authReady, userId, proUser, dailyUsed, started,
+}: {
+  game: AnyGame; bd: SlateBreakdown | null; featured: boolean; onRead: () => void;
+  authReady: boolean; userId: string | null | undefined; proUser: boolean;
+  dailyUsed: boolean; started: boolean;
 }) {
-  const [hover, setHover] = useState(false);
+  const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
+  const isLocked = cta === "Upgrade to read →" || cta === "Sign up to read →";
   const conf = bd?.confidenceLabel ?? null;
-  const c = conf ? CONF[conf] : null;
-  const barColor = c?.bar ?? "var(--pass)";
-  const away = game.awayTeam.teamName;
-  const home = game.homeTeam.teamName;
+
   const odds = game.odds as Record<string, number | null> | null;
   const isMLB = game.sport === "MLB";
   const spreadVal = isMLB
-    ? (odds && "runLine" in odds ? formatSpread(odds.runLine as number | null, game.homeTeam.teamAbv) : "—")
-    : (odds && "spread" in odds ? formatSpread(odds.spread as number | null, game.homeTeam.teamAbv) : "—");
+    ? formatSpread((odds?.runLine ?? null) as number | null, game.homeTeam.teamAbv)
+    : formatSpread((odds?.spread ?? null) as number | null, game.homeTeam.teamAbv);
   const spreadLabel = isMLB ? "Run Line" : "Spread";
   const total = odds?.total != null ? `${odds.total}` : "—";
-  const awayML = odds ? formatML(odds.awayMoneyline as number | null) : "—";
-  const homeML = odds ? formatML(odds.homeMoneyline as number | null) : "—";
-  const insight = bd?.cardSummary ?? null;
-  const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
-  const isUpgradeGated = cta === "Upgrade to read →" || cta === "Sign up to read →";
-  const statusLabel = isFinalByTime(game) ? "FINAL" : "GAME IN PROGRESS";
+  const awayML = formatML((odds?.awayMoneyline ?? null) as number | null);
+
+  const teamSize = featured ? "26px" : "20px";
+  const rowPy = featured ? "28px" : "20px";
 
   return (
     <div
@@ -221,227 +165,88 @@ function HeadlinerCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed
       tabIndex={started ? undefined : 0}
       onClick={started ? undefined : onRead}
       onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
-      onMouseEnter={started ? undefined : () => setHover(true)}
-      onMouseLeave={started ? undefined : () => setHover(false)}
       style={{
-        background: "var(--surface)", borderRadius: 0,
-        border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-        marginBottom: "32px", cursor: started ? "default" : "pointer", color: "var(--ink)",
-        boxShadow: !started && hover ? "var(--shadow-lg)" : "var(--shadow-sm)",
-        transform: !started && hover ? "translateY(-3px)" : "translateY(0)",
-        transition: "box-shadow 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
-        outline: "none",
+        display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+        gap: "24px", padding: `${rowPy} 0`,
+        borderBottom: "1px solid rgba(248,246,242,0.05)",
+        cursor: started ? "default" : "pointer", outline: "none",
       }}
     >
-      {/* Confidence accent bar */}
-      <div style={{ height: "3px", background: barColor }} />
-      {/* Dark band */}
-      <div style={{
-        background: "var(--ink)", padding: "12px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span className="hl-pulse" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--signal)", flexShrink: 0, display: "block" }} />
-          <span style={{ fontFamily: "var(--mono)", fontSize: "12px", letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
-            The Cleanest Read Tonight
-          </span>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: "26px 26px 0" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", marginBottom: "8px" }}>
-          <div style={{ fontSize: "clamp(18px, 4vw, 28px)", fontWeight: 800, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1.1 }}>
-            {away}
-            <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
-            {home}
-          </div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
-            {game.gameTime}
-          </div>
-        </div>
-
-        {/* Stats grid — ML columns hidden on mobile */}
-        <div style={{ overflowX: "auto", margin: "18px 0 0", border: "1px solid var(--border-med)", borderRadius: 0 }}>
-          <div className="hl-stats-grid" style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", minWidth: "300px", overflow: "hidden",
-          }}>
-            {[
-              { label: spreadLabel, value: spreadVal, cls: "" },
-              { label: "Total",     value: total,     cls: "" },
-              { label: `${game.awayTeam.teamAbv} ML`, value: awayML, cls: "hl-ml-col" },
-              { label: `${game.homeTeam.teamAbv} ML`, value: homeML, cls: "hl-ml-col" },
-            ].map((s, i) => (
-              <div key={s.label} className={s.cls} style={{
-                padding: "13px 14px", borderRight: i < 3 ? "1px solid var(--border)" : "none",
-                background: "var(--warm-white)", textAlign: "center",
-              }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "7px" }}>{s.label}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 600, color: "var(--ink)" }}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Insight */}
-        {insight && (
-          <div style={{
-            margin: "20px 0 0", padding: "18px 20px", background: "var(--cream)",
-            borderRadius: 0, borderLeft: `3px solid ${isUpgradeGated ? "var(--border-strong)" : "var(--signal)"}`,
-            fontSize: "15.5px", lineHeight: 1.7, color: "var(--ink-2)", fontStyle: "italic",
-            filter: isUpgradeGated ? "blur(4px)" : "none",
-            userSelect: isUpgradeGated ? "none" : "auto",
-            pointerEvents: isUpgradeGated ? "none" : "auto",
-          }}>
-            {insight}
-          </div>
-        )}
-
+      {/* Left */}
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          margin: "12px 0 0", fontSize: "13px", color: "var(--muted)", lineHeight: 1.55,
-          display: "flex", gap: "8px", alignItems: "flex-start",
-          padding: "10px 14px", background: "rgba(17,17,16,0.03)", borderRadius: 0,
+          fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "rgba(248,246,242,0.2)", marginBottom: "6px",
         }}>
-          <span style={{ flexShrink: 0, marginTop: "1px" }}>💡</span>
-          <span>Highest signal game on tonight&apos;s slate.</span>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        marginTop: "20px", padding: "16px 26px",
-        borderTop: "1px solid var(--border)", background: "var(--warm-white)",
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          <ConfBadge label={conf} />
-        </div>
-        {started ? (
-          <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            {statusLabel}
-          </div>
-        ) : cta === null ? (
-          <div style={{ width: "140px", height: "44px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
-        ) : (
-          <div style={{
-            fontSize: "13.5px", fontWeight: 700, color: "#fff",
-            padding: "11px 24px", borderRadius: 0, background: "var(--signal)",
-            display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap",
-            boxShadow: "0 2px 8px rgba(201,53,42,0.25)",
-            transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-          }}>
-            {cta}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Slate card ───────────────────────────────────────────────────────────────
-
-function SlateCard({ game, bd, onRead, authReady, userId, proUser, dailyUsed, started }: {
-  game: AnyGame; bd: SlateBreakdown | null; onRead: () => void;
-  authReady: boolean; userId: string | null | undefined; proUser: boolean; dailyUsed: boolean; started: boolean;
-}) {
-  const [hover, setHover] = useState(false);
-  const conf = bd?.confidenceLabel ?? null;
-  const c = conf ? CONF[conf] : null;
-  const barColor = c?.bar ?? "var(--pass)";
-  const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
-  const isUpgradeGated = cta === "Upgrade to read →" || cta === "Sign up to read →";
-  const insight = bd?.cardSummary ?? null;
-  const teaserText = "There’s a clear angle here — but it takes some digging to see it...";
-
-  return (
-    <div
-      role={started ? undefined : "button"}
-      tabIndex={started ? undefined : 0}
-      onClick={started ? undefined : onRead}
-      onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
-      onMouseEnter={started || isUpgradeGated ? undefined : () => setHover(true)}
-      onMouseLeave={started || isUpgradeGated ? undefined : () => setHover(false)}
-      style={{
-        background: "var(--surface)", borderRadius: 0,
-        border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden",
-        cursor: started ? "default" : "pointer", color: "var(--ink)", outline: "none",
-        opacity: isUpgradeGated ? 0.75 : 1,
-        boxShadow: !started && !isUpgradeGated && hover ? "var(--shadow-md)" : "var(--shadow-sm)",
-        transform: !started && !isUpgradeGated && hover ? "translateY(-2px)" : "translateY(0)",
-        transition: "box-shadow 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
-      }}
-    >
-      <div style={{ height: "3px", background: barColor }} />
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <ConfBadge label={conf} />
-          <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)" }}>{game.gameTime}</span>
-        </div>
-
-        <div style={{ fontSize: "clamp(16px, 3.5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.15, marginBottom: "4px" }}>
-          {game.awayTeam.teamName}
-          <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted-light)", margin: "0 7px" }}>at</span>
-          {game.homeTeam.teamName}
-        </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.02em", marginBottom: (insight || isUpgradeGated) ? "16px" : "0" }}>
           {game.sport}
         </div>
-
-        {isUpgradeGated ? (
-          <div style={{
-            fontSize: "14px", lineHeight: 1.6, color: "var(--muted)", fontStyle: "italic",
-            padding: "14px 16px", background: "var(--cream)", borderRadius: 0,
-            borderLeft: "2px solid var(--border-strong)",
-            filter: "blur(3px)", userSelect: "none", pointerEvents: "none",
-            marginBottom: "12px",
-          }}>
-            {insight ?? teaserText}
-          </div>
-        ) : insight ? (
-          <div style={{
-            fontSize: "14.5px", lineHeight: 1.65, color: "var(--ink-2)", fontStyle: "italic",
-            marginBottom: "12px", padding: "14px 16px", background: "var(--cream)",
-            borderRadius: 0, borderLeft: "2px solid var(--signal)",
-          }}>
-            {insight}
-          </div>
-        ) : null}
-
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "flex-end",
-          paddingTop: "14px", borderTop: "1px solid var(--border)",
+          fontSize: teamSize, fontWeight: 700, letterSpacing: "-0.03em",
+          color: isLocked ? "rgba(248,246,242,0.25)" : "rgba(248,246,242,0.95)",
+          lineHeight: 1.1, marginBottom: "12px",
         }}>
+          {game.awayTeam.teamName}
+          <span style={{ fontSize: "13px", fontWeight: 400, color: "rgba(248,246,242,0.3)", margin: "0 8px" }}>at</span>
+          {game.homeTeam.teamName}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          {conf && <ConfBadge label={conf} />}
           {started ? (
-            <span style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <span style={{ fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(248,246,242,0.35)" }}>
               {isFinalByTime(game) ? "Final" : "In progress"}
             </span>
           ) : cta === null ? (
-            <span style={{ width: "100px", height: "16px", background: "var(--cream)", borderRadius: 0, display: "block" }} className="animate-pulse" />
+            <span style={{ width: "80px", height: "14px", background: "rgba(248,246,242,0.08)", display: "inline-block" }} className="animate-pulse" />
           ) : (
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--signal)", whiteSpace: "nowrap" }}>
-              {cta}
+            <span style={{ fontSize: "13px", fontWeight: 600, color: isLocked ? "rgba(248,246,242,0.15)" : "var(--signal)" }}>
+              {isLocked ? "Unlock breakdown →" : (bd ? "Read breakdown →" : "Build breakdown →")}
             </span>
           )}
         </div>
       </div>
+
+      {/* Right */}
+      <div className="row-right" style={{ display: "flex", alignItems: "flex-start", gap: "20px", flexShrink: 0, opacity: isLocked ? 0.15 : 1 }}>
+        <div style={{ textAlign: "right", paddingTop: "1px" }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: "13px", color: "rgba(248,246,242,0.25)", whiteSpace: "nowrap" }}>
+            {game.gameTime}
+          </div>
+        </div>
+        <div className="row-stats" style={{ display: "flex", gap: "20px" }}>
+          {[
+            { label: spreadLabel, value: spreadVal },
+            { label: "Total",     value: total },
+            { label: "ML",        value: awayML },
+          ].map((stat) => (
+            <div key={stat.label} style={{ textAlign: "right", minWidth: "44px" }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 700, color: "rgba(248,246,242,0.9)", lineHeight: 1 }}>
+                {stat.value}
+              </div>
+              <div style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(248,246,242,0.3)", marginTop: "4px" }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── Tomorrow row ─────────────────────────────────────────────────────────────
+// ─── TomorrowRow ──────────────────────────────────────────────────────────────
 
 function TomorrowRow({ game }: { game: AnyGame }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "12px 14px", borderBottom: "1px solid var(--border)", opacity: 0.45,
+      padding: "10px 0", borderBottom: "1px solid rgba(248,246,242,0.04)",
     }}>
-      <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--muted)", letterSpacing: "-0.01em" }}>
+      <div style={{ fontSize: "13px", fontWeight: 500, color: "rgba(248,246,242,0.2)", letterSpacing: "-0.01em" }}>
         {game.awayTeam.teamName}
-        <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--muted-light)", margin: "0 5px" }}>at</span>
+        <span style={{ fontSize: "11px", fontWeight: 400, color: "rgba(248,246,242,0.1)", margin: "0 6px" }}>at</span>
         {game.homeTeam.teamName}
       </div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: "11.5px", color: "var(--muted-light)", whiteSpace: "nowrap" }}>
+      <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "rgba(248,246,242,0.12)", whiteSpace: "nowrap" }}>
         {game.gameTime}
       </div>
     </div>
@@ -450,29 +255,25 @@ function TomorrowRow({ game }: { game: AnyGame }) {
 
 // ─── Skeleton states ──────────────────────────────────────────────────────────
 
-function SkeletonHeadliner() {
+function SkeletonRow({ featured }: { featured?: boolean }) {
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 0, border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden", marginBottom: "32px" }}>
-      <div style={{ background: "var(--ink)", padding: "12px 24px", height: "44px" }} />
-      <div style={{ padding: "26px 26px 20px" }}>
-        <div style={{ height: "34px", background: "var(--cream)", borderRadius: 0, width: "65%", marginBottom: "18px" }} className="animate-pulse" />
-        <div style={{ height: "72px", background: "var(--cream)", borderRadius: 0, marginBottom: "12px" }} className="animate-pulse" />
-        <div style={{ height: "48px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
+    <div style={{
+      display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px",
+      padding: featured ? "28px 0" : "20px 0",
+      borderBottom: "1px solid rgba(248,246,242,0.05)",
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ height: "10px", width: "28px", background: "rgba(248,246,242,0.07)", marginBottom: "8px" }} className="animate-pulse" />
+        <div style={{ height: featured ? "28px" : "20px", width: "58%", background: "rgba(248,246,242,0.07)", marginBottom: "12px" }} className="animate-pulse" />
+        <div style={{ height: "14px", width: "90px", background: "rgba(248,246,242,0.07)" }} className="animate-pulse" />
       </div>
-      <div style={{ padding: "16px 26px", borderTop: "1px solid var(--border)", background: "var(--warm-white)", height: "56px" }} />
-    </div>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 0, border: "1px solid rgba(17,17,16,0.06)", overflow: "hidden" }}>
-      <div style={{ height: "3px", background: "var(--cream-dark)" }} />
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ height: "20px", background: "var(--cream)", borderRadius: 0, width: "80px", marginBottom: "14px" }} className="animate-pulse" />
-        <div style={{ height: "26px", background: "var(--cream)", borderRadius: 0, width: "70%", marginBottom: "8px" }} className="animate-pulse" />
-        <div style={{ height: "12px", background: "var(--cream)", borderRadius: 0, width: "30%", marginBottom: "16px" }} className="animate-pulse" />
-        <div style={{ height: "64px", background: "var(--cream)", borderRadius: 0 }} className="animate-pulse" />
+      <div style={{ display: "flex", gap: "20px", flexShrink: 0 }}>
+        {[56, 48, 48, 48].map((w, i) => (
+          <div key={i} style={{ width: `${w}px` }}>
+            <div style={{ height: "16px", background: "rgba(248,246,242,0.07)", marginBottom: "4px" }} className="animate-pulse" />
+            <div style={{ height: "9px", width: "60%", background: "rgba(248,246,242,0.05)" }} className="animate-pulse" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -482,11 +283,11 @@ function SkeletonCard() {
 
 function PageFooter() {
   return (
-    <footer style={{ textAlign: "center", padding: "24px 40px", fontSize: "12px", color: "var(--muted-light)", lineHeight: 1.8 }}>
+    <footer style={{ textAlign: "center", padding: "24px 40px", fontSize: "12px", color: "rgba(248,246,242,0.22)", lineHeight: 1.8 }}>
       For informational purposes only. RawIntel does not provide financial, betting, or investment advice. Bet responsibly.{" "}
-      <a href="https://www.ncpgambling.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>ncpgambling.org</a>
-      {" · "}<Link href="/terms" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Terms of Service</Link>
-      {" · "}<Link href="/privacy" style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Privacy Policy</Link>
+      <a href="https://www.ncpgambling.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(248,246,242,0.32)", textDecoration: "underline", textUnderlineOffset: "2px" }}>ncpgambling.org</a>
+      {" · "}<Link href="/terms" style={{ color: "rgba(248,246,242,0.32)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Terms of Service</Link>
+      {" · "}<Link href="/privacy" style={{ color: "rgba(248,246,242,0.32)", textDecoration: "underline", textUnderlineOffset: "2px" }}>Privacy Policy</Link>
       {" · "}© RawIntel LLC
     </footer>
   );
@@ -565,14 +366,12 @@ function HomePageContent() {
       .order("created_at", { ascending: false })
       .limit(500)
       .then(({ data }) => {
-        // Capture userId from state at query-completion time for ownership mapping
         setUserId((currentUserId) => {
           const map = new Map<string, SlateBreakdown>();
           const seen = new Set<string>();
           for (const row of (data ?? [])) {
             if (seen.has(row.game_id)) continue;
             seen.add(row.game_id);
-            // Map user_id to isOwn immediately — don't store the UUID in state
             map.set(row.game_id, {
               gameId: row.game_id,
               isOwn: row.user_id != null && row.user_id === currentUserId,
@@ -591,8 +390,6 @@ function HomePageContent() {
   useEffect(() => {
     const todayStr = getTodayDateString();
     const cacheKey = `ri_slate_${activeSport}_${todayStr}`;
-
-    // Restore from session cache — preserves slate state on back navigation
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -603,7 +400,6 @@ function HomePageContent() {
         return;
       }
     } catch {}
-
     setLoading(true);
     setError(null);
     const sport = activeSport.toLowerCase();
@@ -627,10 +423,7 @@ function HomePageContent() {
 
   const headliner = (() => {
     if (sorted.length === 0 || !breakdownsReady) return null;
-
     const headlinerKey = `ri_headliner_${activeSport}_${getTodayDateString()}`;
-
-    // Restore locked headliner — but only if it still qualifies as Clear Spot or Lean
     try {
       const lockedId = sessionStorage.getItem(headlinerKey);
       if (lockedId) {
@@ -638,13 +431,10 @@ function HomePageContent() {
         if (locked) {
           const lockedLabel = breakdowns.get(locked.gameId)?.confidenceLabel;
           if (lockedLabel && ELIGIBLE_CONF.has(lockedLabel)) return locked;
-          // Lock is stale (game became Fragile/Pass or never had a breakdown) — clear it
           try { sessionStorage.removeItem(headlinerKey); } catch {}
         }
       }
     } catch {}
-
-    // Pick the best Clear Spot or Lean game, ranked by confidence then game time
     const eligible = sorted
       .filter((g) => {
         const label = breakdowns.get(g.gameId)?.confidenceLabel;
@@ -655,31 +445,13 @@ function HomePageContent() {
         const rb = CONF_RANK[breakdowns.get(b.gameId)?.confidenceLabel ?? ""] ?? 5;
         return ra !== rb ? ra - rb : parseGameTime(a.gameTime) - parseGameTime(b.gameTime);
       });
-
-    console.log(`[headliner:${activeSport}] total games=${sorted.length} breakdownsReady=${breakdownsReady}`);
-    console.log(`[headliner:${activeSport}] breakdown coverage:`, sorted.map((g) => ({
-      gameId: g.gameId,
-      matchup: `${g.awayTeam.teamAbv}@${g.homeTeam.teamAbv}`,
-      label: breakdowns.get(g.gameId)?.confidenceLabel ?? "NO_BREAKDOWN",
-    })));
-    console.log(`[headliner:${activeSport}] eligible (Clear Spot / Lean):`, eligible.map((g) => ({
-      gameId: g.gameId,
-      matchup: `${g.awayTeam.teamAbv}@${g.homeTeam.teamAbv}`,
-      label: breakdowns.get(g.gameId)?.confidenceLabel,
-    })));
-    console.log(`[headliner:${activeSport}] winner:`, eligible[0]
-      ? `${eligible[0].awayTeam.teamAbv}@${eligible[0].homeTeam.teamAbv} (${breakdowns.get(eligible[0].gameId)?.confidenceLabel})`
-      : "none — headliner will be null");
-
     if (eligible.length > 0) {
       try { sessionStorage.setItem(headlinerKey, eligible[0].gameId); } catch {}
       return eligible[0];
     }
-
     return null;
   })();
 
-  // True when breakdowns exist for today but none are Clear Spot or Lean
   const allMurky = !loading && breakdownsReady && sorted.length > 0 && headliner === null && (() => {
     const gamesWithBd = sorted.filter((g) => breakdowns.has(g.gameId));
     return gamesWithBd.length > 0 && gamesWithBd.every((g) => {
@@ -710,287 +482,280 @@ function HomePageContent() {
     setModal(bd ? "bd-locked" : "cap");
   }
 
+  const headlinerSummary = headliner ? (breakdowns.get(headliner.gameId)?.cardSummary ?? null) : null;
+  const tonightsReadText: string | null = allMurky
+    ? "Tonight's slate is murky. Every game has meaningful uncertainty — read the fragility checks before deciding anything."
+    : headlinerSummary;
+  const showTonightsRead = !loading && !!tonightsReadText;
+
+  const PAD = "clamp(16px,4vw,40px)";
+  const MAX_W = "880px";
+
   return (
     <>
-    <style>{`
-      @media (max-width: 768px) {
-        .hl-ml-col { display: none !important; }
-        .hl-stats-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
-      }
-    `}</style>
-    <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
-      <Nav activePage="today" />
+      <style>{`
+        @media (max-width: 600px) {
+          .row-stats { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .row-right { gap: 12px !important; }
+        }
+      `}</style>
+      <div style={{ background: "var(--ink)", minHeight: "100vh" }}>
+        <Nav activePage="today" />
 
-      {accountDeleted && (
-        <div style={{
-          background: "var(--ink)", color: "#fff",
-          textAlign: "center", padding: "12px 24px",
-          fontSize: "13.5px", fontWeight: 500, fontFamily: "var(--sans)",
-          letterSpacing: "0.01em",
-        }}>
-          Account deleted. Sorry to see you go.
-        </div>
-      )}
-
-      {/* Page hero band */}
-      <div className="f2" style={{
-        background: "var(--ink)", padding: "clamp(20px,4vw,32px) clamp(20px,4vw,40px)",
-        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-        gap: "24px", flexWrap: "wrap", position: "relative", overflow: "hidden",
-      }}>
-        <span aria-hidden="true" style={{
-          position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
-          fontSize: "220px", fontWeight: 900, letterSpacing: "-0.05em",
-          color: "transparent", WebkitTextStroke: "1px rgba(255,255,255,0.03)",
-          lineHeight: 1, pointerEvents: "none", userSelect: "none",
-        }}>R</span>
-
-        <div style={{ position: "relative", zIndex: 1 }}>
+        {accountDeleted && (
           <div style={{
-            fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.5)", marginBottom: "10px",
-            display: "flex", alignItems: "center", gap: "10px",
+            background: "rgba(201,53,42,0.12)", borderBottom: "1px solid rgba(201,53,42,0.2)",
+            textAlign: "center", padding: "12px 24px",
+            fontSize: "13.5px", fontWeight: 500, color: "rgba(248,246,242,0.8)",
           }}>
-            <span style={{ width: "20px", height: "1px", background: "var(--signal)", display: "block", flexShrink: 0 }} />
-            Today's Intel
+            Account deleted. Sorry to see you go.
           </div>
+        )}
+
+        {/* Hero zone */}
+        <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `clamp(36px,5vw,52px) ${PAD} 0` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <div style={{ fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(248,246,242,0.3)", fontWeight: 500 }}>
+              {todayLabel} · {activeSport}
+            </div>
+            <div style={{ display: "flex", gap: "4px" }}>
+              {(["NBA", "MLB"] as Sport[]).map((sport) => (
+                <button
+                  key={sport}
+                  onClick={() => setActiveSport(sport)}
+                  style={{
+                    fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
+                    padding: "6px 16px", cursor: "pointer", transition: "all 0.12s",
+                    border: `1px solid ${activeSport === sport ? "var(--signal)" : "rgba(248,246,242,0.15)"}`,
+                    background: activeSport === sport ? "var(--signal)" : "transparent",
+                    color: activeSport === sport ? "#fff" : "rgba(248,246,242,0.4)",
+                  }}
+                >
+                  {sport}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{
-            fontSize: "28px", fontWeight: 800, letterSpacing: "-0.035em",
-            color: "#fff", lineHeight: 1.15, marginBottom: "8px",
+            fontSize: "clamp(28px,5vw,40px)", fontWeight: 800, letterSpacing: "-0.04em",
+            color: "#fff", lineHeight: 1.05, marginBottom: "12px",
           }}>
-            {loading ? "Loading tonight's slate."
-              : games.length === 0 ? `No ${activeSport} games today.`
-              : `${games.length} game${games.length === 1 ? "" : "s"} on tonight's slate.`}
+            {loading
+              ? "Loading tonight's slate."
+              : games.length === 0
+              ? `No ${activeSport} games today.`
+              : `${games.length} game${games.length === 1 ? "" : "s"}. Tonight's slate.`}
           </div>
-          <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.65)", lineHeight: 1.55, maxWidth: "480px" }}>
+
+          <div style={{
+            fontSize: "14px", color: "rgba(248,246,242,0.35)", lineHeight: 1.55,
+            maxWidth: "480px", paddingBottom: "clamp(28px,4vw,40px)",
+          }}>
             {activeSport === "NBA"
               ? "Every game analyzed. Your decision to make."
               : "Pitcher matchups, bullpen depth, and park factors — all in plain English."}
           </div>
         </div>
 
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "flex-end",
-          gap: "12px", flexShrink: 0, position: "relative", zIndex: 1,
-        }}>
-          {/* Sport tabs */}
-          <div style={{ display: "flex", gap: "4px" }}>
-            {(["NBA", "MLB"] as Sport[]).map((sport) => (
-              <button
-                key={sport}
-                onClick={() => setActiveSport(sport)}
-                style={{
-                  fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 600,
-                  letterSpacing: "0.05em", textTransform: "uppercase",
-                  padding: "7px 18px", borderRadius: 0, cursor: "pointer",
-                  border: `1px solid ${activeSport === sport ? "var(--signal)" : "rgba(255,255,255,0.12)"}`,
-                  background: activeSport === sport ? "var(--signal)" : "transparent",
-                  color: activeSport === sport ? "#fff" : "rgba(255,255,255,0.4)",
-                  transition: "all 0.12s",
-                }}
-              >
-                {sport}
-              </button>
-            ))}
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em", color: "rgba(255,255,255,0.5)" }}>
-              {todayLabel}
-            </div>
-            {!loading && games.length > 0 && (
-              <div style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "rgba(255,255,255,0.28)", marginTop: "3px" }}>
-                {games.length} breakdown{games.length === 1 ? "" : "s"} ready
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+        {/* Hero / content separator */}
+        <div style={{ height: "1px", background: "rgba(248,246,242,0.06)" }} />
 
-      {/* Main content */}
-      <div style={{ maxWidth: "880px", margin: "0 auto", padding: "40px clamp(16px,4vw,40px) 80px" }}>
+        {/* Tonight's Read */}
+        {showTonightsRead && (
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `36px ${PAD} 40px` }}>
+            <div style={{
+              fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "rgba(248,246,242,0.4)", marginBottom: "14px", fontWeight: 600,
+            }}>
+              Tonight&apos;s Read
+            </div>
+            <p style={{
+              fontSize: "15px", lineHeight: 1.72, color: "rgba(248,246,242,0.45)",
+              fontStyle: "italic", maxWidth: "560px", margin: 0,
+            }}>
+              {tonightsReadText}
+            </p>
+          </div>
+        )}
+
+        {/* Game list separator */}
+        <div style={{ height: "1px", background: "rgba(248,246,242,0.05)" }} />
 
         {/* Error */}
         {error && (
-          <div style={{
-            background: "var(--surface)", border: "1px solid rgba(201,53,42,0.3)", borderRadius: 0,
-            padding: "24px", textAlign: "center", marginBottom: "24px",
-          }}>
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `24px ${PAD}` }}>
             <p style={{ fontSize: "14px", color: "var(--signal)" }}>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}
-            >
+            <button onClick={() => window.location.reload()} style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}>
               Try again
             </button>
           </div>
         )}
 
-        {/* Headliner */}
-        {(loading || !breakdownsReady || headliner || allMurky) && (
-          <div className="f3">
-            {(loading || !breakdownsReady)
-              ? <SkeletonHeadliner />
-              : headliner
-              ? <HeadlinerCard game={headliner} bd={breakdowns.get(headliner.gameId) ?? null} onRead={() => handleRead(headliner.gameId)} authReady={authReady} userId={userId} proUser={proUser} dailyUsed={dailyUsed} started={isStarted(headliner)} />
-              : allMurky
-              ? <MurkyCard />
-              : null}
-          </div>
-        )}
-
-        {/* Tonight's Breakdowns */}
-        {(loading || listGames.length > 0) && (
-          <div className="f4">
-            <SectionLabel icon="grid" text="Tonight's slate" />
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "36px" }}>
-              {loading
-                ? [1, 2, 3].map((i) => <SkeletonCard key={i} />)
-                : listGames.map((game) => {
-                    const bd = breakdowns.get(game.gameId) ?? null;
-                    return <SlateCard key={game.gameId} game={game} bd={bd} onRead={() => handleRead(game.gameId)} authReady={authReady} userId={userId} proUser={proUser} dailyUsed={dailyUsed} started={isStarted(game)} />;
-                  })}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && games.length === 0 && (
-          <div style={{
-            background: "var(--surface)", border: "1px solid rgba(17,17,16,0.06)",
-            borderRadius: 0, padding: "40px 24px", textAlign: "center",
-          }}>
-            <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>
-              No {activeSport} games today
-            </p>
-            <p style={{ fontSize: "13px", color: "var(--muted)" }}>Check back on a game day.</p>
-          </div>
-        )}
-
-        {/* Tomorrow */}
-        {!loading && tomorrowSorted.length > 0 && (
-          <div className="f5">
-            <SectionLabel icon="calendar" text="Tomorrow's slate" />
-            <div style={{ display: "flex", flexDirection: "column", marginBottom: "40px" }}>
-              {tomorrowSorted.map((g) => <TomorrowRow key={g.gameId} game={g} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Closing panel */}
-        {!loading && (
-          <div className="f6" style={{
-            background: "var(--ink)", borderRadius: 0, overflow: "hidden",
-            display: "grid", gridTemplateColumns: "1fr 1fr",
-          }}>
-            {[
-              { eyebrow: "Tonight", headline: "The breakdown is yours.\nThe decision is too.", sub: "These reads are only good tonight. The slate clears at midnight." },
-              { eyebrow: "Tomorrow", headline: "Come back tomorrow.\nThe board resets.", sub: "New games. New reads. Every night, a fresh slate — same standard, same structure." },
-            ].map((panel, i) => (
-              <div key={panel.eyebrow} style={{ padding: "32px 36px", borderRight: i === 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                <div style={{
-                  fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600,
-                  letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--signal)",
-                  marginBottom: "14px", display: "flex", alignItems: "center", gap: "8px",
-                }}>
-                  <span style={{ width: "16px", height: "1px", background: "var(--signal)", display: "block" }} />
-                  {panel.eyebrow}
-                </div>
-                <div style={{
-                  fontSize: "19px", fontWeight: 700, letterSpacing: "-0.025em",
-                  color: "#fff", lineHeight: 1.35, marginBottom: "8px", whiteSpace: "pre-line",
-                }}>
-                  {panel.headline}
-                </div>
-                <div style={{ fontSize: "13.5px", color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
-                  {panel.sub}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <PageFooter />
-    </div>
-
-    {/* Access modal */}
-    {modal && (
-      <div
-        style={{
-          position: "fixed", inset: 0, zIndex: 1000,
-          background: "rgba(14,14,14,0.55)", backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: "24px",
-        }}
-        onClick={() => setModal(null)}
-      >
-        <div
-          style={{
-            background: "var(--warm-white)", borderRadius: 0,
-            padding: "32px", maxWidth: "400px", width: "100%",
-            boxShadow: "0 20px 60px rgba(14,14,14,0.25)",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {modal === "cap" ? (
+        {/* Game rows */}
+        <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `0 ${PAD}` }}>
+          {loading ? (
             <>
-              <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
-                You&apos;ve used today&apos;s breakdown.
-              </div>
-              <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
-                Free accounts get one breakdown per day. Come back tomorrow or upgrade to Pro for unlimited access.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Link href="/login?mode=signup" style={{
-                  fontSize: "14px", fontWeight: 600, color: "#fff",
-                  background: "var(--signal)", padding: "12px 20px", borderRadius: 0,
-                  textDecoration: "none", textAlign: "center", display: "block",
-                }}>
-                  Upgrade to Pro →
-                </Link>
-                <button
-                  onClick={() => setModal(null)}
-                  style={{
-                    fontSize: "13px", color: "var(--muted)", background: "none", border: "none",
-                    cursor: "pointer", padding: "8px",
-                  }}
-                >
-                  Come back tomorrow
-                </button>
-              </div>
+              <SkeletonRow featured />
+              <SkeletonRow />
+              <SkeletonRow />
             </>
           ) : (
             <>
-              <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
-                This breakdown isn&apos;t yours to read.
-              </div>
-              <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
-                Another user generated this breakdown. Free accounts can only read breakdowns they built. Upgrade to Pro for unlimited access to every game on the slate.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Link href="/login?mode=signup" style={{
-                  fontSize: "14px", fontWeight: 600, color: "#fff",
-                  background: "var(--signal)", padding: "12px 20px", borderRadius: 0,
-                  textDecoration: "none", textAlign: "center", display: "block",
-                }}>
-                  Upgrade to Pro →
-                </Link>
-                <button
-                  onClick={() => setModal(null)}
-                  style={{
-                    fontSize: "13px", color: "var(--muted)", background: "none", border: "none",
-                    cursor: "pointer", padding: "8px",
-                  }}
-                >
-                  Maybe later
-                </button>
-              </div>
+              {headliner && (
+                <GameRow
+                  game={headliner}
+                  bd={breakdowns.get(headliner.gameId) ?? null}
+                  featured
+                  onRead={() => handleRead(headliner.gameId)}
+                  authReady={authReady} userId={userId} proUser={proUser}
+                  dailyUsed={dailyUsed} started={isStarted(headliner)}
+                />
+              )}
+              {listGames.map((game) => (
+                <GameRow
+                  key={game.gameId}
+                  game={game}
+                  bd={breakdowns.get(game.gameId) ?? null}
+                  featured={false}
+                  onRead={() => handleRead(game.gameId)}
+                  authReady={authReady} userId={userId} proUser={proUser}
+                  dailyUsed={dailyUsed} started={isStarted(game)}
+                />
+              ))}
+              {!error && games.length === 0 && (
+                <div style={{ padding: "56px 0", textAlign: "center" }}>
+                  <p style={{ fontSize: "17px", fontWeight: 600, color: "rgba(248,246,242,0.65)", marginBottom: "8px" }}>
+                    No {activeSport} games today
+                  </p>
+                  <p style={{ fontSize: "13px", color: "rgba(248,246,242,0.3)" }}>Check back on a game day.</p>
+                </div>
+              )}
             </>
           )}
         </div>
+
+        {/* Tomorrow's Slate */}
+        {!loading && tomorrowSorted.length > 0 && (
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `0 ${PAD}` }}>
+            <div style={{ height: "1px", background: "rgba(248,246,242,0.07)", margin: "32px 0 0" }} />
+            <div style={{
+              fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "rgba(248,246,242,0.15)", padding: "20px 0 12px", fontWeight: 600,
+            }}>
+              Tomorrow&apos;s Slate
+            </div>
+            {tomorrowSorted.map((g) => <TomorrowRow key={g.gameId} game={g} />)}
+          </div>
+        )}
+
+        {/* Closing zone */}
+        {!loading && (
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `clamp(52px,7vw,80px) ${PAD}` }}>
+            <div style={{ height: "1px", background: "rgba(248,246,242,0.06)", marginBottom: "clamp(40px,5vw,56px)" }} />
+            <div style={{
+              fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em",
+              color: "#fff", lineHeight: 1.3, marginBottom: "12px",
+            }}>
+              Raw data. Clear read. Your call.
+            </div>
+            <div style={{
+              fontSize: "14px", color: "rgba(248,246,242,0.30)", lineHeight: 1.6,
+              maxWidth: "400px", marginBottom: "24px",
+            }}>
+              Every game on tonight&apos;s slate. Analyzed. No noise — just what the data says.
+            </div>
+            {!proUser && (
+              <Link
+                href="/login?mode=signup"
+                style={{
+                  display: "inline-block", fontSize: "13.5px", fontWeight: 700,
+                  color: "#fff", background: "var(--signal)",
+                  padding: "11px 24px", textDecoration: "none",
+                }}
+              >
+                Get full access →
+              </Link>
+            )}
+            <div style={{
+              marginTop: "20px", fontFamily: "var(--mono)", fontSize: "11px",
+              color: "rgba(248,246,242,0.12)", letterSpacing: "0.04em",
+            }}>
+              Not a picks service. Not a prediction engine. Just the data.
+            </div>
+          </div>
+        )}
+
+        <PageFooter />
       </div>
-    )}
+
+      {/* Access modal */}
+      {modal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(14,14,14,0.65)", backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "24px",
+          }}
+          onClick={() => setModal(null)}
+        >
+          <div
+            style={{
+              background: "var(--warm-white)", padding: "32px",
+              maxWidth: "400px", width: "100%",
+              boxShadow: "0 20px 60px rgba(14,14,14,0.35)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {modal === "cap" ? (
+              <>
+                <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
+                  You&apos;ve used today&apos;s breakdown.
+                </div>
+                <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
+                  Free accounts get one breakdown per day. Come back tomorrow or upgrade to Pro for unlimited access.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <Link href="/login?mode=signup" style={{
+                    fontSize: "14px", fontWeight: 600, color: "#fff",
+                    background: "var(--signal)", padding: "12px 20px",
+                    textDecoration: "none", textAlign: "center", display: "block",
+                  }}>
+                    Upgrade to Pro →
+                  </Link>
+                  <button onClick={() => setModal(null)} style={{ fontSize: "13px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: "8px" }}>
+                    Come back tomorrow
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.025em", color: "var(--ink)", marginBottom: "10px" }}>
+                  This breakdown isn&apos;t yours to read.
+                </div>
+                <p style={{ fontSize: "14px", color: "var(--muted)", lineHeight: 1.6, marginBottom: "24px" }}>
+                  Another user generated this breakdown. Free accounts can only read breakdowns they built. Upgrade to Pro for unlimited access to every game on the slate.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <Link href="/login?mode=signup" style={{
+                    fontSize: "14px", fontWeight: 600, color: "#fff",
+                    background: "var(--signal)", padding: "12px 20px",
+                    textDecoration: "none", textAlign: "center", display: "block",
+                  }}>
+                    Upgrade to Pro →
+                  </Link>
+                  <button onClick={() => setModal(null)} style={{ fontSize: "13px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: "8px" }}>
+                    Maybe later
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
