@@ -10,13 +10,13 @@ import { getStartOfDayET } from "@/lib/usage-window";
 import type { AnyGame, ConfidenceLabel, ConfidenceLevel, Sport } from "@/lib/types";
 import type { Tier } from "@/lib/tier";
 
-// ─── Confidence config (dark-background palette) ──────────────────────────────
+// ─── Confidence config ────────────────────────────────────────────────────────
 
 const CONF: Record<string, { label: string; color: string; bgColor: string }> = {
-  "CLEAR SPOT": { label: "Clear Spot", color: "#4DB87A", bgColor: "rgba(26,122,72,0.2)"  },
-  "LEAN":       { label: "Lean",       color: "#6B9FE8", bgColor: "rgba(24,82,168,0.2)"  },
-  "FRAGILE":    { label: "Fragile",    color: "#D4913A", bgColor: "rgba(181,106,18,0.2)" },
-  "PASS":       { label: "Pass",       color: "#9B9790", bgColor: "rgba(110,107,102,0.2)" },
+  "CLEAR SPOT": { label: "Clear Spot", color: "#4DB87A", bgColor: "rgba(26,122,72,0.18)" },
+  "LEAN":       { label: "Lean",       color: "#6B9FE8", bgColor: "rgba(24,82,168,0.18)" },
+  "FRAGILE":    { label: "Fragile",    color: "#D4913A", bgColor: "rgba(181,106,18,0.18)" },
+  "PASS":       { label: "Pass",       color: "#9B9790", bgColor: "rgba(110,107,102,0.18)" },
 };
 
 const CONF_RANK: Record<string, number> = { "CLEAR SPOT": 1, "LEAN": 2, "FRAGILE": 3, "PASS": 4 };
@@ -30,7 +30,10 @@ interface SlateBreakdown {
   cardSummary: string | null;
   confidenceLabel: ConfidenceLabel | null;
   confidenceLevel: ConfidenceLevel | null;
+  keyDrivers?: Array<{ factor: string; direction?: string }>;
 }
+
+type Filter = "all" | "free" | "locked";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -116,7 +119,23 @@ function getCtaLabel(
   return "Upgrade to read →";
 }
 
-// ─── ConfBadge ────────────────────────────────────────────────────────────────
+function extractDnaTags(keyDrivers: Array<{ factor: string }>): string[] {
+  return keyDrivers.slice(0, 3).flatMap((d) => {
+    const parts = d.factor.split(/\s*[—–]\s*/);
+    const first = parts[0].trim();
+    if (/^(SUPPORTS|WORKS|NEUTRAL|INJURY)/i.test(first)) {
+      if (parts.length >= 2) {
+        const label = parts[1].split(/[:]/)[0].trim();
+        if (label.length >= 3 && label.length <= 24) return [label];
+      }
+      return [];
+    }
+    if (first.length >= 3 && first.length <= 24) return [first];
+    return [];
+  });
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ConfBadge({ label }: { label: ConfidenceLabel | null }) {
   if (!label) return null;
@@ -124,9 +143,10 @@ function ConfBadge({ label }: { label: ConfidenceLabel | null }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: "5px",
-      padding: "3px 8px", background: c.bgColor,
+      padding: "4px 10px", borderRadius: "20px",
+      background: c.bgColor,
       fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em",
-      textTransform: "uppercase", color: c.color, whiteSpace: "nowrap",
+      textTransform: "uppercase", color: c.color, whiteSpace: "nowrap", flexShrink: 0,
     }}>
       <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
       {c.label}
@@ -134,15 +154,55 @@ function ConfBadge({ label }: { label: ConfidenceLabel | null }) {
   );
 }
 
-// ─── GameRow ──────────────────────────────────────────────────────────────────
+function DnaChip({ label }: { label: string }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: "20px",
+      background: "rgba(248,246,242,0.07)",
+      fontSize: "11px", fontWeight: 500, color: "rgba(248,246,242,0.45)",
+      letterSpacing: "0.01em", whiteSpace: "nowrap",
+    }}>
+      {label}
+    </span>
+  );
+}
 
-function GameRow({
+function LockedChip() {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: "20px",
+      background: "rgba(248,246,242,0.05)",
+      fontSize: "11px", fontWeight: 600, color: "rgba(248,246,242,0.22)",
+      letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap",
+    }}>
+      Locked
+    </span>
+  );
+}
+
+function BreakdownChip() {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: "20px",
+      background: "rgba(201,53,42,0.14)",
+      fontSize: "11px", fontWeight: 600, color: "var(--signal)",
+      letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap",
+    }}>
+      Full Breakdown
+    </span>
+  );
+}
+
+// ─── GameCard ─────────────────────────────────────────────────────────────────
+
+function GameCard({
   game, bd, featured, onRead, authReady, userId, proUser, dailyUsed, started,
 }: {
   game: AnyGame; bd: SlateBreakdown | null; featured: boolean; onRead: () => void;
   authReady: boolean; userId: string | null | undefined; proUser: boolean;
   dailyUsed: boolean; started: boolean;
 }) {
+  const [hover, setHover] = useState(false);
   const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
   const isLocked = cta === "Upgrade to read →" || cta === "Sign up to read →";
   const conf = bd?.confidenceLabel ?? null;
@@ -156,8 +216,9 @@ function GameRow({
   const total = odds?.total != null ? `${odds.total}` : "—";
   const awayML = formatML((odds?.awayMoneyline ?? null) as number | null);
 
-  const teamSize = featured ? "26px" : "20px";
-  const rowPy = featured ? "28px" : "20px";
+  const dnaTags = bd?.keyDrivers ? extractDnaTags(bd.keyDrivers) : [];
+  const titleSize = featured ? "22px" : "17px";
+  const cardBg = hover && !started ? "#202020" : "#1a1918";
 
   return (
     <div
@@ -165,68 +226,82 @@ function GameRow({
       tabIndex={started ? undefined : 0}
       onClick={started ? undefined : onRead}
       onKeyDown={started ? undefined : (e) => e.key === "Enter" && onRead()}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-        gap: "24px", padding: `${rowPy} 0`,
-        borderBottom: "1px solid rgba(248,246,242,0.05)",
-        cursor: started ? "default" : "pointer", outline: "none",
+        borderRadius: "12px",
+        background: cardBg,
+        padding: "18px 20px 16px",
+        marginBottom: "10px",
+        cursor: started ? "default" : "pointer",
+        outline: "none",
+        border: "1px solid rgba(248,246,242,0.06)",
+        transition: "background 0.12s ease",
+        opacity: started && isFinalByTime(game) ? 0.45 : 1,
       }}
     >
-      {/* Left */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
-          color: "rgba(248,246,242,0.2)", marginBottom: "6px",
-        }}>
-          {game.sport}
+      {/* Top row: sport label + game title + badge */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "rgba(248,246,242,0.2)", marginBottom: "5px",
+          }}>
+            {game.sport}
+          </div>
+          <div style={{
+            fontSize: titleSize, fontWeight: 700, letterSpacing: "-0.025em",
+            color: isLocked ? "rgba(248,246,242,0.25)" : "rgba(248,246,242,0.95)",
+            lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {game.awayTeam.teamAbv}
+            <span style={{ fontSize: "12px", fontWeight: 400, color: "rgba(248,246,242,0.25)", margin: "0 6px" }}>at</span>
+            {game.homeTeam.teamAbv}
+          </div>
         </div>
-        <div style={{
-          fontSize: teamSize, fontWeight: 700, letterSpacing: "-0.03em",
-          color: isLocked ? "rgba(248,246,242,0.25)" : "rgba(248,246,242,0.95)",
-          lineHeight: 1.1, marginBottom: "12px",
-        }}>
-          {game.awayTeam.teamName}
-          <span style={{ fontSize: "13px", fontWeight: 400, color: "rgba(248,246,242,0.3)", margin: "0 8px" }}>at</span>
-          {game.homeTeam.teamName}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          {conf && <ConfBadge label={conf} />}
-          {started ? (
-            <span style={{ fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(248,246,242,0.35)" }}>
-              {isFinalByTime(game) ? "Final" : "In progress"}
-            </span>
-          ) : cta === null ? (
-            <span style={{ width: "80px", height: "14px", background: "rgba(248,246,242,0.08)", display: "inline-block" }} className="animate-pulse" />
-          ) : (
-            <span style={{ fontSize: "13px", fontWeight: 600, color: isLocked ? "rgba(248,246,242,0.15)" : "var(--signal)" }}>
-              {isLocked ? "Unlock breakdown →" : (bd ? "Read breakdown →" : "Build breakdown →")}
+        {conf && <ConfBadge label={conf} />}
+      </div>
+
+      {/* DNA tags + status chips */}
+      {(dnaTags.length > 0 || bd || isLocked) && (
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {dnaTags.map((tag) => <DnaChip key={tag} label={tag} />)}
+          {bd && !isLocked && <BreakdownChip />}
+          {isLocked && <LockedChip />}
+          {started && !isFinalByTime(game) && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: "5px",
+              padding: "3px 10px", borderRadius: "20px",
+              background: "rgba(201,53,42,0.1)",
+              fontSize: "11px", fontWeight: 500, color: "var(--signal)",
+            }}>
+              <span className="w-[5px] h-[5px] rounded-full animate-pulse block" style={{ background: "var(--signal)", flexShrink: 0 }} />
+              In progress
             </span>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Right */}
-      <div className="row-right" style={{ display: "flex", alignItems: "flex-start", gap: "20px", flexShrink: 0, opacity: isLocked ? 0.15 : 1 }}>
-        <div style={{ textAlign: "right", paddingTop: "1px" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: "13px", color: "rgba(248,246,242,0.25)", whiteSpace: "nowrap" }}>
-            {game.gameTime}
-          </div>
-        </div>
-        <div className="row-stats" style={{ display: "flex", gap: "20px" }}>
+      {/* Bottom: stats + time */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
+        <div className="card-stats" style={{ display: "flex", gap: "16px", opacity: isLocked ? 0.18 : 1 }}>
           {[
             { label: spreadLabel, value: spreadVal },
-            { label: "Total",     value: total },
-            { label: "ML",        value: awayML },
-          ].map((stat) => (
-            <div key={stat.label} style={{ textAlign: "right", minWidth: "44px" }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 700, color: "rgba(248,246,242,0.9)", lineHeight: 1 }}>
-                {stat.value}
+            { label: "Total", value: total },
+            { label: "ML", value: awayML },
+          ].map((s) => (
+            <div key={s.label}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 700, color: "rgba(248,246,242,0.9)", lineHeight: 1 }}>
+                {s.value}
               </div>
-              <div style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(248,246,242,0.3)", marginTop: "4px" }}>
-                {stat.label}
+              <div style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(248,246,242,0.28)", marginTop: "3px" }}>
+                {s.label}
               </div>
             </div>
           ))}
+        </div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "rgba(248,246,242,0.22)", whiteSpace: "nowrap", paddingBottom: "2px" }}>
+          {game.gameTime || "TBD"}
         </div>
       </div>
     </div>
@@ -239,12 +314,12 @@ function TomorrowRow({ game }: { game: AnyGame }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 0", borderBottom: "1px solid rgba(248,246,242,0.04)",
+      padding: "9px 0", borderBottom: "1px solid rgba(248,246,242,0.04)",
     }}>
       <div style={{ fontSize: "13px", fontWeight: 500, color: "rgba(248,246,242,0.2)", letterSpacing: "-0.01em" }}>
-        {game.awayTeam.teamName}
+        {game.awayTeam.teamAbv}
         <span style={{ fontSize: "11px", fontWeight: 400, color: "rgba(248,246,242,0.1)", margin: "0 6px" }}>at</span>
-        {game.homeTeam.teamName}
+        {game.homeTeam.teamAbv}
       </div>
       <div style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "rgba(248,246,242,0.12)", whiteSpace: "nowrap" }}>
         {game.gameTime}
@@ -253,25 +328,32 @@ function TomorrowRow({ game }: { game: AnyGame }) {
   );
 }
 
-// ─── Skeleton states ──────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function SkeletonRow({ featured }: { featured?: boolean }) {
+function SkeletonCard({ featured }: { featured?: boolean }) {
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px",
-      padding: featured ? "28px 0" : "20px 0",
-      borderBottom: "1px solid rgba(248,246,242,0.05)",
+      borderRadius: "12px", background: "#1a1918",
+      padding: "18px 20px 16px", marginBottom: "10px",
+      border: "1px solid rgba(248,246,242,0.06)",
     }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ height: "10px", width: "28px", background: "rgba(248,246,242,0.07)", marginBottom: "8px" }} className="animate-pulse" />
-        <div style={{ height: featured ? "28px" : "20px", width: "58%", background: "rgba(248,246,242,0.07)", marginBottom: "12px" }} className="animate-pulse" />
-        <div style={{ height: "14px", width: "90px", background: "rgba(248,246,242,0.07)" }} className="animate-pulse" />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ height: "9px", width: "24px", background: "rgba(248,246,242,0.07)", marginBottom: "7px" }} className="animate-pulse" />
+          <div style={{ height: featured ? "22px" : "17px", width: "55%", background: "rgba(248,246,242,0.07)" }} className="animate-pulse" />
+        </div>
+        <div style={{ height: "26px", width: "80px", borderRadius: "20px", background: "rgba(248,246,242,0.06)" }} className="animate-pulse" />
       </div>
-      <div style={{ display: "flex", gap: "20px", flexShrink: 0 }}>
-        {[56, 48, 48, 48].map((w, i) => (
-          <div key={i} style={{ width: `${w}px` }}>
-            <div style={{ height: "16px", background: "rgba(248,246,242,0.07)", marginBottom: "4px" }} className="animate-pulse" />
-            <div style={{ height: "9px", width: "60%", background: "rgba(248,246,242,0.05)" }} className="animate-pulse" />
+      <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
+        {[70, 80].map((w) => (
+          <div key={w} style={{ height: "24px", width: `${w}px`, borderRadius: "20px", background: "rgba(248,246,242,0.06)" }} className="animate-pulse" />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: "16px" }}>
+        {[44, 36, 36].map((w, i) => (
+          <div key={i}>
+            <div style={{ height: "15px", width: `${w}px`, background: "rgba(248,246,242,0.07)", marginBottom: "3px" }} className="animate-pulse" />
+            <div style={{ height: "9px", width: "28px", background: "rgba(248,246,242,0.05)" }} className="animate-pulse" />
           </div>
         ))}
       </div>
@@ -310,6 +392,7 @@ function HomePageContent() {
   const accountDeleted = searchParams.get("deleted") === "1";
 
   const [activeSport, setActiveSport] = useState<Sport>(initialSport);
+  const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [games, setGames] = useState<AnyGame[]>([]);
   const [tomorrowGames, setTomorrowGames] = useState<AnyGame[]>([]);
   const [breakdowns, setBreakdowns] = useState<Map<string, SlateBreakdown>>(new Map());
@@ -361,7 +444,7 @@ function HomePageContent() {
     const todayStr = getTodayDateString();
     client
       .from("breakdowns")
-      .select("game_id, user_id, card_summary, confidence_label, confidence_level, created_at")
+      .select("game_id, user_id, card_summary, confidence_label, confidence_level, created_at, breakdown_content")
       .eq("game_date", todayStr)
       .order("created_at", { ascending: false })
       .limit(500)
@@ -372,12 +455,14 @@ function HomePageContent() {
           for (const row of (data ?? [])) {
             if (seen.has(row.game_id)) continue;
             seen.add(row.game_id);
+            const content = row.breakdown_content as { keyDrivers?: Array<{ factor: string; direction?: string }> } | null;
             map.set(row.game_id, {
               gameId: row.game_id,
               isOwn: row.user_id != null && row.user_id === currentUserId,
               cardSummary: row.card_summary ?? null,
               confidenceLabel: (row.confidence_label as ConfidenceLabel) ?? null,
               confidenceLevel: (row.confidence_level as ConfidenceLevel) ?? null,
+              keyDrivers: content?.keyDrivers ?? undefined,
             });
           }
           setBreakdowns(map);
@@ -463,6 +548,20 @@ function HomePageContent() {
   const listGames = headliner ? sorted.filter((g) => g.gameId !== headliner.gameId) : sorted;
   const proUser = isPro(tier);
 
+  // Filter logic
+  const filterGame = (game: AnyGame): boolean => {
+    if (activeFilter === "all") return true;
+    const bd = breakdowns.get(game.gameId) ?? null;
+    const cta = getCtaLabel(bd, proUser, authReady, userId, dailyUsed);
+    const isLocked = cta === "Upgrade to read →" || cta === "Sign up to read →";
+    if (activeFilter === "locked") return isLocked;
+    if (activeFilter === "free") return !isLocked;
+    return true;
+  };
+
+  const filteredHeadliner = headliner && filterGame(headliner) ? headliner : null;
+  const filteredList = listGames.filter(filterGame);
+
   const todayLabel = new Date().toLocaleDateString("en-US", {
     timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric",
   });
@@ -489,16 +588,19 @@ function HomePageContent() {
   const showTonightsRead = !loading && !!tonightsReadText;
 
   const PAD = "clamp(16px,4vw,40px)";
-  const MAX_W = "880px";
+  const MAX_W = "860px";
+
+  const filterTabs: { key: Filter; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "free", label: "Free" },
+    { key: "locked", label: "Locked" },
+  ];
 
   return (
     <>
       <style>{`
-        @media (max-width: 600px) {
-          .row-stats { display: none !important; }
-        }
-        @media (max-width: 480px) {
-          .row-right { gap: 12px !important; }
+        @media (max-width: 540px) {
+          .card-stats { gap: 12px !important; }
         }
       `}</style>
       <div style={{ background: "var(--ink)", minHeight: "100vh" }}>
@@ -527,8 +629,8 @@ function HomePageContent() {
                   onClick={() => setActiveSport(sport)}
                   style={{
                     fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
-                    padding: "6px 16px", cursor: "pointer", transition: "all 0.12s",
-                    border: `1px solid ${activeSport === sport ? "var(--signal)" : "rgba(248,246,242,0.15)"}`,
+                    padding: "6px 16px", cursor: "pointer", transition: "all 0.12s", borderRadius: "6px",
+                    border: `1px solid ${activeSport === sport ? "var(--signal)" : "rgba(248,246,242,0.12)"}`,
                     background: activeSport === sport ? "var(--signal)" : "transparent",
                     color: activeSport === sport ? "#fff" : "rgba(248,246,242,0.4)",
                   }}
@@ -560,15 +662,15 @@ function HomePageContent() {
           </div>
         </div>
 
-        {/* Hero / content separator */}
+        {/* Separator */}
         <div style={{ height: "1px", background: "rgba(248,246,242,0.06)" }} />
 
         {/* Tonight's Read */}
         {showTonightsRead && (
-          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `36px ${PAD} 40px` }}>
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `32px ${PAD} 36px` }}>
             <div style={{
               fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "rgba(248,246,242,0.4)", marginBottom: "14px", fontWeight: 600,
+              color: "rgba(248,246,242,0.4)", marginBottom: "12px", fontWeight: 600,
             }}>
               Tonight&apos;s Read
             </div>
@@ -581,41 +683,62 @@ function HomePageContent() {
           </div>
         )}
 
-        {/* Game list separator */}
-        <div style={{ height: "1px", background: "rgba(248,246,242,0.05)" }} />
-
-        {/* Error */}
-        {error && (
-          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `24px ${PAD}` }}>
-            <p style={{ fontSize: "14px", color: "var(--signal)" }}>{error}</p>
-            <button onClick={() => window.location.reload()} style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}>
-              Try again
-            </button>
-          </div>
-        )}
-
-        {/* Game rows */}
+        {/* Filter tabs + game list */}
         <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `0 ${PAD}` }}>
+          <div style={{ height: "1px", background: "rgba(248,246,242,0.05)", marginBottom: "20px" }} />
+
+          {/* Filter tabs */}
+          {!loading && games.length > 0 && (
+            <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key)}
+                  style={{
+                    fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
+                    padding: "6px 14px", cursor: "pointer", transition: "all 0.12s", borderRadius: "20px",
+                    border: `1px solid ${activeFilter === tab.key ? "rgba(248,246,242,0.25)" : "rgba(248,246,242,0.08)"}`,
+                    background: activeFilter === tab.key ? "rgba(248,246,242,0.1)" : "transparent",
+                    color: activeFilter === tab.key ? "rgba(248,246,242,0.85)" : "rgba(248,246,242,0.35)",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div style={{ padding: "16px 0" }}>
+              <p style={{ fontSize: "14px", color: "var(--signal)" }}>{error}</p>
+              <button onClick={() => window.location.reload()} style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--signal)", background: "none", border: "none", cursor: "pointer" }}>
+                Try again
+              </button>
+            </div>
+          )}
+
+          {/* Game cards */}
           {loading ? (
             <>
-              <SkeletonRow featured />
-              <SkeletonRow />
-              <SkeletonRow />
+              <SkeletonCard featured />
+              <SkeletonCard />
+              <SkeletonCard />
             </>
           ) : (
             <>
-              {headliner && (
-                <GameRow
-                  game={headliner}
-                  bd={breakdowns.get(headliner.gameId) ?? null}
+              {filteredHeadliner && (
+                <GameCard
+                  game={filteredHeadliner}
+                  bd={breakdowns.get(filteredHeadliner.gameId) ?? null}
                   featured
-                  onRead={() => handleRead(headliner.gameId)}
+                  onRead={() => handleRead(filteredHeadliner.gameId)}
                   authReady={authReady} userId={userId} proUser={proUser}
-                  dailyUsed={dailyUsed} started={isStarted(headliner)}
+                  dailyUsed={dailyUsed} started={isStarted(filteredHeadliner)}
                 />
               )}
-              {listGames.map((game) => (
-                <GameRow
+              {filteredList.map((game) => (
+                <GameCard
                   key={game.gameId}
                   game={game}
                   bd={breakdowns.get(game.gameId) ?? null}
@@ -633,6 +756,11 @@ function HomePageContent() {
                   <p style={{ fontSize: "13px", color: "rgba(248,246,242,0.3)" }}>Check back on a game day.</p>
                 </div>
               )}
+              {!loading && games.length > 0 && filteredHeadliner === null && filteredList.length === 0 && (
+                <div style={{ padding: "40px 0", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", color: "rgba(248,246,242,0.35)" }}>No games match this filter.</p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -640,10 +768,10 @@ function HomePageContent() {
         {/* Tomorrow's Slate */}
         {!loading && tomorrowSorted.length > 0 && (
           <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `0 ${PAD}` }}>
-            <div style={{ height: "1px", background: "rgba(248,246,242,0.07)", margin: "32px 0 0" }} />
+            <div style={{ height: "1px", background: "rgba(248,246,242,0.07)", margin: "24px 0 0" }} />
             <div style={{
               fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "rgba(248,246,242,0.15)", padding: "20px 0 12px", fontWeight: 600,
+              color: "rgba(248,246,242,0.15)", padding: "18px 0 10px", fontWeight: 600,
             }}>
               Tomorrow&apos;s Slate
             </div>
@@ -653,17 +781,17 @@ function HomePageContent() {
 
         {/* Closing zone */}
         {!loading && (
-          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `clamp(52px,7vw,80px) ${PAD}` }}>
-            <div style={{ height: "1px", background: "rgba(248,246,242,0.06)", marginBottom: "clamp(40px,5vw,56px)" }} />
+          <div style={{ maxWidth: MAX_W, margin: "0 auto", padding: `clamp(48px,7vw,72px) ${PAD}` }}>
+            <div style={{ height: "1px", background: "rgba(248,246,242,0.06)", marginBottom: "clamp(36px,5vw,48px)" }} />
             <div style={{
               fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em",
-              color: "#fff", lineHeight: 1.3, marginBottom: "12px",
+              color: "#fff", lineHeight: 1.3, marginBottom: "10px",
             }}>
               Raw data. Clear read. Your call.
             </div>
             <div style={{
               fontSize: "14px", color: "rgba(248,246,242,0.30)", lineHeight: 1.6,
-              maxWidth: "400px", marginBottom: "24px",
+              maxWidth: "400px", marginBottom: "22px",
             }}>
               Every game on tonight&apos;s slate. Analyzed. No noise — just what the data says.
             </div>
@@ -673,7 +801,7 @@ function HomePageContent() {
                 style={{
                   display: "inline-block", fontSize: "13.5px", fontWeight: 700,
                   color: "#fff", background: "var(--signal)",
-                  padding: "11px 24px", textDecoration: "none",
+                  padding: "11px 24px", textDecoration: "none", borderRadius: "4px",
                 }}
               >
                 Get full access →
@@ -705,7 +833,7 @@ function HomePageContent() {
           <div
             style={{
               background: "var(--warm-white)", padding: "32px",
-              maxWidth: "400px", width: "100%",
+              maxWidth: "400px", width: "100%", borderRadius: "12px",
               boxShadow: "0 20px 60px rgba(14,14,14,0.35)",
             }}
             onClick={(e) => e.stopPropagation()}
@@ -721,7 +849,7 @@ function HomePageContent() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <Link href="/login?mode=signup" style={{
                     fontSize: "14px", fontWeight: 600, color: "#fff",
-                    background: "var(--signal)", padding: "12px 20px",
+                    background: "var(--signal)", padding: "12px 20px", borderRadius: "6px",
                     textDecoration: "none", textAlign: "center", display: "block",
                   }}>
                     Upgrade to Pro →
@@ -742,7 +870,7 @@ function HomePageContent() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <Link href="/login?mode=signup" style={{
                     fontSize: "14px", fontWeight: 600, color: "#fff",
-                    background: "var(--signal)", padding: "12px 20px",
+                    background: "var(--signal)", padding: "12px 20px", borderRadius: "6px",
                     textDecoration: "none", textAlign: "center", display: "block",
                   }}>
                     Upgrade to Pro →
