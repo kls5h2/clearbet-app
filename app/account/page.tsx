@@ -31,7 +31,7 @@ function Toast({ toast }: { toast: ToastState | null }) {
         fontFamily: "var(--sans)",
         maxWidth: "380px",
         zIndex: 1000,
-        borderRadius: 0,
+        borderRadius: 6,
         boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
         lineHeight: 1.4,
         pointerEvents: "none",
@@ -58,7 +58,7 @@ function formatDate(unixSec: number): string {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "9px 12px",
-  borderRadius: 0,
+  borderRadius: 6,
   border: "1px solid var(--border-med)",
   background: "var(--warm-white)",
   fontSize: "14px",
@@ -70,7 +70,7 @@ const inputStyle: React.CSSProperties = {
 
 const saveBtnStyle: React.CSSProperties = {
   padding: "8px 18px",
-  borderRadius: 0,
+  borderRadius: 6,
   border: "none",
   cursor: "pointer",
   fontSize: "13px",
@@ -82,7 +82,7 @@ const saveBtnStyle: React.CSSProperties = {
 
 const cancelBtnStyle: React.CSSProperties = {
   padding: "8px 14px",
-  borderRadius: 0,
+  borderRadius: 6,
   border: "1px solid var(--border-med)",
   background: "none",
   cursor: "pointer",
@@ -104,7 +104,7 @@ const monoLabel: React.CSSProperties = {
 const card: React.CSSProperties = {
   background: "var(--surface)",
   border: "1px solid var(--border-med)",
-  borderRadius: 0,
+  borderRadius: 8,
   padding: "20px 24px",
 };
 
@@ -489,7 +489,7 @@ export default function AccountPage() {
                         <span style={{
                           fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700,
                           letterSpacing: "0.08em", textTransform: "uppercase",
-                          padding: "3px 10px", borderRadius: 0,
+                          padding: "3px 10px", borderRadius: 4,
                           background: "rgba(201,53,42,0.08)", color: "var(--signal)",
                         }}>PRO</span>
                         {cancelAtPeriodEnd && (
@@ -607,7 +607,7 @@ export default function AccountPage() {
                 style={{
                   background: "none", border: "1px solid var(--border-med)",
                   cursor: "pointer", fontSize: "13px", fontWeight: 500,
-                  color: "var(--muted)", padding: "7px 14px", borderRadius: 0,
+                  color: "var(--muted)", padding: "7px 14px", borderRadius: 6,
                   transition: "color 0.12s, border-color 0.12s",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--signal)"; e.currentTarget.style.borderColor = "var(--signal)"; }}
@@ -630,7 +630,7 @@ export default function AccountPage() {
                   style={{
                     background: "none", border: "1px solid var(--signal)",
                     cursor: "pointer", fontSize: "13px", fontWeight: 500,
-                    color: "var(--signal)", padding: "7px 14px", borderRadius: 0,
+                    color: "var(--signal)", padding: "7px 14px", borderRadius: 6,
                     transition: "background 0.12s",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(201,53,42,0.06)"; }}

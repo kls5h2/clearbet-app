@@ -1,5 +1,5 @@
 /**
- * Batter scoring function + park HR factor constants.
+ * Batter scoring function.
  *
  * Step 1 verification (Tank01 /getMLBTeamRoster?getStats=true):
  *   CONFIRMED present: bats, stats.Hitting.HR, stats.Hitting.AB, stats.Hitting.avg,
@@ -7,35 +7,6 @@
  *   MISSING: PA (approximated as AB + BB), SLG (derived from TB/AB)
  */
 
-// Numeric HR park factors — keyed by team abbreviation (home team).
-// Source: multi-year HR index data. Default for unlisted parks: 100.
-export const TEAM_TO_PARK_FACTOR: Record<string, number> = {
-  LAD: 129,  // Dodger Stadium
-  CIN: 122,  // Great American Ball Park
-  NYY: 117,  // Yankee Stadium
-  HOU: 115,  // Minute Maid Park / Daikin Park
-  BAL: 108,  // Camden Yards
-  TEX: 106,  // Globe Life Field
-  ATL: 103,  // Truist Park
-  MIL: 102,  // American Family Field
-  BOS: 101,  // Fenway Park
-  MIN: 100,  // Target Field
-  TOR: 100,  // Rogers Centre
-  CWS: 100,  // Guaranteed Rate Field
-  STL:  99,  // Busch Stadium
-  CHC:  98,  // Wrigley Field
-  SEA:  97,  // T-Mobile Park
-  MIA:  97,  // loanDepot park
-  ARI:  96,  // Chase Field
-  NYM:  95,  // Citi Field
-  SF:   94,  // Oracle Park
-  PIT:  93,  // PNC Park
-  SD:   92,  // Petco Park
-  OAK:  82,  // Oakland Coliseum
-  ATH:  82,  // Athletics (alternate abbreviation)
-};
-
-export const DEFAULT_PARK_FACTOR = 100;
 
 export interface BatterInput {
   playerName: string;

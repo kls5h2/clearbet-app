@@ -200,6 +200,7 @@ export interface MLBPitcher {
   name: string;
   seasonERA: number | null;
   recentERA: number | null;
+  recentStartCount?: number; // number of starts used to compute recentERA (may be < 5 early in season)
   hand: "L" | "R" | null;
   seasonSO: number | null;
   seasonBB: number | null;
@@ -212,7 +213,9 @@ export interface MLBPitcher {
   // Data quality flags — derived by the breakdown pipeline, not raw API data
   smallSample?: boolean;           // true when seasonIP < 40; treat stats as preliminary
   teamChangedThisSeason?: boolean; // pitcher played for multiple teams this season (best-effort)
-  priorTeamAbv?: string | null;    // abbreviation of the team they left (if detectable from MLB Stats API)
+  priorTeamAbv?: string | null;    // abbreviation of the team they left (if detectable from MLB Stats API splits)
+  tankTeamAbv?: string;            // raw Tank01 team field from playerInfo — used for secondary team-change detection
+  teamChangeSource?: "mlb-splits" | "tank01-roster"; // which detection method triggered the flag
 }
 
 export interface MLBGame {
@@ -278,8 +281,11 @@ export interface MLBBullpenStats {
 }
 
 export interface MLBParkFactor {
-  parkName: string;
-  factor: "high" | "low";
+  stadiumName: string;
+  hrFactor: number;   // HR park factor: 100 = league avg, >100 = more HRs
+  runFactor: number;  // Run park factor: 100 = league avg, >100 = more runs
+  tag: "extreme hitter-friendly" | "hitter-friendly" | "neutral" | "pitcher-friendly" | "extreme pitcher-friendly";
+  note: string;
 }
 
 export interface MLBUmpire {

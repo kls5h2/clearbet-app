@@ -27,20 +27,20 @@ export default async function DashboardPage({
   const email = profile?.email ?? user?.email ?? "";
 
   return (
-    <div style={{ background: "var(--canvas)", minHeight: "100vh", paddingBottom: "5rem" }}>
+    <div style={{ background: "var(--warm-white)", minHeight: "100vh", paddingBottom: "5rem" }}>
       <Nav />
 
       <div style={{ background: "var(--ink)", minHeight: "280px", padding: "72px 24px 64px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center" }}>
         <span aria-hidden="true" style={{
           position: "absolute", right: "-60px", top: "-80px",
-          fontFamily: "Georgia, serif", fontSize: "520px", fontStyle: "italic",
+          fontFamily: "var(--sans)", fontSize: "520px", fontWeight: 900,
           color: "rgba(217,59,58,0.07)", pointerEvents: "none", zIndex: 0, lineHeight: 1,
         }}>R.</span>
         <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative", zIndex: 1, width: "100%" }}>
           <p style={{ fontFamily: "var(--sans)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--signal)", marginBottom: "16px" }}>
             Dashboard
           </p>
-          <h1 style={{ fontFamily: "var(--serif)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 500, color: "#FAFAFA", letterSpacing: "-0.025em", lineHeight: 1.1, maxWidth: "680px", margin: 0 }}>
+          <h1 style={{ fontFamily: "var(--sans)", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 800, color: "#FAFAFA", letterSpacing: "-0.04em", lineHeight: 1.05, maxWidth: "680px", margin: 0 }}>
             {upgraded ? "Welcome to Pro." : "Your account."}
           </h1>
           <p style={{ fontFamily: "var(--sans)", fontSize: "16px", color: "#9A9A96", lineHeight: 1.6, maxWidth: "520px", marginTop: "16px", marginBottom: 0 }}>
@@ -50,11 +50,11 @@ export default async function DashboardPage({
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "48px 24px 0" }}>
-        <div style={{ background: "var(--paper)", border: "0.5px solid var(--border)", borderRadius: 0, padding: "22px 24px", marginBottom: "16px" }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border-med)", borderRadius: 8, padding: "22px 24px", marginBottom: "16px" }}>
           <p style={{ fontFamily: "var(--sans)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "10px" }}>
             Plan
           </p>
-          <p style={{ fontFamily: "var(--serif)", fontSize: "24px", fontWeight: 500, color: "var(--ink)", margin: 0, marginBottom: "10px" }}>
+          <p style={{ fontSize: "24px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", margin: 0, marginBottom: "10px" }}>
             {tier === "pro" ? "Pro" : "Free"}
           </p>
           {tier === "free" ? (
@@ -69,7 +69,7 @@ export default async function DashboardPage({
                   background: "var(--signal)", color: "#FAFAFA",
                   fontFamily: "var(--sans)", fontSize: "13px", fontWeight: 500,
                   letterSpacing: "0.04em", padding: "12px 24px",
-                  borderRadius: 0, textDecoration: "none",
+                  borderRadius: 6, textDecoration: "none",
                 }}
               >
                 Upgrade to Pro →

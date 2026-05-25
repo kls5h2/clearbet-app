@@ -99,6 +99,14 @@ If a pitcher's stat line includes a [SMALL SAMPLE] flag, do not present their st
 ## TEAM CHANGE RULE
 If a pitcher's stat line includes a [TEAM CHANGE THIS SEASON] flag, you must reference which context the stats came from. Never present combined stats from multiple teams as a single performance baseline. Frame as: "[Pitcher] carries a combined ERA from stints at [prior team] and [current team] — the current-team sample is incomplete." If per-team split detail is not available, acknowledge the combined nature in the Key Drivers entry for that pitcher and note that it limits confidence in the baseline. Do not use the literal text "[TEAM CHANGE THIS SEASON]" in your output — describe the situation directly.
 
+## RECENT FORM TRENDING RULE
+Every pitcher's stat line may show both a recent-form ERA (last N starts) and a season ERA. When both are present and the difference is greater than 0.75, weight recent form over the season baseline.
+
+- Trending down (recent ERA more than 0.75 higher than season ERA): name it as a fragility factor in Key Drivers. Example: "[Pitcher]'s season ERA of 3.10 understates recent struggles — a 5.40 ERA over the last 5 starts is the relevant signal tonight, not the full-season number."
+- Trending up (recent ERA more than 0.75 lower than season ERA): note it as a supporting factor. Example: "[Pitcher]'s season ERA of 4.20 overstates current risk — their last 5 starts show a 2.80 ERA, suggesting they are sharper than the full-season number implies."
+
+A difference of 0.75 or less requires no comment — treat the season ERA as the baseline and omit comparison language.
+
 ## BULLPEN RULE
 Blown save rate is the key fragility signal. A team blowing 30%+ of save opportunities belongs as the primary Fragility Check item, not a footnote. ERA last 7 days reflects real form — weight it over season average. When citing 7-day ERA as structural support for a directional claim (not just supporting color), add a one-clause caveat: "...though 7-day samples can be volatile." Do not present a 7-day hot or cold streak as a durable structural edge without qualification.
 
@@ -125,7 +133,13 @@ Same rule applies to every category: only flag a prop market when the data creat
 Name the umpire tendency only if it clearly amplifies another factor. Never lead with it. Pitcher-friendly ump + dominant strikeout pitcher = worth naming. Neutral ump = say nothing.
 
 ## PARK FACTOR RULE
-Flag extreme parks in Market Read when discussing the total. Coors inflates. Petco and Oracle suppress. Neutral parks — say nothing.
+Park factor data is provided for every game with numeric HR and run factors (100 = league average). Use them.
+
+A run factor above 108 or below 92 is material — name it explicitly in Game Shape and weigh it in Market Read when discussing the total. Do not assert park effects qualitatively without grounding in the number: cite the specific run factor, not just "hitter's park" or "pitcher's park."
+
+A run factor between 92–108 is neutral — acknowledge it briefly in one sentence in Game Shape and move on. Do not repeat park references across multiple sections for a neutral park.
+
+Coors Field (run factor 119) is in its own category — always treat altitude as the dominant run-environment variable.
 
 ## PLAYOFF/WILD CARD RULE
 Division standing and wild card position affect urgency. A team 4 games back in June plays differently than a team 4 games back in September. Name the urgency gap when it's real.
@@ -460,7 +474,14 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
     if (!p) return "[UNCONFIRMED] Probable starter not listed by MLB Stats API";
     const tag = p.confirmed ? "[CONFIRMED STARTER] " : "[UNCONFIRMED] ";
     const hand = p.hand ? ` (${p.hand}HP)` : "";
-    const recent = p.recentERA !== null ? `, last 3 starts ERA: ${formatERA(p.recentERA)}` : "";
+    const eraDisplay = (() => {
+      if (p.recentERA !== null) {
+        const count = p.recentStartCount ?? 5;
+        const label = count < 5 ? `last ${count} starts` : "last 5 starts";
+        return `${label} ERA: ${formatERA(p.recentERA)} (season: ${formatERA(p.seasonERA)})`;
+      }
+      return `season ERA: ${formatERA(p.seasonERA)}`;
+    })();
     const propStats = [
       p.seasonSO !== null ? `SO: ${p.seasonSO}` : null,
       `K/9: ${formatK9(p.seasonSO, p.seasonIP)}`,
@@ -469,7 +490,7 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
       p.seasonBB !== null ? `BB: ${p.seasonBB}` : null,
     ].filter(Boolean).join(" / ");
 
-    let line = `${tag}${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
+    let line = `${tag}${p.name}${hand} — ${eraDisplay}${propStats ? ` | ${propStats}` : ""}`;
 
     if (p.smallSample && p.seasonIP !== null) {
       line += `\n  [SMALL SAMPLE: only ${p.seasonIP.toFixed(1)} IP this season — treat all metrics as preliminary, not established norms]`;
@@ -477,8 +498,13 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
 
     if (p.teamChangedThisSeason) {
       if (p.priorTeamAbv) {
+        // MLB Stats API returned per-team splits — prior team is known
         line += `\n  [TEAM CHANGE THIS SEASON: stats above are combined from ${p.priorTeamAbv} and current team — current-team sample is incomplete, do not treat as a single baseline]`;
+      } else if (p.teamChangeSource === "tank01-roster") {
+        // Tank01 roster field shows a different team than today's game
+        line += `\n  [TEAM CHANGE THIS SEASON: detected via roster data — combined stats below may span multiple teams, interpret with caution]`;
       } else {
+        // MLB Stats API detected a change but couldn't isolate prior team
         line += `\n  [TEAM CHANGE THIS SEASON: combined stats include a prior team — current-team sample is incomplete, interpret with caution]`;
       }
     }
@@ -595,12 +621,13 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
   };
 
   const formatParkFactor = (pf: MLBParkFactor | null): string => {
-    if (!pf) return "";
-    const effect =
-      pf.factor === "high"
-        ? "inflates scoring — totals here run higher than the pitching matchup alone suggests"
-        : "suppresses scoring — pitcher ERAs look better here than they would in a neutral park";
-    return `━━━ PARK FACTOR ━━━\n${homeTeam.teamAbv} plays at ${pf.parkName} — ${pf.factor.toUpperCase()} run environment: ${effect}.`;
+    if (!pf) return `━━━ PARK FACTOR ━━━\nPark factor data unavailable — treat as neutral environment.`;
+    return [
+      `━━━ PARK FACTOR ━━━`,
+      `${pf.stadiumName}`,
+      `HR factor: ${pf.hrFactor} | Run factor: ${pf.runFactor} | ${pf.tag}`,
+      pf.note,
+    ].join("\n");
   };
 
   const parkSection = formatParkFactor(parkFactor);
@@ -674,7 +701,8 @@ ${formatBullpen(awayBullpen, awayTeam.teamAbv)}
 
 ━━━ UMPIRE ━━━
 ${formatUmpire(umpire)}
-${parkSection ? `\n${parkSection}\n` : ""}
+
+${parkSection}
 ━━━ ${homeTeam.teamAbv} (HOME) ━━━
 Record: ${formatRecord(homeTeamStats.wins, homeTeamStats.losses)}
 Runs/game: ${homeTeamStats.runsPerGame}

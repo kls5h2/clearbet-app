@@ -113,7 +113,7 @@ function FilterGroup({
                 background: isActive ? "var(--ink)" : "transparent",
                 border: `1px solid ${isActive ? "var(--ink)" : "var(--border-med)"}`,
                 padding: "4px 12px",
-                borderRadius: 0,
+                borderRadius: 4,
                 textDecoration: "none",
                 transition: "all 0.12s",
                 fontFamily: "var(--sans)",
@@ -257,7 +257,7 @@ export default async function MyBreakdownsPage({
 
           {/* Upsell banner */}
           <div style={{
-            background: "var(--ink)", borderRadius: 0,
+            background: "var(--ink)", borderRadius: 8,
             padding: "20px 24px", marginBottom: 28,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             gap: 20, flexWrap: "wrap",
@@ -274,7 +274,7 @@ export default async function MyBreakdownsPage({
               href="/pricing"
               style={{
                 display: "inline-flex", alignItems: "center",
-                padding: "10px 20px", borderRadius: 0,
+                padding: "10px 20px", borderRadius: 6,
                 background: "var(--signal)", color: "#fff",
                 fontWeight: 700, fontSize: 13.5, fontFamily: "var(--sans)",
                 textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
@@ -294,7 +294,7 @@ export default async function MyBreakdownsPage({
               <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, maxWidth: 320, margin: "0 auto 28px" }}>
                 Start with today&apos;s slate to build your history.
               </p>
-              <Link href="/" style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", textDecoration: "none", padding: "12px 28px", background: "var(--signal)", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              <Link href="/" style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", textDecoration: "none", padding: "12px 28px", borderRadius: 6, background: "var(--signal)", display: "inline-flex", alignItems: "center", gap: 7 }}>
                 View today&apos;s slate →
               </Link>
             </div>
@@ -618,7 +618,7 @@ export default async function MyBreakdownsPage({
             style={{
               background: "var(--surface)",
               border: "1px solid var(--border-med)",
-              borderRadius: 0,
+              borderRadius: 8,
               padding: "10px 14px",
               marginBottom: 20,
             }}
@@ -677,7 +677,7 @@ export default async function MyBreakdownsPage({
                 color: "#fff",
                 textDecoration: "none",
                 padding: "12px 28px",
-                borderRadius: 0,
+                borderRadius: 6,
                 background: "var(--signal)",
                 display: "inline-flex",
                 alignItems: "center",

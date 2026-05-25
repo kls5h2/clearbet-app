@@ -20,7 +20,8 @@ import {
   getMLBLineupConfirmed,
 } from "@/lib/mlb-stats-api";
 import { getStatcastBatters, lookupStatcast } from "@/lib/baseball-savant";
-import { scoreBatter, calcHrPer9, TEAM_TO_PARK_FACTOR, DEFAULT_PARK_FACTOR } from "@/lib/batter-scoring";
+import { scoreBatter, calcHrPer9 } from "@/lib/batter-scoring";
+import { PARK_FACTORS } from "@/lib/park-factors";
 import type { BatterSignal } from "@/lib/types";
 import { fetchESPNNBASeries } from "@/lib/espn-nba-series";
 import { generateMLBBreakdown } from "@/lib/claude-mlb";
@@ -35,7 +36,6 @@ import type {
   MLBGameDetailData,
   NBAGame,
   MLBGame,
-  MLBParkFactor,
   BreakdownApiResponse,
   Sport,
   VerificationResult,
@@ -667,19 +667,38 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     // smallSample is always computed here (not in the API clients) so it applies
     // regardless of whether the pitcher came from MLB Stats API or the Tank01 fallback.
     const MLB_SMALL_SAMPLE_IP_THRESHOLD = 40;
-    const addPitcherFlags = (p: typeof homeFallback): typeof homeFallback => {
+    const addPitcherFlags = (p: typeof homeFallback, teamAbv: string): typeof homeFallback => {
       if (!p) return null;
-      return {
-        ...p,
-        smallSample: p.seasonIP !== null && p.seasonIP < MLB_SMALL_SAMPLE_IP_THRESHOLD,
-      };
+      const smallSample = p.seasonIP !== null && p.seasonIP < MLB_SMALL_SAMPLE_IP_THRESHOLD;
+
+      // Primary detection: MLB Stats API per-team splits (set in mlb-stats-api.ts)
+      let teamChangedThisSeason = p.teamChangedThisSeason ?? false;
+      let teamChangeSource = p.teamChangeSource;
+
+      // Secondary detection: Tank01 roster check.
+      // Only fires when primary detection missed it AND Tank01 returns a team field
+      // that clearly differs from the team pitching today. Both values must be
+      // non-empty to prevent false positives from missing or stale Tank01 data.
+      if (
+        !teamChangedThisSeason &&
+        p.tankTeamAbv &&
+        teamAbv &&
+        p.tankTeamAbv.toUpperCase() !== teamAbv.toUpperCase()
+      ) {
+        teamChangedThisSeason = true;
+        teamChangeSource = "tank01-roster";
+      }
+
+      return { ...p, smallSample, teamChangedThisSeason, teamChangeSource };
     };
 
     const homePitcher = addPitcherFlags(
-      statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null)
+      statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null),
+      homeTeam.teamAbv
     );
     const awayPitcher = addPitcherFlags(
-      statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null)
+      statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null),
+      awayTeam.teamAbv
     );
     console.log(
       `[breakdown:MLB] pitchers: home=${homePitcher?.name ?? "none"} (confirmed=${homePitcher?.confirmed ?? false}), ` +
@@ -687,11 +706,11 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     );
     if (homePitcher?.smallSample) console.log(`[breakdown:MLB] home pitcher small sample: ${homePitcher.seasonIP} IP`);
     if (awayPitcher?.smallSample) console.log(`[breakdown:MLB] away pitcher small sample: ${awayPitcher.seasonIP} IP`);
-    if (homePitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] home pitcher team change detected: prior team=${homePitcher.priorTeamAbv}`);
-    if (awayPitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] away pitcher team change detected: prior team=${awayPitcher.priorTeamAbv}`);
+    if (homePitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] home pitcher team change detected: source=${homePitcher.teamChangeSource} prior=${homePitcher.priorTeamAbv ?? "unknown"}`);
+    if (awayPitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] away pitcher team change detected: source=${awayPitcher.teamChangeSource} prior=${awayPitcher.priorTeamAbv ?? "unknown"}`);
 
     // ─── Batter scoring ───────────────────────────────────────────────────────
-    const parkFactor = TEAM_TO_PARK_FACTOR[homeTeam.teamAbv] ?? DEFAULT_PARK_FACTOR;
+    const parkFactor = PARK_FACTORS[homeTeam.teamAbv]?.hrFactor ?? 100;
 
     const scoreBattersForTeam = (
       batters: Awaited<ReturnType<typeof getMLBBatterStats>>,
@@ -798,13 +817,7 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
     };
     // ─── End MLB Data Verification ────────────────────────────────────────────
 
-    const MLB_PARK_FACTORS: Record<string, MLBParkFactor> = {
-      COL: { parkName: "Coors Field", factor: "high" },
-      SD:  { parkName: "Petco Park", factor: "low" },
-      SF:  { parkName: "Oracle Park", factor: "low" },
-      CIN: { parkName: "Great American Ball Park", factor: "high" },
-    };
-    const mlbParkFactor = MLB_PARK_FACTORS[homeTeam.teamAbv] ?? null;
+    const mlbParkFactor = PARK_FACTORS[homeTeam.teamAbv] ?? null;
 
     // Record opening line (insert-only, non-blocking). openingLine already fetched in Promise.all above.
     recordOpeningLine(

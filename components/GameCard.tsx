@@ -53,7 +53,7 @@ function OddsRow({ game, homeTeamAbv, awayTeamAbv }: { game: AnyGame; homeTeamAb
   if (!game.odds) return null;
   const labelStyle: React.CSSProperties = { fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "2px" };
   const valStyle: React.CSSProperties = { fontSize: "13px", fontWeight: 500, color: "var(--ink)" };
-  const rowStyle: React.CSSProperties = { background: "#EDEAE3", borderRadius: 0, padding: "10px 12px", display: "flex", marginBottom: "14px" };
+  const rowStyle: React.CSSProperties = { background: "#EDEAE3", borderRadius: 6, padding: "10px 12px", display: "flex", marginBottom: "14px" };
 
   if (game.sport === "MLB") {
     const o: MLBGameOdds = game.odds;
@@ -99,7 +99,7 @@ function ClickableCard({
       className="w-full text-left cursor-pointer focus:outline-none"
       style={{
         background: hover ? "#EFEDE7" : "var(--paper)",
-        borderRadius: 0,
+        borderRadius: 8,
         padding: "20px 24px 18px",
         border: `0.5px solid ${hover ? "rgba(14,14,14,0.18)" : "transparent"}`,
         transform: hover ? "translateY(-1px)" : "translateY(0)",
@@ -146,7 +146,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
   const atConnector = (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", flexShrink: 0, padding: "0 6px", paddingBottom: "2px" }}>
-      <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "16px", color: "var(--muted)" }}>at</span>
+      <span style={{ fontStyle: "italic", fontSize: "16px", color: "var(--muted)" }}>at</span>
     </div>
   );
 
@@ -172,7 +172,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
         <div className="flex items-center gap-3" style={{ marginBottom: "14px" }}>
           <div className="flex-1">
             <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
-            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
+            <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
             {sport === "MLB" && (
               <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.awayPitcher
@@ -184,7 +184,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
           {atConnector}
           <div className="flex-1 text-right">
             <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
-            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
+            <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
             {sport === "MLB" && (
               <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginTop: "4px", lineHeight: 1.3 }}>
                 {game.homePitcher
@@ -197,7 +197,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
         {/* THE READ */}
         {signal && (
-          <div style={{ background: "#EDEAE3", borderRadius: 0, padding: "10px 13px", marginBottom: "14px" }}>
+          <div style={{ background: "#EDEAE3", borderRadius: 6, padding: "10px 13px", marginBottom: "14px" }}>
             <p style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--muted)", marginBottom: "5px" }}>The Read</p>
             <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.5 }}>{signal}</p>
           </div>
@@ -212,7 +212,7 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
   // Dead (final / live) card
   if (isDead) {
     return (
-      <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 0, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.5 }}>
+      <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 8, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.5 }}>
         <div className="flex justify-between items-center" style={{ marginBottom: "10px" }}>
           <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
           {effectiveStatus === "live" && (
@@ -225,12 +225,12 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
         <div className="flex items-center gap-3" style={{ marginBottom: "10px" }}>
           <div className="flex-1">
             <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
-            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
+            <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
           </div>
           {atConnector}
           <div className="flex-1 text-right">
             <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
-            <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
+            <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
           </div>
         </div>
         <p style={{ fontSize: "11px", color: "var(--muted)", fontStyle: "italic" }}>
@@ -242,19 +242,19 @@ export default function GameCard({ game, onClick, preview = false, whatThisMeans
 
   // Tomorrow preview card
   return (
-    <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 0, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.65 }}>
+    <div className="w-full text-left" style={{ background: "var(--paper)", borderRadius: 8, border: "0.5px solid var(--border)", padding: "18px 24px", opacity: 0.65 }}>
       <div style={{ marginBottom: "10px" }}>
         <span style={{ fontSize: "12px", color: "var(--muted)" }}>{gameTime || "Time TBD"}</span>
       </div>
       <div className="flex items-center gap-3" style={{ marginBottom: "10px" }}>
         <div className="flex-1">
           <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{awayCity}</p>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
+          <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{awayNickname}</p>
         </div>
         {atConnector}
         <div className="flex-1 text-right">
           <p style={{ fontSize: "10px", fontWeight: 500, textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>{homeCity}</p>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
+          <p style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1 }}>{homeNickname}</p>
         </div>
       </div>
       <p style={{ fontSize: "11px", color: "var(--muted)", fontStyle: "italic" }}>Breakdown available day of game</p>

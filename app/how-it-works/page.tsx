@@ -512,7 +512,7 @@ export default function HowItWorksPage() {
                 <div
                   style={{
                     background: "var(--cream)",
-                    borderRadius: 0,
+                    borderRadius: 4,
                     borderLeft: "2px solid var(--border)",
                     padding: "10px 14px",
                     fontSize: 12,
@@ -541,7 +541,7 @@ export default function HowItWorksPage() {
               background: "var(--signal)", color: "#fff",
               fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700,
               letterSpacing: "0.14em", textTransform: "uppercase",
-              padding: "5px 12px", flexShrink: 0,
+              padding: "5px 12px", borderRadius: 4, flexShrink: 0,
             }}>
               Sample Breakdown
             </div>
@@ -579,7 +579,7 @@ export default function HowItWorksPage() {
                 letterSpacing: "0.08em", textTransform: "uppercase",
                 color: "var(--signal)", background: "none",
                 border: "1px solid var(--border-med)", padding: "9px 20px",
-                cursor: "pointer", transition: "all 0.15s",
+                borderRadius: 6, cursor: "pointer", transition: "all 0.15s",
               }}
             >
               {breakdownExpanded ? "Collapse ↑" : "See full breakdown ↓"}
@@ -630,7 +630,7 @@ export default function HowItWorksPage() {
               className={`reveal ${i > 0 ? `rd${i}` : ""}`}
               style={{
                 background: "var(--surface)",
-                borderRadius: 0,
+                borderRadius: 8,
                 border: "1px solid rgba(17,17,16,0.06)",
                 overflow: "hidden",
                 boxShadow: "var(--shadow-sm)",
@@ -679,7 +679,7 @@ export default function HowItWorksPage() {
                     lineHeight: 1.5,
                     padding: "10px 12px",
                     background: "var(--cream)",
-                    borderRadius: 0,
+                    borderRadius: 4,
                   }}
                 >
                   {level.example}
@@ -737,7 +737,7 @@ export default function HowItWorksPage() {
                 gap: 14,
                 padding: "14px 18px",
                 background: "var(--surface)",
-                borderRadius: 0,
+                borderRadius: 8,
                 border: "1px solid var(--border)",
                 boxShadow: "var(--shadow-sm)",
               }}
@@ -750,7 +750,7 @@ export default function HowItWorksPage() {
                   background: "var(--cream)",
                   border: "1px solid var(--border-med)",
                   padding: "4px 10px",
-                  borderRadius: 0,
+                  borderRadius: 4,
                   whiteSpace: "nowrap",
                   flexShrink: 0,
                 }}

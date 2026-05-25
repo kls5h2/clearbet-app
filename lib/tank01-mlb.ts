@@ -306,6 +306,13 @@ export async function getMLBStartingPitcher(
     const seasonERA = seasonIP > 0 ? parseFloat(pitching?.ERA ?? "0") : null;
     const hand = (player.throws === "L" || player.throws === "R") ? player.throws : null;
 
+    // Capture the team Tank01 associates with this player's stats. If it differs
+    // from the team we requested (teamAbv), that's a signal of a mid-season trade.
+    // Only set when non-empty to avoid false positives from missing fields.
+    const tankTeamAbv = typeof player.stats?.teamAbv === "string" && player.stats.teamAbv.trim()
+      ? player.stats.teamAbv.trim().toUpperCase()
+      : undefined;
+
     return {
       name: player.longName,
       seasonERA,
@@ -316,6 +323,7 @@ export async function getMLBStartingPitcher(
       seasonWHIP: pitching?.WHIP != null ? parseFloat(pitching.WHIP) : null,
       seasonHR: pitching?.HR != null ? parseInt(pitching.HR, 10) : null,
       seasonIP: seasonIP > 0 ? seasonIP : null,
+      tankTeamAbv,
     };
   } catch {
     return getMLBPitcherFromRoster(teamAbv);

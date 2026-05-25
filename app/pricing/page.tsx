@@ -185,7 +185,7 @@ export default function PricingPage() {
           <div
             style={{
               background: "var(--surface)",
-              borderRadius: 0,
+              borderRadius: 8,
               border: "1px solid var(--border-med)",
               overflow: "hidden",
               boxShadow: "var(--shadow-sm)",
@@ -259,7 +259,7 @@ export default function PricingPage() {
                   color: "var(--ink)",
                   textDecoration: "none",
                   padding: "12px 20px",
-                  borderRadius: 0,
+                  borderRadius: 6,
                   border: "1.5px solid var(--border-strong)",
                   transition: "all 0.15s",
                   boxSizing: "border-box",
@@ -385,7 +385,7 @@ export default function PricingPage() {
           <div
             style={{
               background: "var(--ink)",
-              borderRadius: 0,
+              borderRadius: 8,
               border: "1px solid rgba(255,255,255,0.06)",
               overflow: "hidden",
               boxShadow: "var(--shadow-lg)",
@@ -473,7 +473,7 @@ export default function PricingPage() {
                   gap: 6,
                   background: "rgba(201,53,42,0.12)",
                   border: "1px solid rgba(201,53,42,0.2)",
-                  borderRadius: 0,
+                  borderRadius: 4,
                   padding: "4px 10px",
                   marginTop: 12,
                   fontFamily: "var(--mono)",
@@ -504,7 +504,7 @@ export default function PricingPage() {
                   fontWeight: 700,
                   color: "#fff",
                   padding: "13px 20px",
-                  borderRadius: 0,
+                  borderRadius: 6,
                   background: "var(--signal)",
                   border: "none",
                   cursor: busy ? "default" : "pointer",
@@ -643,7 +643,7 @@ export default function PricingPage() {
           className="reveal"
           style={{
             background: "var(--surface)",
-            borderRadius: 0,
+            borderRadius: 8,
             border: "1px solid var(--border-med)",
             boxShadow: "var(--shadow-sm)",
             marginBottom: 48,
@@ -663,7 +663,7 @@ export default function PricingPage() {
                 style={{
                   width: 36,
                   height: 36,
-                  borderRadius: 0,
+                  borderRadius: 6,
                   background: "var(--cream)",
                   border: "1px solid var(--border-med)",
                   display: "flex",
@@ -711,7 +711,7 @@ export default function PricingPage() {
                 background: "rgba(201,53,42,0.08)",
                 border: "1px solid rgba(201,53,42,0.15)",
                 padding: "6px 14px",
-                borderRadius: 0,
+                borderRadius: 4,
                 whiteSpace: "nowrap",
                 flexShrink: 0,
               }}
@@ -729,7 +729,7 @@ export default function PricingPage() {
           className="reveal rd1"
           style={{
             background: "var(--ink)",
-            borderRadius: 0,
+            borderRadius: 8,
             overflow: "hidden",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",

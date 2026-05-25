@@ -47,6 +47,8 @@ interface RawPitchingSplit {
     baseOnBalls?: number;
     whip?: string;
     homeRuns?: number;
+    earnedRuns?: number;  // present in gameLog splits
+    gamesStarted?: number; // 1 = start, 0 = relief; used to filter starts from gameLog
   };
   // Present when MLB Stats API returns per-team splits for traded players
   team?: { id?: number; name?: string; abbreviation?: string };
@@ -246,6 +248,20 @@ interface PersonDetails {
   seasonHR: number | null;
   teamChangedThisSeason: boolean;
   priorTeamAbv: string | null;
+  recentERA: number | null;
+  recentStartCount: number;
+}
+
+// Parse baseball IP notation (e.g. "6.1" = 6⅓ innings, "5.2" = 5⅔ innings).
+// parseFloat gives wrong totals when summing multiple starts: 6.1 + 5.2 = 11.3
+// instead of the correct 12.0. This converts to true decimal before arithmetic.
+function parseBaseballIP(raw: string | undefined): number {
+  if (!raw) return 0;
+  const val = parseFloat(raw);
+  if (isNaN(val)) return 0;
+  const whole = Math.floor(val);
+  const thirds = Math.round((val - whole) * 10); // 0, 1, or 2
+  return whole + thirds / 3;
 }
 
 async function fetchPersonDetails(
@@ -254,13 +270,55 @@ async function fetchPersonDetails(
   const map = new Map<number, PersonDetails>();
   if (ids.length === 0) return map;
 
-  const res = await fetch(
-    `${BASE}/people?personIds=${ids.join(",")}&hydrate=stats(group=[pitching],type=season)`,
-    { next: { revalidate: 900 } }
-  );
-  if (!res.ok) return map;
+  const idStr = ids.join(",");
+  const season = String(new Date().getFullYear());
 
-  const data: RawPeopleResponse = await res.json();
+  // Run season stats and game log fetches in parallel.
+  // gameLog failure is non-fatal — recentERA falls back to null.
+  const [seasonRes, gameLogRes] = await Promise.all([
+    fetch(
+      `${BASE}/people?personIds=${idStr}&hydrate=stats(group=[pitching],type=season)`,
+      { next: { revalidate: 900 } }
+    ),
+    fetch(
+      `${BASE}/people?personIds=${idStr}&hydrate=stats(group=[pitching],type=gameLog,season=${season})`,
+      { next: { revalidate: 900 } }
+    ),
+  ]);
+
+  // Parse game log → recentERA per pitcher.
+  // Takes the last 5 GS (games where the pitcher started), sums ER and IP,
+  // then computes ERA = (totalER / totalIP) * 9.
+  const recentMap = new Map<number, { recentERA: number | null; recentStartCount: number }>();
+  if (gameLogRes.ok) {
+    const logData: RawPeopleResponse = await gameLogRes.json();
+    for (const p of logData.people ?? []) {
+      const pitching = p.stats?.find((s) => s.group.displayName === "pitching");
+      const allSplits = pitching?.splits ?? [];
+      // Filter to starts only — game log entries where gamesStarted >= 1 and IP > 0.
+      const starts = allSplits.filter(
+        (s) => (s.stat.gamesStarted ?? 0) >= 1 && parseBaseballIP(s.stat.inningsPitched) > 0
+      );
+      // Game log is chronological (oldest first) — take the last 5.
+      const recent = starts.slice(-5);
+      if (recent.length === 0) {
+        recentMap.set(p.id, { recentERA: null, recentStartCount: 0 });
+        continue;
+      }
+      let totalER = 0;
+      let totalIP = 0;
+      for (const s of recent) {
+        totalER += s.stat.earnedRuns ?? 0;
+        totalIP += parseBaseballIP(s.stat.inningsPitched);
+      }
+      const recentERA = totalIP > 0 ? Math.round((totalER / totalIP) * 9 * 100) / 100 : null;
+      recentMap.set(p.id, { recentERA, recentStartCount: recent.length });
+    }
+  }
+
+  if (!seasonRes.ok) return map;
+
+  const data: RawPeopleResponse = await seasonRes.json();
   for (const p of data.people ?? []) {
     const hand = p.pitchHand?.code ?? null;
     const pitching = p.stats?.find((s) => s.group.displayName === "pitching");
@@ -290,6 +348,8 @@ async function fetchPersonDetails(
       }
     }
 
+    const recent = recentMap.get(p.id) ?? { recentERA: null, recentStartCount: 0 };
+
     map.set(p.id, {
       hand,
       seasonERA: seasonIP !== null && seasonIP > 0 ? seasonERA : null,
@@ -300,6 +360,8 @@ async function fetchPersonDetails(
       seasonHR: stat?.homeRuns ?? null,
       teamChangedThisSeason,
       priorTeamAbv,
+      recentERA: recent.recentERA,
+      recentStartCount: recent.recentStartCount,
     });
   }
   return map;
@@ -313,7 +375,8 @@ function buildPitcher(
   return {
     name: stub.name,
     seasonERA: details?.seasonERA ?? null,
-    recentERA: null,
+    recentERA: details?.recentERA ?? null,
+    recentStartCount: details?.recentStartCount,
     hand: details?.hand ?? null,
     seasonSO: details?.seasonSO ?? null,
     seasonBB: details?.seasonBB ?? null,
