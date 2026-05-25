@@ -186,29 +186,36 @@ function StepCard({
 
   return (
     <div style={{
-      borderBottom: "1px solid rgba(248,246,242,0.06)",
-      background: highlighted ? "rgba(201,53,42,0.05)" : "transparent",
+      borderRadius: "8px",
+      border: highlighted ? "1px solid rgba(201,53,42,0.22)" : "1px solid rgba(248,246,242,0.07)",
+      background: highlighted ? "rgba(201,53,42,0.07)" : "rgba(248,246,242,0.02)",
+      overflow: "hidden",
     }}>
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
           width: "100%", display: "flex", alignItems: "center",
-          padding: "16px 24px", gap: "16px",
+          padding: "14px 20px", gap: "14px",
           background: "transparent", border: "none", cursor: "pointer",
           textAlign: "left",
         }}
       >
         <span style={{
-          fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 700,
-          letterSpacing: "0.12em", color: highlighted ? "var(--signal)" : "rgba(201,53,42,0.55)",
-          flexShrink: 0, minWidth: "20px",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700,
+          letterSpacing: "0.04em",
+          color: highlighted ? "var(--signal)" : "rgba(248,246,242,0.4)",
+          background: highlighted ? "rgba(201,53,42,0.18)" : "rgba(248,246,242,0.07)",
+          borderRadius: "6px",
+          padding: "4px 7px",
+          flexShrink: 0,
         }}>
           {num}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em",
-            textTransform: "uppercase", color: highlighted ? "rgba(248,246,242,0.85)" : "rgba(248,246,242,0.5)",
+            fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em",
+            color: highlighted ? "rgba(248,246,242,0.9)" : "rgba(248,246,242,0.7)",
             marginBottom: "2px",
           }}>
             {label}
@@ -230,7 +237,7 @@ function StepCard({
         </span>
       </button>
       {open && (
-        <div style={{ padding: "0 24px 20px" }}>
+        <div style={{ padding: "0 20px 16px" }}>
           {children}
         </div>
       )}
@@ -344,6 +351,7 @@ export default function BreakdownView({ breakdown, game, gated }: Props) {
           <DriverSection drivers={breakdown.keyDrivers} />
 
           {/* Expandable step cards */}
+          <div style={{ padding: "12px 12px 6px", display: "flex", flexDirection: "column", gap: "6px" }}>
           <StepCard num="01" label="Game Shape" summary={gameShape1Sentence}>
             <p style={{ fontSize: "13px", color: "rgba(248,246,242,0.55)", lineHeight: 1.75, margin: 0 }}>
               {breakdown.gameShape}
@@ -422,6 +430,7 @@ export default function BreakdownView({ breakdown, game, gated }: Props) {
               )}
             </StepCard>
           )}
+          </div>
 
           {breakdown.wildcard && (
             <div style={{

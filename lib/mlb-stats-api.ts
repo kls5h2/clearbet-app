@@ -39,19 +39,25 @@ interface RawScheduleResponse {
   dates?: Array<{ games: RawGame[] }>;
 }
 
+interface RawPitchingSplit {
+  stat: {
+    era?: string;
+    inningsPitched?: string;
+    strikeOuts?: number;
+    baseOnBalls?: number;
+    whip?: string;
+    homeRuns?: number;
+  };
+  // Present when MLB Stats API returns per-team splits for traded players
+  team?: { id?: number; name?: string; abbreviation?: string };
+}
+
 interface RawPerson {
   id: number;
   pitchHand?: { code: "L" | "R" };
   stats?: Array<{
     group: { displayName: string };
-    splits: Array<{ stat: {
-      era?: string;
-      inningsPitched?: string;
-      strikeOuts?: number;
-      baseOnBalls?: number;
-      whip?: string;
-      homeRuns?: number;
-    } }>;
+    splits: RawPitchingSplit[];
   }>;
 }
 
@@ -238,6 +244,8 @@ interface PersonDetails {
   seasonBB: number | null;
   seasonWHIP: number | null;
   seasonHR: number | null;
+  teamChangedThisSeason: boolean;
+  priorTeamAbv: string | null;
 }
 
 async function fetchPersonDetails(
@@ -256,12 +264,32 @@ async function fetchPersonDetails(
   for (const p of data.people ?? []) {
     const hand = p.pitchHand?.code ?? null;
     const pitching = p.stats?.find((s) => s.group.displayName === "pitching");
-    const stat = pitching?.splits?.[0]?.stat;
+    const splits = pitching?.splits ?? [];
+    // splits[0] is always the combined/season totals (even for traded players).
+    // When a player was traded mid-season, MLB Stats API returns additional splits
+    // (one per team) after the combined entry.
+    const stat = splits[0]?.stat;
     const eraStr = stat?.era;
     const ipStr = stat?.inningsPitched;
     const seasonIP = ipStr ? parseFloat(ipStr) : null;
     const seasonERA =
       eraStr && eraStr !== "-" && eraStr !== "-.--" ? parseFloat(eraStr) : null;
+
+    // Detect team change: multiple splits with distinct team abbreviations means
+    // the pitcher played for more than one team this season.
+    let teamChangedThisSeason = false;
+    let priorTeamAbv: string | null = null;
+    if (splits.length > 1) {
+      const teamAbbvs = splits
+        .slice(1) // skip the combined totals entry
+        .map((s) => s.team?.abbreviation ?? null)
+        .filter((a): a is string => a !== null && a !== "---" && a !== "");
+      if (teamAbbvs.length >= 2) {
+        teamChangedThisSeason = true;
+        priorTeamAbv = teamAbbvs[0]; // first team in the list = earlier team
+      }
+    }
+
     map.set(p.id, {
       hand,
       seasonERA: seasonIP !== null && seasonIP > 0 ? seasonERA : null,
@@ -270,6 +298,8 @@ async function fetchPersonDetails(
       seasonBB: stat?.baseOnBalls ?? null,
       seasonWHIP: stat?.whip ? parseFloat(stat.whip) : null,
       seasonHR: stat?.homeRuns ?? null,
+      teamChangedThisSeason,
+      priorTeamAbv,
     });
   }
   return map;
@@ -291,6 +321,8 @@ function buildPitcher(
     seasonHR: details?.seasonHR ?? null,
     seasonIP: details?.seasonIP ?? null,
     confirmed: true, // sourced from MLB Stats API probablePitcher
+    teamChangedThisSeason: details?.teamChangedThisSeason ?? false,
+    priorTeamAbv: details?.priorTeamAbv ?? null,
   };
 }
 

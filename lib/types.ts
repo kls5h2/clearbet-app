@@ -209,6 +209,10 @@ export interface MLBPitcher {
   // true = listed as probablePitcher by MLB Stats API (authoritative — overrides Tank01 injury data)
   // false / undefined = Tank01 roster fallback (treat as UNCONFIRMED)
   confirmed?: boolean;
+  // Data quality flags — derived by the breakdown pipeline, not raw API data
+  smallSample?: boolean;           // true when seasonIP < 40; treat stats as preliminary
+  teamChangedThisSeason?: boolean; // pitcher played for multiple teams this season (best-effort)
+  priorTeamAbv?: string | null;    // abbreviation of the team they left (if detectable from MLB Stats API)
 }
 
 export interface MLBGame {

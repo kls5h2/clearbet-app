@@ -13,10 +13,10 @@ import { lookupTeam, parseGameId } from "@/lib/team-names";
 // ─── Confidence display config ────────────────────────────────────────────────
 
 const CONF: Record<string, { label: string; color: string; bgColor: string; borderColor: string }> = {
-  "CLEAR SPOT": { label: "Clear Spot", color: "#4DB87A", bgColor: "rgba(26,122,72,0.15)", borderColor: "rgba(77,184,122,0.4)" },
-  "LEAN":       { label: "Lean",       color: "#6B9FE8", bgColor: "rgba(24,82,168,0.15)", borderColor: "rgba(107,159,232,0.4)" },
-  "FRAGILE":    { label: "Fragile",    color: "#D4913A", bgColor: "rgba(181,106,18,0.15)", borderColor: "rgba(212,145,58,0.4)" },
-  "PASS":       { label: "Pass",       color: "#9B9790", bgColor: "rgba(110,107,102,0.15)", borderColor: "rgba(155,151,144,0.35)" },
+  "CLEAR SPOT": { label: "Clear Spot", color: "#4DB87A", bgColor: "rgba(22,65,38,0.55)",  borderColor: "rgba(77,184,122,0.3)" },
+  "LEAN":       { label: "Lean",       color: "#6B9FE8", bgColor: "rgba(15,50,120,0.5)",  borderColor: "rgba(107,159,232,0.3)" },
+  "FRAGILE":    { label: "Fragile",    color: "#D4913A", bgColor: "rgba(130,75,10,0.5)",  borderColor: "rgba(212,145,58,0.3)" },
+  "PASS":       { label: "Pass",       color: "#9B9790", bgColor: "rgba(70,70,65,0.4)",   borderColor: "rgba(155,151,144,0.25)" },
 };
 
 const CONF_SUBTITLES: Record<string, string> = {
@@ -340,6 +340,12 @@ export default function BreakdownPage() {
     };
   })();
 
+  const abbrevNames = (() => {
+    if (game) return { away: game.awayTeam.teamAbv, home: game.homeTeam.teamAbv };
+    const parsed = parseGameId(gameId);
+    return { away: parsed?.awayAbv ?? "", home: parsed?.homeAbv ?? "" };
+  })();
+
   const effectiveStatus: "scheduled" | "live" | "final" | "postponed" = (() => {
     if (!game) return "scheduled";
     if (game.gameStatus === "final") return "final";
@@ -490,10 +496,16 @@ export default function BreakdownPage() {
 
               {/* Matchup */}
               <div style={{
-                fontSize: "clamp(20px, 3.5vw, 30px)", fontWeight: 800,
-                letterSpacing: "-0.035em", color: "#fff", lineHeight: 1.1, marginBottom: "8px",
+                fontSize: "clamp(24px, 4vw, 42px)", fontWeight: 800,
+                letterSpacing: "-0.04em", color: "#fff", lineHeight: 1.1, marginBottom: "8px",
               }}>
-                {resolvedNames.away && resolvedNames.home ? (
+                {abbrevNames.away && abbrevNames.home ? (
+                  <>
+                    {abbrevNames.away}
+                    <span style={{ fontSize: "0.55em", fontWeight: 400, color: "rgba(255,255,255,0.25)", margin: "0 10px" }}>at</span>
+                    {abbrevNames.home}
+                  </>
+                ) : resolvedNames.away && resolvedNames.home ? (
                   <>
                     {resolvedNames.away}
                     <span style={{ fontSize: "0.65em", fontWeight: 400, color: "rgba(255,255,255,0.25)", margin: "0 10px" }}>at</span>
@@ -514,33 +526,27 @@ export default function BreakdownPage() {
                 </div>
               )}
 
-              {/* Signal Grade pill */}
+              {/* Signal Grade */}
               {status === "done" && confInfo && confLabel && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <div>
+                  <div style={{
+                    fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "rgba(248,246,242,0.28)", marginBottom: "8px",
+                  }}>
+                    Signal Grade
+                  </div>
                   <span style={{
-                    display: "inline-flex", alignItems: "center", gap: "6px",
-                    padding: "5px 12px", borderRadius: "20px",
+                    display: "inline-flex", alignItems: "center", gap: "7px",
+                    padding: "6px 14px", borderRadius: "20px",
                     border: `1px solid ${confInfo.borderColor}`,
                     background: confInfo.bgColor,
                   }}>
-                    <span style={{
-                      fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600,
-                      letterSpacing: "0.1em", textTransform: "uppercase",
-                      color: "rgba(248,246,242,0.35)",
-                    }}>
-                      Signal Grade
-                    </span>
-                    <span style={{ width: "1px", height: "10px", background: "rgba(248,246,242,0.12)", display: "inline-block" }} />
                     <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: confInfo.color, flexShrink: 0 }} />
                     <span style={{ fontSize: "12px", fontWeight: 700, color: confInfo.color, letterSpacing: "0.02em" }}>
                       {confInfo.label}
                     </span>
                   </span>
-                  {confInfo && (
-                    <span style={{ fontSize: "11px", color: "rgba(248,246,242,0.3)", fontStyle: "italic" }}>
-                      {CONF_SUBTITLES[confLabel] ?? ""}
-                    </span>
-                  )}
                 </div>
               )}
             </div>

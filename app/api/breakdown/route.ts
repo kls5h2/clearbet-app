@@ -662,12 +662,33 @@ async function handleMLBBreakdown(gameId: string, userId: string | null = null):
       getMLBStartingPitcher(rawGame.probableStarterHomeId, homeTeam.teamAbv).catch(() => null),
       getMLBStartingPitcher(rawGame.probableStarterAwayId, awayTeam.teamAbv).catch(() => null),
     ]);
-    const homePitcher = statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null);
-    const awayPitcher = statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null);
+
+    // Derive the final pitcher objects, then apply data quality flags.
+    // smallSample is always computed here (not in the API clients) so it applies
+    // regardless of whether the pitcher came from MLB Stats API or the Tank01 fallback.
+    const MLB_SMALL_SAMPLE_IP_THRESHOLD = 40;
+    const addPitcherFlags = (p: typeof homeFallback): typeof homeFallback => {
+      if (!p) return null;
+      return {
+        ...p,
+        smallSample: p.seasonIP !== null && p.seasonIP < MLB_SMALL_SAMPLE_IP_THRESHOLD,
+      };
+    };
+
+    const homePitcher = addPitcherFlags(
+      statsEntry?.home ?? (homeFallback ? { ...homeFallback, confirmed: false } : null)
+    );
+    const awayPitcher = addPitcherFlags(
+      statsEntry?.away ?? (awayFallback ? { ...awayFallback, confirmed: false } : null)
+    );
     console.log(
       `[breakdown:MLB] pitchers: home=${homePitcher?.name ?? "none"} (confirmed=${homePitcher?.confirmed ?? false}), ` +
       `away=${awayPitcher?.name ?? "none"} (confirmed=${awayPitcher?.confirmed ?? false})`
     );
+    if (homePitcher?.smallSample) console.log(`[breakdown:MLB] home pitcher small sample: ${homePitcher.seasonIP} IP`);
+    if (awayPitcher?.smallSample) console.log(`[breakdown:MLB] away pitcher small sample: ${awayPitcher.seasonIP} IP`);
+    if (homePitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] home pitcher team change detected: prior team=${homePitcher.priorTeamAbv}`);
+    if (awayPitcher?.teamChangedThisSeason) console.log(`[breakdown:MLB] away pitcher team change detected: prior team=${awayPitcher.priorTeamAbv}`);
 
     // ─── Batter scoring ───────────────────────────────────────────────────────
     const parkFactor = TEAM_TO_PARK_FACTOR[homeTeam.teamAbv] ?? DEFAULT_PARK_FACTOR;

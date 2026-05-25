@@ -93,6 +93,12 @@ Never reference a confirmed starter as "injured" or "questionable" even if their
 
 Do not use the labels [CONFIRMED STARTER] or [UNCONFIRMED] or any bracketed labels in your written breakdown output. These are internal data flags only. Refer to pitchers naturally by name and status.
 
+## SMALL SAMPLE RULE
+If a pitcher's stat line includes a [SMALL SAMPLE] flag, do not present their stats as established norms. Use language like "early-season indicator" or "limited sample to date." Do not build the Base Script around a pitcher with fewer than 40 IP without explicitly acknowledging the limited sample. Example: "Henderson's 2.25 ERA is an encouraging early-season indicator, but his 8 IP is too limited to anchor the script." Never omit the caveat when the [SMALL SAMPLE] flag is present. Do not use the literal text "[SMALL SAMPLE]" in your output — reference the underlying reality (limited innings, preliminary read) instead.
+
+## TEAM CHANGE RULE
+If a pitcher's stat line includes a [TEAM CHANGE THIS SEASON] flag, you must reference which context the stats came from. Never present combined stats from multiple teams as a single performance baseline. Frame as: "[Pitcher] carries a combined ERA from stints at [prior team] and [current team] — the current-team sample is incomplete." If per-team split detail is not available, acknowledge the combined nature in the Key Drivers entry for that pitcher and note that it limits confidence in the baseline. Do not use the literal text "[TEAM CHANGE THIS SEASON]" in your output — describe the situation directly.
+
 ## BULLPEN RULE
 Blown save rate is the key fragility signal. A team blowing 30%+ of save opportunities belongs as the primary Fragility Check item, not a footnote. ERA last 7 days reflects real form — weight it over season average. When citing 7-day ERA as structural support for a directional claim (not just supporting color), add a one-clause caveat: "...though 7-day samples can be volatile." Do not present a 7-day hot or cold streak as a durable structural edge without qualification.
 
@@ -462,7 +468,22 @@ function buildMLBUserMessage(data: MLBGameDetailData): string {
       p.seasonHR !== null ? `HR allowed: ${p.seasonHR}` : null,
       p.seasonBB !== null ? `BB: ${p.seasonBB}` : null,
     ].filter(Boolean).join(" / ");
-    return `${tag}${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
+
+    let line = `${tag}${p.name}${hand} — season ERA: ${formatERA(p.seasonERA)}${recent}${propStats ? ` | ${propStats}` : ""}`;
+
+    if (p.smallSample && p.seasonIP !== null) {
+      line += `\n  [SMALL SAMPLE: only ${p.seasonIP.toFixed(1)} IP this season — treat all metrics as preliminary, not established norms]`;
+    }
+
+    if (p.teamChangedThisSeason) {
+      if (p.priorTeamAbv) {
+        line += `\n  [TEAM CHANGE THIS SEASON: stats above are combined from ${p.priorTeamAbv} and current team — current-team sample is incomplete, do not treat as a single baseline]`;
+      } else {
+        line += `\n  [TEAM CHANGE THIS SEASON: combined stats include a prior team — current-team sample is incomplete, interpret with caution]`;
+      }
+    }
+
+    return line;
   };
 
   // MLB Stats API probablePitcher is authoritative for pitchers. When a
@@ -719,6 +740,17 @@ export async function generateMLBBreakdown(data: MLBGameDetailData): Promise<Bre
   const userMessage = buildMLBUserMessage(data);
   console.log(`[breakdown:MLB:debug] HOME ROSTER (${data.homeRoster?.length ?? 0} players):`, data.homeRoster?.join(", ") || "EMPTY — will hallucinate");
   console.log(`[breakdown:MLB:debug] AWAY ROSTER (${data.awayRoster?.length ?? 0} players):`, data.awayRoster?.join(", ") || "EMPTY — will hallucinate");
+  // Log pitcher flag state so small sample / team change can be verified in server logs
+  const { homePitcher, awayPitcher } = data.game;
+  if (homePitcher?.smallSample || homePitcher?.teamChangedThisSeason) {
+    console.log(`[breakdown:MLB:debug] HOME PITCHER FLAGS — smallSample=${homePitcher.smallSample ?? false} teamChange=${homePitcher.teamChangedThisSeason ?? false} priorTeam=${homePitcher.priorTeamAbv ?? "n/a"}`);
+  }
+  if (awayPitcher?.smallSample || awayPitcher?.teamChangedThisSeason) {
+    console.log(`[breakdown:MLB:debug] AWAY PITCHER FLAGS — smallSample=${awayPitcher.smallSample ?? false} teamChange=${awayPitcher.teamChangedThisSeason ?? false} priorTeam=${awayPitcher.priorTeamAbv ?? "n/a"}`);
+  }
+  console.log("[breakdown:MLB:debug] USER PROMPT (STARTING PITCHERS section):\n",
+    userMessage.slice(userMessage.indexOf("━━━ STARTING PITCHERS ━━━"), userMessage.indexOf("━━━ BETTING LINES ━━━")).trim()
+  );
 
   // ── Confirmed-OUT names for structural dedup ────────────────────────────────
   const confirmedOutNames = [

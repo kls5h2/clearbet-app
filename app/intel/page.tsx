@@ -697,9 +697,9 @@ function HomePageContent() {
                   style={{
                     fontSize: "11px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
                     padding: "6px 14px", cursor: "pointer", transition: "all 0.12s", borderRadius: "20px",
-                    border: `1px solid ${activeFilter === tab.key ? "rgba(248,246,242,0.25)" : "rgba(248,246,242,0.08)"}`,
-                    background: activeFilter === tab.key ? "rgba(248,246,242,0.1)" : "transparent",
-                    color: activeFilter === tab.key ? "rgba(248,246,242,0.85)" : "rgba(248,246,242,0.35)",
+                    border: `1px solid ${activeFilter === tab.key ? "var(--signal)" : "rgba(248,246,242,0.1)"}`,
+                    background: activeFilter === tab.key ? "var(--signal)" : "transparent",
+                    color: activeFilter === tab.key ? "#fff" : "rgba(248,246,242,0.35)",
                   }}
                 >
                   {tab.label}
